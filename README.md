@@ -83,24 +83,38 @@ git clone <your-fork-url> dg-ai-agent && cd dg-ai-agent
 python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# 2. configure the LLM key (required for the AI pipeline)
+# 2. (optional) LLM key — only needed to RUN the AI pipeline, not to build the data
 cp .env.example .env        # then edit .env and set ANTHROPIC_API_KEY
 
-# 3. generate the synthetic SAP dataset (creates cpe_analytics.duckdb)
-python scripts/generate_sap_sample_data.py     # MM: PO, GR, inventory, equipment
-python scripts/generate_zmm_approval_log.py    # ZMM: custom approval-log Z-table
-python scripts/generate_sd_billing.py          # SD: customers, sales orders, billing
-python scripts/generate_fi_shadows.py          # FI: accounting-document shadows
+# 3. build everything from scratch (synthetic data + all dbt layers)
+python scripts/bootstrap.py
 
-# 4. build the dbt layers  (run FROM the dbt/ dir — profiles.yml path is relative)
-cd dbt && dbt seed && dbt run && dbt test && cd ..
-
-# 5. launch the app
+# 4. launch the app
 streamlit run app/Home.py
 ```
 
-> **dbt note:** `dbt/profiles.yml` uses a relative DuckDB path (`../cpe_analytics.duckdb`), so always run
-> dbt with the working directory set to `dbt/`.
+`scripts/bootstrap.py` runs the four deterministic data generators, then `dbt seed` / `dbt run` /
+`dbt test`. Prefer it step by step? See the manual build below.
+
+<details><summary><b>Manual build</b> (exactly what <code>bootstrap.py</code> does)</summary>
+
+```bash
+python scripts/generate_sap_sample_data.py   # MM: PO, GR, inventory, equipment
+python scripts/generate_zmm_approval_log.py  # ZMM: custom approval-log Z-table
+python scripts/generate_sd_billing.py        # SD: customers, sales orders, billing
+python scripts/generate_fi_shadows.py        # FI: accounting-document shadows
+cd dbt && dbt seed && dbt run && dbt test     # build all layers (run FROM dbt/ — relative DuckDB path)
+```
+</details>
+
+### How the data works — no database is committed
+
+The repo ships **code + deterministic synthetic-data generators + the seed knowledge graph** — never the
+database itself (a ~250 MB build artifact, so it's git-ignored). `bootstrap.py` rebuilds
+`cpe_analytics.duckdb` **reproducibly**: the generators are seeded (`seed=42`), so every clone produces the
+*same* data, and `dbt run` is the DDL-as-code that recreates all **135 models** across every layer. The
+generated **governance wiki under `knowledge/` is committed**, so you can browse the glossary, data
+catalog, lineage, and S2T mappings directly on GitHub without building anything.
 
 ---
 

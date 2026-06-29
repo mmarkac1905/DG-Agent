@@ -17,14 +17,10 @@ context/**/*.md
 !context/post_demo_roadmap.md
 # context/direction_d_spec.md is referenced from scripts/run_join_cardinality_analysis.py
 !context/direction_d_spec.md
-knowledge/**/*.md
-!knowledge/.gitkeep
-!knowledge/**/.gitkeep
-# Hand-maintained source-of-truth wiki pages (NOT auto-regenerated):
-!knowledge/knowledge_rules.md
-!knowledge/anti_patterns.md
-!knowledge/seeds_catalog.md
-!knowledge/dv_verification_report.md
+# Knowledge wiki (knowledge/**/*.md) is auto-generated from dbt/seeds by
+# scripts/build_knowledge_wiki.py — but COMMITTED so the governed metadata
+# (business glossary, data catalog, lineage, S2T mappings) is browsable on
+# GitHub without running a build. Regenerate after seed changes.
 
 # Debug / session logs (8.5.1 hygiene)
 *.log
