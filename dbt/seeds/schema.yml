@@ -1,0 +1,980 @@
+version: 2
+
+seeds:
+  - name: domain_facts
+    description: >
+      Structural, cross-term observations about the data (currency ratios,
+      plant cardinalities, material prefix conventions, actually-used
+      movement types, null baselines, etc.). Populated exclusively by the
+      Domain Analysis tab in Streamlit. Rule 24: never hand-write
+      facts without executed evidence_sql. Rule 22: status changes are
+      human-only, never set by code.
+    columns:
+      - name: fact_id
+        description: Primary key, format DF-NNNN.
+        tests:
+          - unique
+          - not_null
+      - name: category
+        description: High-level bucket the fact belongs to.
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - currency
+                - naming_convention
+                - cardinality
+                - volume_distribution
+                - null_pattern
+                - org_structure
+                - temporal_pattern
+                - referential_integrity
+                - value_domain
+                - business_rule_observed
+      - name: scope_layer
+        description: Which warehouse layer the fact describes.
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - raw
+                - staging
+                - vault
+                - mart
+                - cross_layer
+      - name: scope_tables
+        description: Comma-separated list of tables the fact applies to.
+      - name: fact_plain
+        description: 1-3 sentence business-readable description.
+      - name: fact_technical
+        description: Technical wording including column names and exact figures. Used for LLM injection.
+      - name: evidence_sql
+        description: Re-executable SELECT that produces evidence_result_json. Must not mutate state.
+        tests:
+          - not_null
+      - name: evidence_result_json
+        description: Last execution result serialized as JSON.
+      - name: evidence_result_summary
+        description: One-line summary of the result.
+      - name: evidence_refreshed_at
+        description: Timestamp evidence_sql was last executed.
+      - name: discovered_at
+        description: Date the fact first entered the seed.
+      - name: discovered_by
+        description: Origin of the fact.
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - guided_domain_llm
+                - guided_domain_human
+                - human_verified
+      - name: confidence
+        description: How trustworthy the fact is.
+        tests:
+          - accepted_values:
+              values:
+                - high
+                - medium
+                - low
+      - name: stale_after_days
+        description: Number of days after evidence_refreshed_at when the fact should be considered stale. Null = never stales (schema-level facts).
+      - name: auto_inject
+        description: When true, the fact is eligible to be injected into downstream LLM prompts via load_domain_context().
+      - name: priority_score
+        description: Integer 1-100. Higher priority facts are kept when truncation is needed.
+      - name: status
+        description: Lifecycle state. Changed manually only — never by code (Rule 22).
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - active
+                - stale
+                - superseded
+                - rejected
+                - draft
+      - name: superseded_by
+        description: fact_id of a newer fact that replaces this one.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "NOT (auto_inject = true AND status != 'active')"
+          config:
+            severity: error
+
+  - name: ingestion_log
+    description: >
+      Append-only log of raw-data ingestion events. Written by the loader
+      (today: scripts/generate_sap_sample_data.py). Streamlit's freshness
+      banner reads MAX(finished_at_utc) from here. Rule 31: this seed is
+      the single source of truth for "when was the raw data last loaded?".
+    columns:
+      - name: run_id
+        description: Primary key, format ING-YYYYMMDD-NNN.
+        tests:
+          - unique
+          - not_null
+      - name: started_at_utc
+        description: Start of the ingestion run, ISO 8601 in UTC.
+        tests:
+          - not_null
+      - name: finished_at_utc
+        description: End of the ingestion run, ISO 8601 in UTC.
+        tests:
+          - not_null
+      - name: source_type
+        description: What produced this run.
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - sample_generator
+                - real_batch
+                - manual
+      - name: row_count_total
+        description: Total rows inserted across every table touched.
+      - name: tables_touched
+        description: Comma-separated raw_sap table names written during the run.
+      - name: trigger_user
+        description: OS username (os.getenv('USER') / 'USERNAME') or 'default'.
+      - name: notes
+        description: Free text — deployment context, migration label, etc.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "started_at_utc <= finished_at_utc"
+          config:
+            severity: error
+
+  - name: business_glossary
+    description: >
+      Business term registry. Rule 22: `status` changes are human-only
+      (except the archive action, which is an explicit user click).
+      Phase 12 extended the enum to {draft, approved, archived};
+      Piece 9 Stage A (§28) extends further with scope_confirmed +
+      reserved states (domain_eda_pending, term_eda_pending,
+      ready_for_s2t) — of those, only scope_confirmed is wired by
+      Stage A; the rest are forward-compat placeholders for Stages
+      B/C. Archived rows preserve all downstream artefacts and may
+      carry an archive_id. Composite uniqueness on term_name applies
+      only to non-archived rows. See Rule 33. scope_derivation_history_json
+      (Stage A addition) stores the full propose/revise/confirm
+      iteration trail per term; '{}' is the pre-Stage-A default.
+    columns:
+      - name: id
+        tests: [not_null, unique]
+      - name: term_name
+        tests: [not_null]
+      - name: status
+        description: Lifecycle + governance state. Stage A extends the enum with scope_confirmed + reserved values.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [draft, scope_confirmed, domain_eda_pending, term_eda_pending, ready_for_s2t, approved, denied, archived]
+      - name: archive_id
+        description: ARC-YYYYMMDD-NNN when status='archived', else empty.
+      - name: archived_at_utc
+        description: ISO UTC timestamp of archive event, else empty.
+      - name: archived_reason_code
+        description: Enum of archive reasons; empty when not archived.
+      - name: archived_reason_text
+        description: Optional free text, up to ~500 chars.
+      - name: scope_derivation_history_json
+        description: >
+          Stage A iteration trail. JSON object containing ordered
+          list of proposals (each with tables, rationale, blockers,
+          attestation, analyst action). '{}' on pre-Stage-A or
+          never-derived terms. One-way-grow; never rewritten except
+          by a fresh propose+confirm cycle.
+
+  - name: archive_log
+    description: >
+      Append-only record of term-archive events. One row per archive.
+      Phase 12 / Rule 33. The `learning_signal` flag drives whether
+      `app/_archive_context_loader.py` surfaces the row to future
+      same-name S2T builds — TRUE by default, FALSE for demo rehearsals
+      or reproducible-state scenarios.
+    columns:
+      - name: archive_id
+        tests:
+          - unique
+          - not_null
+      - name: business_term_id
+        tests: [not_null]
+      - name: term_name
+        tests: [not_null]
+      - name: archived_at_utc
+        tests: [not_null]
+      - name: archived_reason_code
+        tests:
+          - not_null
+          - accepted_values:
+              values: [wrong_grain, bad_definition, redefined, obsolete, other]
+      - name: archived_reason_text
+      - name: learning_signal
+        tests: [not_null]
+      - name: archived_by
+      - name: s2t_row_ids
+      - name: target_models
+      - name: files_archived
+      - name: cascaded_models_json
+        description: >
+          KI #71 — JSON array of {name, layer, src, dst} for every .sql
+          file moved during this archive. Forensic detail beyond the
+          semicolon-separated `target_models` column. Empty string for
+          pre-KI-71 archive rows.
+      - name: blockers_resolved
+        description: >
+          KI #71 — semicolon-separated business_term_ids that had to be
+          archived first via guided unwind to satisfy the strict-cascade
+          gate. Empty when the archive faced no sharing/downstream
+          blockers (the common case for terms with no shared deps).
+
+  - name: source_column_roles
+    description: >
+      Per-column role metadata for every raw_sap.* column. Phase 15a piece 1
+      design; piece 3 implementation. Five roles — measure / dimension / date /
+      key / text — assigned by a mechanical rule pass plus LLM classification
+      over sap_data_dictionary context. Primary key: (table_name, column_name).
+      Populated by scripts/classify_source_columns.py. User overrides via
+      apply_user_override() preserve prior state in source_column_role_changes.
+      RULE 29: no governance approval flow (LLM context data, not a business
+      deliverable). RULE 42 rev #5: not term-scoped; no term_name resolution.
+    columns:
+      - name: table_name
+        description: raw_sap table the column belongs to (lowercase).
+        tests: [not_null]
+      - name: column_name
+        description: SAP field name (uppercase per SAP convention).
+        tests: [not_null]
+      - name: role
+        description: Analytical role.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [measure, dimension, date, key, text]
+      - name: role_confidence
+        description: How trustworthy the classification is.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [high, medium, low]
+      - name: role_rationale
+        description: One-line explanation capped at 300 chars.
+      - name: role_source
+        description: How the row was classified.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [llm_classified, user_override, default]
+      - name: user_override_reason
+        description: Required text when role_source='user_override'; empty otherwise.
+      - name: classified_at_utc
+        description: ISO UTC timestamp of most recent classification or override.
+      - name: schema_version
+        description: sha256[:12] of the table's column set at classification time.
+      - name: previous_role
+        description: Role before the most recent change; empty for first-ever classification.
+      - name: previous_role_source
+        description: Source before the most recent change.
+      - name: stale
+        description: Soft-invalidation flag. True when schema drift makes the classification suspect.
+        tests:
+          - accepted_values:
+              values: ["true", "false"]
+      - name: stale_reason
+        description: Why stale; nullable when stale=false.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [table_name, column_name]
+      - dbt_utils.expression_is_true:
+          expression: "NOT (role_source = 'user_override' AND (user_override_reason IS NULL OR user_override_reason = ''))"
+          config:
+            severity: error
+
+  - name: source_column_role_changes
+    description: >
+      Append-only audit log of role-classification changes on
+      source_column_roles. One row per change event. Phase 15a piece 3 §5d.
+      Direct response to known_issue #19 (stale revert flags) — full history
+      lives outside the primary seed so supersession can never be invisible.
+    columns:
+      - name: changed_at_utc
+        description: ISO UTC timestamp when the change was written.
+        tests: [not_null]
+      - name: table_name
+        tests: [not_null]
+      - name: column_name
+        tests: [not_null]
+      - name: from_role
+        description: Prior role before the change.
+      - name: from_source
+        description: Prior role_source before the change.
+      - name: from_confidence
+        description: Prior role_confidence before the change.
+      - name: from_rationale
+        description: Prior role_rationale before the change.
+      - name: to_role
+        description: New role after the change.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [measure, dimension, date, key, text]
+      - name: to_source
+        description: New role_source after the change.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [llm_classified, user_override, default]
+      - name: changed_by
+        description: User identity or 'pipeline' / 'unknown'.
+      - name: reason
+        description: Free text explaining the change.
+
+  - name: domain_analysis_results
+    description: >
+      OBT: raw output of Guided Analysis runs scoped to a source table or
+      domain. Phase 15a piece 2 §1. 15 shared + source_tables + domain_name
+      = 17 cols. Written by scripts/run_<analysis>_analysis.py CLIs. Rows
+      are immutable after promote (piece 2 §5c); superseded rows carry
+      status='superseded' + superseded_by pointing at the newer row.
+    columns:
+      - name: id
+        description: Surrogate key DAR-NNNNN.
+        tests: [not_null, unique]
+      - name: analysis_type
+        description: >
+          Which analyzer produced this row. Phase 15a ships completeness,
+          dimensions, magnitude, code_tables (active). Phase 2 (§25 /
+          v3.9 / 8.4.6) adds temporal_coverage, performance_baseline,
+          grain_relationship, segmentation_threshold. Remaining Phase 15a
+          names (sample_rows, dates, part_to_whole, referential_integrity)
+          are reserved for future implementations; schema.yml keeps them
+          in accepted_values so dbt test doesn't break when reserved
+          slots are ever activated.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [sample_rows, dimensions, dates, completeness,
+                       magnitude, part_to_whole, code_tables,
+                       referential_integrity,
+                       temporal_coverage, performance_baseline,
+                       grain_relationship, segmentation_threshold,
+                       schema_discovery, join_cardinality,
+                       bridge_coverage_by_filter]
+      - name: executed_at_utc
+        tests: [not_null]
+      - name: result_json
+      - name: promoted
+      - name: promoted_at_utc
+      - name: promoted_to_target_id
+      - name: run_id
+      - name: query_sql
+      - name: row_count
+      - name: error_message
+      - name: status
+        description: >
+          success = DAR emitted with analytical output.
+          error = DAR emitted with error_message populated.
+          skipped = analyzer could not apply (Stage D.1: per-analyzer
+          skip conditions surface as status='skipped' rows with
+          result_json carrying a skip_reason; Stage C prereq counts
+          these as satisfying the analyzer requirement).
+          superseded = replaced by a newer DAR on re-run.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [success, error, superseded, skipped]
+      - name: superseded_by
+      - name: executed_by
+      - name: schema_version
+      - name: source_tables
+        description: Comma-separated raw_sap table names in scope.
+        tests: [not_null]
+      - name: domain_name
+      - name: last_source_ingestion_at
+        description: >
+          MAX(ingestion_date) across scope tables at analysis execution time,
+          or NULL when no source table carries an ingestion_date column (today's
+          state — see known_issue #25). Decision #72: age-based staleness signal,
+          informational only — never blocks analysts. UI consumes this to show
+          "analysis from {date}; source has N new records since then" with a
+          re-run affordance.
+
+  - name: term_analysis_results
+    description: |
+      Term EDA analytical evidence produced by Stage C. Each row is either a
+      query executed during a Stage C run (row_type='query') or the run's
+      terminal sufficiency judgment (row_type='sufficiency'). See §28.11.7
+      of context/phase_15b_piece_8_pre_s2t_reasoning_layer.md for full spec.
+      21 columns. Consumed by Piece 8's context assembler as grounding
+      evidence for BAR iteration.
+    config:
+      column_types:
+        id: varchar
+        term_id: varchar
+        row_type: varchar
+        analysis_lens: varchar
+        stage: varchar
+        query_index: integer
+        query_sql: varchar
+        query_result_json: varchar
+        result_row_count: integer
+        interpretation: varchar
+        grounded_in_tar_ids: varchar
+        sufficiency_json: varchar
+        status: varchar
+        confidence: varchar
+        executed_at_utc: timestamp
+        executed_by: varchar
+        superseded_by: varchar
+        run_id: varchar
+        llm_usage_json: varchar
+        validation_errors_json: varchar
+        error_message: varchar
+    columns:
+      - name: id
+        description: TAR-NNNNN surrogate key.
+        tests: [unique, not_null]
+      - name: term_id
+        description: FK to business_glossary.id.
+        tests: [not_null]
+      - name: row_type
+        description: query | sufficiency.
+        tests:
+          - accepted_values:
+              values: [query, sufficiency]
+      - name: analysis_lens
+        description: >
+          Baraa 8-lens enum. Populated on query rows (one of eight values);
+          empty string on sufficiency rows (lens decisions live in
+          sufficiency_json.lens_consideration instead).
+        tests:
+          - accepted_values:
+              values:
+                - measures_overview
+                - by_dimension
+                - ranking
+                - time_trend
+                - cumulative
+                - variance
+                - bucketing
+                - part_to_whole
+                - ""
+      - name: stage
+        description: Which trajectory stage emitted this row.
+        tests:
+          - accepted_values:
+              values: [framework_floor, reflection, sufficiency_loop, terminal]
+      - name: status
+        description: success | error | superseded | quarantined.
+        tests:
+          - accepted_values:
+              values: [success, error, superseded, quarantined]
+      - name: confidence
+        description: >
+          high | medium | low | "" — only populated on sufficiency rows;
+          empty string on query rows.
+        tests:
+          - accepted_values:
+              values: [high, medium, low, ""]
+      - name: run_id
+        description: >
+          TARRUN-YYYYMMDDHHMMSS-<term_id> — identical across all rows produced
+          by the same Stage C run. Enables precise scenario-25 teardown and
+          run-scoped queries.
+        tests: [not_null]
+      - name: validation_errors_json
+        description: >
+          JSON describing validation errors when status='quarantined'.
+          NULL/empty for non-quarantined rows. Populated by _tar_writer
+          when sufficiency_json.lens_consideration.tar_ids cite ids not
+          allocated by this run (KI-102). Schema:
+          {error_type, cited_ids, allocated_ids_this_run, unresolved_ids,
+           lens_breakdown: {<lens>: {cited, unresolved}}}.
+      - name: error_message
+        description: >
+          Captures the DuckDB error string when an LLM-emitted query fails
+          execution (status='error'). Empty for successful query rows and
+          for sufficiency rows. Surfaces to the LLM in the next-turn bundle
+          via _render_query_results so the LLM can self-correct binder
+          errors (column-table mismatches, syntax issues) instead of
+          retrying the same wrong pattern. Mirrors Stage B's
+          domain_analysis_results.error_message convention (KI-113).
+
+  - name: business_term_analysis_results
+    description: >
+      OBT: BAR rows produced by Phase 15b piece 8's Pre-S2T Reasoning Layer.
+      Replaces the prior Phase 15a piece 2 §1 Guided Analysis shape (zero
+      production rows existed at replacement time — destructive-safe per
+      v3.2 §18.5). One row per term-injection runner invocation, capturing
+      the iterative reasoning loop's audit trail, final S2T SQL fragment,
+      metric interpretation, and analyst-gating confidence. Schema: 37
+      columns per piece 8 §3a; see piece 8 §3b for the
+      identity/bundle-friendly/audit-only three-bucket split. RULE 42 rev
+      #5: no term_name resolution — reads use naive business_term_id ==
+      term_id match. Piece 8 §18.4: business_glossary PK is `id`, so the
+      relationships test targets `field: id` (not `term_id`).
+    config:
+      column_types:
+        id: varchar
+        business_term_id: varchar
+        status: varchar
+        analysis_type: varchar
+        executed_at_utc: timestamp
+        inprogress_since_utc: timestamp
+        finished_at_utc: timestamp
+        scope_tables: varchar
+        bundle_fingerprint: varchar
+        iterations_count: integer
+        convergence_reason: varchar
+        final_query_sql: varchar
+        final_metric_value: double
+        final_metric_unit: varchar
+        final_metric_interpretation: varchar
+        term_conditions_covered: varchar
+        term_conditions_missed: varchar
+        confidence: varchar
+        confidence_rationale: varchar
+        analyst_review_needed: boolean
+        analyst_review_reason: varchar
+        promoted_at_utc: timestamp
+        promoted_by: varchar
+        superseded_by: varchar
+        last_source_ingestion_at: timestamp
+        iteration_trace: varchar
+        bundle_token_count: integer
+        llm_total_input_tokens: integer
+        llm_total_output_tokens: integer
+        llm_total_cost_usd: double
+        ontology_consumed: varchar
+        domain_facts_consumed: varchar
+        analysis_findings_consumed: varchar
+        dar_consumed: varchar
+        prior_bar_consumed: varchar
+        record_source: varchar
+        load_date: timestamp
+        # v3.8 §24 (8.4.5) — BAR schema extension; closes the 8.4.3/8.4.4
+        # attestation migration gap (ATTESTATION_FIELDS grew in the
+        # runner without BAR persistence columns being added). JSON-
+        # encoded arrays, same format as the other *_consumed columns.
+        semantic_model_consumed: varchar
+        dbt_semantic_model_consumed: varchar
+        # Phase 2b (C5 sourcing recommendations) — populated only when
+        # C5 fires (consecutive scope_sanity=no producing
+        # convergence_reason=hard_stop_scope_mismatch). NULL otherwise.
+        # sourcing_recommendations stores the full validate_recommendations()
+        # output (validated list + summary counts + catalog_gaps) as JSON.
+        sourcing_recommendations: varchar
+        c5_input_tokens: integer
+        c5_output_tokens: integer
+        c5_cost_usd: double
+        c5_skipped_reason: varchar
+        # Option B Phase 3 (OQ-3a) — JSON list of bridge_coverage_by_filter
+        # DAR-NNNNN ids the iteration LLM consulted. Always emitted
+        # (empty `[]` when no DARs in scope); validated conditionally.
+        bridge_coverage_consulted: varchar
+        # C3 (Theme 1 sub-items 1+2) — JSON list of TAR-NNNNN ids the
+        # iteration LLM consulted from the TERM EDA section (both
+        # row_type='query' and row_type='sufficiency'; both current-term
+        # and cross-term prior TARs). Always-emit (empty `[]` acceptable;
+        # no conditional gate — per OQ-C3-2 bridge_coverage's
+        # empirical-refutation rationale doesn't transfer to TARs).
+        tars_consulted: varchar
+        # C4 (Theme 1 sub-item 5) — JSON list of Stage A blocker IDs
+        # (iter{N}.b{I} format) the iteration LLM consulted from the
+        # "## Stage A blockers" bundle section. Always-emit (empty `[]`
+        # acceptable when no blockers in bundle or none pertinent).
+        stage_a_blockers_consumed: varchar
+    columns:
+      - name: id
+        description: Surrogate key BAR-NNNNN.
+        tests: [not_null, unique]
+      - name: business_term_id
+        description: FK to business_glossary.id (§18.4 — business_glossary PK is `id`, not `term_id`).
+        tests:
+          - not_null
+          - relationships:
+              to: ref('business_glossary')
+              field: id
+      - name: status
+        description: Lifecycle + governance state per piece 8 §5d.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [in_progress, converged, hard_stop, failed, promoted, superseded, needs_data_extension]
+      - name: analysis_type
+        description: Piece 8 always writes 'pre_s2t_reasoning'.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [pre_s2t_reasoning]
+      - name: executed_at_utc
+        tests: [not_null]
+      - name: convergence_reason
+        description: Terminal-state enum per piece 8 §4b (17 values).
+        tests:
+          - accepted_values:
+              values:
+                - converged_soft
+                - hard_stop_max_iters
+                - hard_stop_oscillation
+                - hard_stop_budget
+                - hard_stop_two_consecutive_mechanical
+                - hard_stop_mechanical_regression
+                - hard_stop_alignment_regression
+                - hard_stop_complexity_explosion
+                - hard_stop_preflight_no_scope
+                - hard_stop_preflight_empty_heavy
+                - hard_stop_attestation_failure
+                - hard_stop_citation_audit_failure
+                - hard_stop_finalization_attestation_failure
+                - hard_stop_bundle_fingerprint_drift
+                - hard_stop_scope_mismatch
+                - hard_stop_orphaned_inprogress
+                - hard_stop_glossary_drift
+                - hard_stop_ontology_collision
+                - hard_stop_bridge_unreachable
+                - hard_stop_bridge_attestation_missing
+      - name: confidence
+        description: Analyst-gating confidence per piece 8 §5c.
+        tests:
+          - accepted_values:
+              values: [high, medium, low, failed]
+      - name: superseded_by
+        description: Self-reference to newer BAR id (human-set, piece 8 §5d).
+        tests:
+          - relationships:
+              to: ref('business_term_analysis_results')
+              field: id
+      - name: last_source_ingestion_at
+        description: >
+          MAX(last_source_ingestion_at) across consumed DAR rows, or NULL
+          when no DAR had a value (known_issue #25). Informational
+          staleness signal per decision #72 — never blocks analysts.
+      # Phase 2b — C5 sourcing recommendations (tasks/c5_design.md
+      # Components 2-4). Populated only when C5 fires; NULL on every
+      # other run. C5 fires on consecutive scope_sanity=no, which
+      # produces convergence_reason=hard_stop_scope_mismatch.
+      - name: sourcing_recommendations
+        description: >
+          JSON-serialized validate_recommendations() output: validated
+          recommendations (table_name, tier, classification A/B/C/D,
+          recommendation_grade), summary counts, and catalog_gaps.
+          NULL if C5 didn't fire or was skipped (see c5_skipped_reason).
+      - name: c5_input_tokens
+        description: Anthropic input-token count for the C5 LLM call. NULL if C5 skipped.
+      - name: c5_output_tokens
+        description: Anthropic output-token count for the C5 LLM call. NULL if C5 skipped.
+      - name: c5_cost_usd
+        description: USD cost of the C5 LLM call (rolled up into llm_total_cost_usd). NULL if C5 skipped.
+      - name: c5_skipped_reason
+        description: >
+          Populated when C5 was skipped despite the trigger firing.
+          Values: budget_exhausted, llm_response_unparseable,
+          llm_call_error. NULL on successful C5 runs and on runs where
+          C5 didn't trigger.
+      # Option B Phase 3 (OQ-3a) — bridge_coverage_consulted attestation
+      # field. Always emitted by the iteration LLM; conditionally
+      # validated by _check_bridge_coverage_attestation (firing
+      # convergence_reason=hard_stop_bridge_attestation_missing when
+      # DARs exist for scope but the list is empty).
+      - name: bridge_coverage_consulted
+        description: >
+          JSON list of bridge_coverage_by_filter DAR-NNNNN ids the
+          iteration LLM consulted to verify filter reachability through
+          chosen joins. Empty `[]` is acceptable when no DARs are in
+          scope; non-empty when DARs exist (enforced by
+          _check_bridge_coverage_attestation gate). NULL on rows that
+          pre-date the Phase 3 schema migration.
+      # C3 (Theme 1 sub-items 1+2) — tars_consulted attestation field.
+      # Always emitted by the iteration LLM (no conditional gate; per
+      # OQ-C3-2 bridge_coverage's empirical-refutation rationale doesn't
+      # transfer to TARs).
+      - name: tars_consulted
+        description: >
+          JSON list of TAR-NNNNN ids (from term_analysis_results) the
+          iteration LLM consulted from the TERM EDA section while
+          composing SQL. Spans both row_type='query' and
+          row_type='sufficiency'; covers both current-term TARs and
+          cross-term prior TARs (from terms with overlapping s2t_mapping
+          scope). Empty `[]` is acceptable (e.g., bundle has no TARs, or
+          term's SQL didn't require analytical grounding). NULL on rows
+          that pre-date the C3 schema migration.
+      # C4 (Theme 1 sub-item 5) — stage_a_blockers_consumed attestation
+      # field. Always emitted by the iteration LLM. No conditional gate
+      # (mirrors C3 / Phase 3 leans).
+      - name: stage_a_blockers_consumed
+        description: >
+          JSON list of Stage A blocker IDs the iteration LLM consulted
+          from the "## Stage A blockers" bundle section. ID format is
+          "iter{N}.b{I}" (e.g., "iter1.b0" for the first blocker of
+          iteration 1). Surfaces all `resolves_in` routings (domain_eda,
+          term_eda, analyst_decision, ingestion_required,
+          source_diagnostic_required); the iteration LLM acknowledges
+          analyst_decision / ingestion_required blockers in
+          reasoning_summary since they cannot auto-resolve. Empty `[]`
+          is acceptable (e.g., term has no Stage A history, or no
+          blockers were pertinent). NULL on rows that pre-date the C4
+          schema migration.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [business_term_id, executed_at_utc]
+
+  - name: semantic_model
+    description: >
+      Layer A: EDA-compiled per-table SQL conventions for raw source tables
+      that lack dbt ontology coverage. One row per raw table;
+      compiled by scripts/compile_semantic_model.py from the four EDA
+      analyses' DAR rows (Completeness + Dimensions + Magnitude + Code
+      Tables). Consumed as part of the static layer by both
+      purpose='pre_s2t_reasoning' and purpose='create_s2t'. See piece 8
+      design doc §22 (v3.6 amendment). Ontology coverage signal:
+      main_seeds.dbt_column_lineage.origin_table. Human-override rows
+      (populated_by='human_override' or review_state='human_reviewed')
+      are preserved across recompile (§22.5 step 4).
+    config:
+      column_types:
+        table_name: varchar
+        source_schema: varchar
+        canonical_alias: varchar
+        entity_class: varchar
+        primary_key_cols: varchar
+        natural_key_cols: varchar
+        typical_join_keys_json: varchar
+        code_column_refs_json: varchar
+        typical_filters: varchar
+        common_traps: varchar
+        typical_use_cases: varchar
+        reference_sql: varchar
+        row_count_estimate: integer
+        populated_by: varchar
+        populated_at_utc: timestamp
+        review_state: varchar
+        source_dar_ids: varchar
+        # v3.9 §25.5 — Phase 2 EDA enrichment.
+        temporal_coverage_json: varchar
+        typical_values_range_json: varchar
+        grain_relationships_json: varchar
+        natural_thresholds_json: varchar
+    columns:
+      - name: table_name
+        description: Lowercase raw source table name; primary key.
+        tests: [not_null, unique]
+      - name: source_schema
+        description: Source schema name. Currently 'raw_sap'; extensible to other sources.
+        tests: [not_null]
+      - name: canonical_alias
+        description: Short alias the LLM must use when aliasing this table in generated SQL.
+        tests: [not_null]
+      - name: entity_class
+        description: Entity classification per piece 8 §22.4.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [fact, dimension, bridge, history, lookup]
+      - name: populated_by
+        description: Provenance of the row's content.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [eda_compile, human_override]
+      - name: review_state
+        description: Human-review lifecycle state per piece 8 §22.9(c).
+        tests:
+          - not_null
+          - accepted_values:
+              values: [auto_generated, human_reviewed, deprecated]
+      - name: populated_at_utc
+        tests: [not_null]
+      # v3.9 §25.5 — Phase 2 EDA enrichment JSON fields. All VARCHAR
+      # (free-form JSON); no accepted_values enforcement. Default '{}'
+      # for dict-shaped, '[]' for grain_relationships_json list shape.
+      - name: temporal_coverage_json
+        description: >
+          Per-date-column temporal coverage from run_date_analysis.py:
+          {col_name: {min, max, span_days, null_pct, gap_count}}.
+          Empty object {} when no date columns or analyzer hasn't run.
+      - name: typical_values_range_json
+        description: >
+          Per-measure-column baseline statistics from
+          run_magnitude_analysis.py performance_baseline emission:
+          {col_name: {min, max, avg, stddev, p25, p75}}.
+      - name: grain_relationships_json
+        description: >
+          Detected header/detail sum-match relationships with partner
+          tables. Self-contained list shape per §25.9(c): [{other_table,
+          role, detail_col, header_col, sum_match_pct, confidence}].
+          Symmetric entries written on co-compile.
+      - name: natural_thresholds_json
+        description: >
+          Per-measure-column natural breakpoints from
+          run_segmentation_analysis.py: {col_name: {thresholds: [...],
+          rationale: str}}. MVP uses quartile thresholds (§25.9(e)).
+
+  - name: dbt_semantic_model
+    description: |
+      Layer B: dbt-manifest-compiled per-model SQL conventions for dbt
+      models (staging / vault / marts / obt / knowledge / other). One row
+      per dbt model; compiled deterministically by
+      scripts/compile_dbt_semantic_model.py from dbt/target/manifest.json.
+      Complements Layer A (semantic_model.csv) which covers raw tables
+      without dbt ontology coverage. Consumer priority: Layer B first
+      (dbt-covered scopes) then Layer A second (raw-only) then base LLM.
+      See piece 8 design doc section 23 (v3.7 amendment). Dual-rendering
+      per 23.10: reference_sql is stored in dbt canonical Jinja form
+      (ref macro); assembler rewrites to literal schema-qualified form
+      (main_<schema>.<model>) for iteration consumers
+      (purpose=pre_s2t_reasoning) while preserving Jinja for Create S2T
+      consumers (purpose=create_s2t) where dbt compiles Jinja at build
+      time. Human-override rows (populated_by=human_override) are
+      preserved across recompile.
+    config:
+      column_types:
+        model_name: varchar
+        dbt_layer: varchar
+        materialized: varchar
+        upstream_models: varchar
+        downstream_models: varchar
+        exposed_columns_json: varchar
+        primary_key_cols: varchar
+        canonical_alias: varchar
+        typical_join_keys_json: varchar
+        reference_sql: varchar
+        model_description: varchar
+        populated_at_utc: timestamp
+        populated_by: varchar
+        source_manifest_hash: varchar
+    columns:
+      - name: model_name
+        description: Lowercase dbt model name; primary key; matches the argument passed to the dbt ref() macro.
+        tests: [not_null, unique]
+      - name: dbt_layer
+        description: Layer classification heuristic per §23.4.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [staging, vault_hub, vault_link, vault_satellite, mart_fact, mart_dim, obt, knowledge, other]
+      - name: materialized
+        description: dbt materialization strategy from config.materialized.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [view, table, incremental, ephemeral]
+      - name: populated_by
+        description: Provenance of the row.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [dbt_manifest_compile, human_override]
+      - name: populated_at_utc
+        tests: [not_null]
+      - name: reference_sql
+        description: |
+          Stored in dbt canonical form using ref() Jinja syntax.
+          Assembler rewrites to literal schema-qualified form
+          (main_<layer>.<model>) for iteration consumers
+          (purpose=pre_s2t_reasoning). Preserved unchanged for Create
+          S2T consumers (purpose=create_s2t) where dbt renders Jinja
+          at compile time. See section 23.10.
+
+  # 8.4.7 demo_model_expansion — ZMM_APPROVAL_LOG decoder seeds.
+  # Small finite enums backing the Z-table's APPR_STATUS + REASON_CODE
+  # code columns. Accepted_values on the `code` column is NOT enforced:
+  # these seeds ARE the source of truth (parallel to movement_type_mapping).
+  - name: zmm_approval_status
+    description: >
+      Decoder for ZMM_APPROVAL_LOG.APPR_STATUS. 4 rows: Pending Review
+      (01), Approved (02), Rejected (03), Escalated (04). Joined by
+      Code Tables analyzer as the description source.
+    config:
+      column_types:
+        code: varchar
+        description: varchar
+    columns:
+      - name: code
+        tests: [not_null, unique]
+      - name: description
+        tests: [not_null]
+
+  - name: zmm_reason_codes
+    description: >
+      Decoder for ZMM_APPROVAL_LOG.REASON_CODE. 6 rows: QTYV/PRCV/
+      TOL1/TOL2/TOL3/MISC. Joined by Code Tables analyzer.
+    config:
+      column_types:
+        code: varchar
+        description: varchar
+    columns:
+      - name: code
+        tests: [not_null, unique]
+      - name: description
+        tests: [not_null]
+
+  - name: sap_data_dictionary
+    description: >
+      Business-meaning dictionary for every raw_sap.* column. One row per
+      (table_name, field_name). 8.5.2 backfill extends coverage from 57
+      hand-authored rows to full 326-row coverage across all 42 raw_sap
+      tables via scripts/run_catalog_backfill.py (LLM generation with
+      5-value description_source enum + needs_review flag). Primary key:
+      (table_name, field_name). data_type uses SAP DDIC conventions
+      (CHAR / NUMC / DATE / QUAN / CURR / UNIT / etc.), not DuckDB types.
+      length is SAP field length. Consumed by Stage A scope derivation
+      and Piece 8 context bundle.
+    config:
+      column_types:
+        table_name: varchar
+        field_name: varchar
+        data_type: varchar
+        length: varchar
+        description_en: varchar
+        description_hr: varchar
+        business_meaning: varchar
+        example_value: varchar
+        domain_area: varchar
+        description_source: varchar
+        needs_review: integer
+    columns:
+      - name: table_name
+        description: raw_sap table name (uppercase SAP convention).
+        tests: [not_null]
+      - name: field_name
+        description: SAP field name (uppercase).
+        tests: [not_null]
+      - name: data_type
+        description: >
+          SAP DDIC type. May be blank when description_source='inferred'
+          (8.5.2 policy — avoid type hallucination for non-standard fields).
+      - name: length
+        description: SAP field length. May be blank when data_type is blank.
+      - name: description_en
+        description: Short technical description in English.
+        tests: [not_null]
+      - name: description_hr
+        description: >
+          Croatian translation. Populated only for
+          description_source='sap_standard' (SAP ships Croatian
+          localization for standard fields). Blank elsewhere by policy;
+          Croatian completion is a separate future pass.
+      - name: business_meaning
+        description: Extended semantic note — code-value semantics, typical usage, domain context.
+      - name: example_value
+        description: Illustrative sample value.
+      - name: domain_area
+        description: Coarse functional area (procurement, inventory, materials, finance, etc.).
+      - name: description_source
+        description: >
+          Provenance tag. 5-value enum introduced in 8.5.2 backfill.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [sap_standard, column_name_convention, source_column_roles, inferred, existing]
+      - name: needs_review
+        description: >
+          Integer boolean. 1 when description_source='inferred' OR the
+          consistency check rejected the LLM output. 0 otherwise.
+          Consumers should treat needs_review=1 rows as lower-confidence.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]

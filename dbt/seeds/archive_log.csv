@@ -1,0 +1,2 @@
+archive_id,business_term_id,term_name,archived_at_utc,archived_reason_code,archived_reason_text,learning_signal,archived_by,s2t_row_ids,target_models,files_archived,cascaded_models_json,blockers_resolved
+ARC-20260418-001,BG026,cpe_active_deployed_count,2026-04-18T08:20:33Z,other,"Demo rehearsal — SQL repair changed model grain, restart with clean baseline",false,mmarkac,S034;S035;S036;S037;S038,obt_active_cpe_count,1,,

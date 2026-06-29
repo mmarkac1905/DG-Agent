@@ -1,0 +1,20 @@
+{
+  "cost_usd": 0.05,
+  "input_tokens": 500,
+  "output_tokens": 200,
+  "cache_read_input_tokens": 0,
+  "cache_creation_input_tokens": 0,
+  "response": {
+    "ontology_consumed": [
+      "fact_purchase_orders"
+    ],
+    "domain_facts_consumed": [],
+    "analysis_findings_consumed": [],
+    "dar_consumed": [],
+    "prior_bar_consumed": [],
+    "semantic_model_consumed": [],
+    "dbt_semantic_model_consumed": [],
+    "query_sql": "CREATE TABLE fact_purchase_orders AS SELECT * FROM raw_sap.ekko",
+    "reasoning_summary": "mock collision"
+  }
+}

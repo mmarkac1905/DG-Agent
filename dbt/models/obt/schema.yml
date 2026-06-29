@@ -1,0 +1,248 @@
+version: 2
+
+models:
+  - name: obt_procurement_overview
+    description: "Wide flat table for Streamlit procurement dashboard. Joins fact_purchase_orders with all dims."
+    columns:
+      - name: purchase_order_number
+        description: "PO document number (SAP EKKO.EBELN). Unique per PO header."
+      - name: po_item_number
+        description: "PO line item number within the PO header (SAP EKPO.EBELP)."
+      - name: po_date
+        description: "PO header creation date (EKKO.BEDAT)."
+      - name: po_year
+        description: "Calendar year of po_date, from dim_date."
+      - name: po_quarter
+        description: "Calendar quarter (1-4) of po_date."
+      - name: po_month
+        description: "Calendar month (1-12) of po_date."
+      - name: po_year_quarter
+        description: "Formatted year-quarter key (e.g. '2026-Q2') for grouping."
+      - name: po_year_month
+        description: "Formatted year-month key (e.g. '2026-04') for monthly aggregation."
+      - name: vendor_id
+        description: "Vendor account number (LIFNR). Joins to dim_vendor / sat_vendor_general."
+      - name: vendor_name
+        description: "Vendor display name from sat_vendor_general."
+      - name: vendor_country
+        description: "Vendor country code (ISO 2-char) from LFA1."
+      - name: vendor_city
+        description: "Vendor city from LFA1."
+      - name: vendor_region
+        description: "Derived vendor region grouping (Europe / APAC / Americas / Other) for concentration analysis."
+      - name: payment_terms
+        description: "Vendor payment terms code (LFB1.ZTERM), e.g. NET30."
+      - name: material_number
+        description: "Material number (MATNR). Identifies the CPE type / SKU."
+      - name: material_description
+        description: "Material short text from MAKT.MAKTX."
+      - name: material_group
+        description: "Material group (MARA.MATKL) — coarse procurement category."
+      - name: equipment_category
+        description: "Derived CPE category (router / ONT / set-top-box / modem / switch / other) from material attributes."
+      - name: plant
+        description: "Receiving plant code (WERKS) — physical warehouse location."
+      - name: storage_location
+        description: "Storage location within the plant (LGORT)."
+      - name: cost_center
+        description: "Cost center (KOSTL) charged for the PO line, from sat_po_account."
+      - name: ordered_quantity
+        description: "Quantity ordered on the PO line (EKPO.MENGE)."
+      - name: unit_price
+        description: "Per-unit price on the PO line (EKPO.NETPR)."
+      - name: net_value
+        description: "Net value of the PO line in document currency (EKPO.NETWR)."
+      - name: currency
+        description: "PO transaction currency code (EKKO.WAERS)."
+      - name: received_quantity
+        description: "Total goods-receipt quantity for this PO line, summed from BWART='101' postings only (excludes 102 reversals)."
+      - name: received_value
+        description: "Received quantity × unit_price — economic value actually delivered against the PO line."
+      - name: scheduled_delivery_date
+        description: "Vendor-committed delivery date from sat_po_schedule (EKET.EINDT)."
+      - name: first_gr_date
+        description: "Date of the earliest goods receipt against this PO (any line). Anchor for lead-time and OTD calculations."
+      - name: delivery_status
+        description: "BG013 classification: pending (no GR yet), partially_received (received < ordered), fully_received (received >= ordered)."
+      - name: lead_time_days
+        description: "BG001: days from po_date to first_gr_date (NULL if no GR yet)."
+      - name: is_on_time
+        description: "BG002: TRUE if first_gr_date <= scheduled_delivery_date + 2-day tolerance."
+      - name: po_cycle_days
+        description: "BG008: days from purchase requisition date to po_date."
+      - name: pr_date
+        description: "Purchase requisition creation date (EBAN.BADAT)."
+      - name: processing_status
+        description: "PO header processing status (EKKO.PROCSTAT) — open / approved / blocked etc."
+      - name: document_type
+        description: "PO document type (EKKO.BSART), e.g. NB=standard, FO=framework, UB=stock transfer."
+      - name: purchasing_organization
+        description: "Purchasing organization (EKORG) responsible for the PO."
+      - name: purchasing_group
+        description: "Purchasing group (EKGRP) — buyer team within the purchasing org."
+      - name: created_by
+        description: "SAP user who created the PO header (EKKO.ERNAM)."
+
+  - name: obt_vendor_scorecard
+    description: "Quarterly vendor performance: lead time, OTD rate, spend share, concentration risk."
+    columns:
+      - name: vendor_id
+        description: "Vendor account number (LIFNR)."
+      - name: vendor_name
+        description: "Vendor display name."
+      - name: vendor_region
+        description: "Derived vendor region grouping."
+      - name: payment_terms
+        description: "Vendor payment terms code."
+      - name: year
+        description: "Calendar year from po_date."
+      - name: quarter
+        description: "Calendar quarter (1-4) from po_date."
+      - name: year_quarter
+        description: "Formatted year-quarter key (e.g. '2026-Q2')."
+      - name: total_po_items
+        description: "Count of PO line items placed with this vendor in the quarter."
+      - name: total_spend
+        description: "Sum of net_value for all PO lines in the quarter."
+      - name: avg_lead_time_days
+        description: "BG001: average lead-time days across the quarter's PO lines (PO date → first GR)."
+      - name: on_time_delivery_rate
+        description: "BG002: fraction of PO lines where first GR was within scheduled delivery + 2-day tolerance."
+      - name: total_ordered_qty
+        description: "Sum of ordered_quantity across the quarter's PO lines."
+      - name: total_received_qty
+        description: "Sum of received_quantity (BWART='101' only) across the quarter's PO lines."
+      - name: vendor_spend_share
+        description: "BG014: vendor's total_spend divided by quarter-wide total spend (0..1)."
+      - name: concentration_risk_flag
+        description: "BG010: TRUE when vendor_spend_share > 0.60 in the quarter."
+      - name: fulfillment_rate
+        description: "BG015: total_received_qty / total_ordered_qty for the quarter (0..1)."
+
+  - name: obt_cpe_lifecycle
+    description: "Equipment lifecycle view with material details for CPE tracking dashboard."
+    columns:
+      - name: equipment_number
+        description: "Equipment master record number (EQUI.EQUNR) — identifies the individual CPE device."
+      - name: serial_number
+        description: "Vendor-issued serial number (EQUI.SERNR)."
+      - name: manufacturer
+        description: "Equipment manufacturer (EQUI.HERST)."
+      - name: model_description
+        description: "Equipment model / type description (EQUI.TYPBZ)."
+      - name: lifecycle_status
+        description: "Derived lifecycle state: received / in_warehouse / deployed / returned / disposed."
+      - name: current_status
+        description: "Raw SAP equipment status (EQUI.SWERK family) before lifecycle derivation."
+      - name: status_since
+        description: "Date the current lifecycle status began."
+      - name: received_date
+        description: "Date the equipment was first goods-received into warehouse stock."
+      - name: startup_date
+        description: "Equipment startup date (EQUI.INBDT) — when first deployed/activated."
+      - name: current_plant
+        description: "Plant code where the equipment currently resides."
+      - name: days_since_receipt
+        description: "Days elapsed between received_date and current date. Input to BG003 defect rate."
+      - name: days_since_deployment
+        description: "Days elapsed between startup_date and current date. Input to BG003 defect rate."
+      - name: material_description
+        description: "Material short text from MAKT (the type/SKU this equipment instance belongs to)."
+      - name: material_group
+        description: "Material group classification."
+      - name: equipment_category
+        description: "Derived CPE category (router / ONT / set-top-box / modem / switch / other)."
+      - name: gross_weight_kg
+        description: "Equipment gross weight in kilograms (MARA.BRGEW), used for logistics planning."
+
+  - name: obt_inventory_health
+    description: "Current stock with material, plant, and storage location context."
+    columns:
+      - name: material_number
+        description: "Material number (MATNR)."
+      - name: material_description
+        description: "Material short text from MAKT."
+      - name: equipment_category
+        description: "Derived CPE category."
+      - name: material_group
+        description: "Material group (MARA.MATKL)."
+      - name: plant_code
+        description: "Plant code (T001W.WERKS)."
+      - name: plant_name
+        description: "Plant name (T001W.NAME1)."
+      - name: plant_city
+        description: "Plant city (T001W.ORT01)."
+      - name: storage_location
+        description: "Storage location code (T001L.LGORT)."
+      - name: storage_location_name
+        description: "Storage location name (T001L.LGOBE)."
+      - name: location_type
+        description: "Derived storage-location type (warehouse / staging / quality / blocked)."
+      - name: unrestricted_stock
+        description: "Stock available for normal use (MARD.LABST)."
+      - name: quality_inspection_stock
+        description: "Stock under quality inspection hold (MARD.INSME)."
+      - name: blocked_stock
+        description: "BG022: stock blocked from use (MARD.SPEME) — quality issues, compliance holds."
+      - name: total_stock
+        description: "Sum of unrestricted + quality_inspection + blocked stock."
+      - name: is_zero_stock
+        description: "BG021: TRUE when unrestricted_stock <= 0."
+      - name: has_blocked_stock
+        description: "TRUE when blocked_stock > 0 — exception flag."
+      - name: has_qi_stock
+        description: "TRUE when quality_inspection_stock > 0 — exception flag."
+
+  - name: obt_goods_movements
+    description: "All movements with full dimensional context for movement analysis."
+    columns:
+      - name: material_document_number
+        description: "Material document number (MKPF.MBLNR) — unique per goods-movement transaction header."
+      - name: fiscal_year
+        description: "Fiscal year of the material document (MKPF.MJAHR)."
+      - name: document_item
+        description: "Line number within the material document (MSEG.ZEILE)."
+      - name: posting_date
+        description: "Posting date of the goods movement (MKPF.BUDAT)."
+      - name: posting_year
+        description: "Calendar year derived from posting_date."
+      - name: posting_quarter
+        description: "Calendar quarter (1-4) derived from posting_date."
+      - name: posting_month
+        description: "Calendar month (1-12) derived from posting_date."
+      - name: posting_year_month
+        description: "Formatted year-month key (e.g. '2026-04')."
+      - name: movement_type
+        description: "Movement type code (BWART), e.g. 101=GR for PO, 201=goods issue, 161=customer return."
+      - name: movement_description
+        description: "English description of the movement type from dim_movement_type."
+      - name: movement_category
+        description: "Derived label: goods_receipt / gr_reversal / vendor_return / customer_return / deployment / gi_reversal / plant_transfer / initial_stock / other."
+      - name: movement_direction
+        description: "Stock-impact direction: inbound (101/161/202/561) / outbound (102/122/201) / transfer (301) / unknown."
+      - name: quantity
+        description: "Raw movement quantity (MSEG.MENGE), always positive regardless of direction."
+      - name: signed_quantity
+        description: "Directional quantity: positive for inbound (stock increase), negative for outbound (stock decrease), zero for transfers. Used for net stock-impact aggregation."
+      - name: amount_local_currency
+        description: "Movement value in local currency (MSEG.DMBTR)."
+      - name: material_number
+        description: "Material number (MATNR) of the moved material."
+      - name: material_description
+        description: "Material short text from MAKT."
+      - name: equipment_category
+        description: "Derived CPE category for the moved material."
+      - name: plant
+        description: "Plant where the movement was posted (MSEG.WERKS)."
+      - name: plant_name
+        description: "Plant name from dim_plant."
+      - name: storage_location
+        description: "Storage location within the plant (MSEG.LGORT)."
+      - name: purchase_order_number
+        description: "Reference PO number for this movement, if any (MSEG.EBELN). NULL for non-PO movements."
+      - name: vendor_id
+        description: "Vendor account number for PO-related movements (MSEG.LIFNR)."
+      - name: has_po_reference
+        description: "TRUE when purchase_order_number is non-empty — distinguishes PO-driven movements from internal ones."
+      - name: posted_by
+        description: "SAP user who posted the material document (MKPF.USNAM)."

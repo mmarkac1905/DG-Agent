@@ -1,0 +1,218 @@
+{
+  "total_seeds": 35,
+  "parity": 35,
+  "divergent": 0,
+  "absent": 0,
+  "per_seed": [
+    {
+      "seed": "abap_logic_catalog",
+      "csv_rows": 16,
+      "duckdb_rows": 16,
+      "status": "PARITY"
+    },
+    {
+      "seed": "analysis_findings",
+      "csv_rows": 43,
+      "duckdb_rows": 43,
+      "status": "PARITY"
+    },
+    {
+      "seed": "archive_log",
+      "csv_rows": 1,
+      "duckdb_rows": 1,
+      "status": "PARITY"
+    },
+    {
+      "seed": "business_glossary",
+      "csv_rows": 28,
+      "duckdb_rows": 28,
+      "status": "PARITY"
+    },
+    {
+      "seed": "business_term_analysis_results",
+      "csv_rows": 1,
+      "duckdb_rows": 1,
+      "status": "PARITY"
+    },
+    {
+      "seed": "cpe_catalog",
+      "csv_rows": 10,
+      "duckdb_rows": 10,
+      "status": "PARITY"
+    },
+    {
+      "seed": "data_contracts",
+      "csv_rows": 21,
+      "duckdb_rows": 21,
+      "status": "PARITY"
+    },
+    {
+      "seed": "data_profile_config",
+      "csv_rows": 10,
+      "duckdb_rows": 10,
+      "status": "PARITY"
+    },
+    {
+      "seed": "data_qa_log",
+      "csv_rows": 8,
+      "duckdb_rows": 8,
+      "status": "PARITY"
+    },
+    {
+      "seed": "data_vault_design",
+      "csv_rows": 34,
+      "duckdb_rows": 34,
+      "status": "PARITY"
+    },
+    {
+      "seed": "dbt_column_lineage",
+      "csv_rows": 996,
+      "duckdb_rows": 996,
+      "status": "PARITY"
+    },
+    {
+      "seed": "dbt_model_catalog",
+      "csv_rows": 93,
+      "duckdb_rows": 93,
+      "status": "PARITY"
+    },
+    {
+      "seed": "dbt_model_relationships",
+      "csv_rows": 174,
+      "duckdb_rows": 174,
+      "status": "PARITY"
+    },
+    {
+      "seed": "dbt_semantic_model",
+      "csv_rows": 93,
+      "duckdb_rows": 93,
+      "status": "PARITY"
+    },
+    {
+      "seed": "domain_analysis_results",
+      "csv_rows": 144,
+      "duckdb_rows": 144,
+      "status": "PARITY"
+    },
+    {
+      "seed": "domain_facts",
+      "csv_rows": 11,
+      "duckdb_rows": 11,
+      "status": "PARITY"
+    },
+    {
+      "seed": "domain_reports",
+      "csv_rows": 1,
+      "duckdb_rows": 1,
+      "status": "PARITY"
+    },
+    {
+      "seed": "ingestion_log",
+      "csv_rows": 1,
+      "duckdb_rows": 1,
+      "status": "PARITY"
+    },
+    {
+      "seed": "known_decisions",
+      "csv_rows": 76,
+      "duckdb_rows": 76,
+      "status": "PARITY"
+    },
+    {
+      "seed": "known_issues",
+      "csv_rows": 80,
+      "duckdb_rows": 80,
+      "status": "PARITY"
+    },
+    {
+      "seed": "movement_type_mapping",
+      "csv_rows": 8,
+      "duckdb_rows": 8,
+      "status": "PARITY"
+    },
+    {
+      "seed": "org_structure",
+      "csv_rows": 7,
+      "duckdb_rows": 7,
+      "status": "PARITY"
+    },
+    {
+      "seed": "procurement_rules",
+      "csv_rows": 7,
+      "duckdb_rows": 7,
+      "status": "PARITY"
+    },
+    {
+      "seed": "s2t_mapping",
+      "csv_rows": 45,
+      "duckdb_rows": 45,
+      "status": "PARITY"
+    },
+    {
+      "seed": "sap_data_dictionary",
+      "csv_rows": 326,
+      "duckdb_rows": 326,
+      "status": "PARITY"
+    },
+    {
+      "seed": "semantic_model",
+      "csv_rows": 7,
+      "duckdb_rows": 7,
+      "status": "PARITY"
+    },
+    {
+      "seed": "signal_relationships",
+      "csv_rows": 7,
+      "duckdb_rows": 7,
+      "status": "PARITY"
+    },
+    {
+      "seed": "source_column_role_changes",
+      "csv_rows": 0,
+      "duckdb_rows": 0,
+      "status": "PARITY"
+    },
+    {
+      "seed": "source_column_roles",
+      "csv_rows": 326,
+      "duckdb_rows": 326,
+      "status": "PARITY"
+    },
+    {
+      "seed": "strategy_configs",
+      "csv_rows": 5,
+      "duckdb_rows": 5,
+      "status": "PARITY"
+    },
+    {
+      "seed": "term_analysis_results",
+      "csv_rows": 17,
+      "duckdb_rows": 17,
+      "status": "PARITY"
+    },
+    {
+      "seed": "vendor_catalog",
+      "csv_rows": 8,
+      "duckdb_rows": 8,
+      "status": "PARITY"
+    },
+    {
+      "seed": "z_tables_catalog",
+      "csv_rows": 11,
+      "duckdb_rows": 11,
+      "status": "PARITY"
+    },
+    {
+      "seed": "zmm_approval_status",
+      "csv_rows": 4,
+      "duckdb_rows": 4,
+      "status": "PARITY"
+    },
+    {
+      "seed": "zmm_reason_codes",
+      "csv_rows": 6,
+      "duckdb_rows": 6,
+      "status": "PARITY"
+    }
+  ]
+}

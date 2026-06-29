@@ -1,0 +1,61 @@
+id,entity_type,entity_name,business_key,source_tables,grain,notes,decided_date
+35,hub,hub_accounting_document,hk_accounting_document,BKPF,,Hub: Accounting Document (FI journal entry — WE / RE / RV),2026-06-28
+36,hub,hub_billing_document,hk_billing_doc,VBRK,,Hub: Billing Document (monthly service invoice),2026-06-28
+37,hub,hub_customer,hk_customer,KNA1,,Hub: Customer,2026-06-28
+4,hub,hub_equipment,EQUNR,EQUI,one row per individual CPE device,Serial-level tracking for CPE lifecycle,2026-04-13
+18,hub,hub_invoice,invoice_number,RBKP,,Hub: Invoice,2026-04-15
+1,hub,hub_material,MATNR,MARA,one row per unique material number,Material is the central CPE entity,2026-04-13
+19,hub,hub_material_document,material_document_number,MKPF,,Hub: Material Document,2026-04-15
+38,hub,hub_movement_type,hk_movement_type,T156,,Hub: Movement Type,2026-06-28
+5,hub,hub_plant,WERKS,T001W,one row per plant/warehouse,Organizational entity for stock,2026-04-13
+3,hub,hub_purchase_order,EBELN,EKKO,one row per unique PO number,PO is the procurement transaction key,2026-04-13
+20,hub,hub_purchase_requisition,requisition_number,EBAN,,Hub: Purchase Requisition,2026-04-15
+39,hub,hub_sales_order,hk_sales_order,VBAK,,Hub: Sales Order (service contract),2026-06-28
+40,hub,hub_service_plan,hk_service_plan,VBAP,,Hub: Service Plan (broadband / IPTV / business subscription),2026-06-28
+2,hub,hub_vendor,LIFNR,LFA1,one row per unique vendor number,Vendor = equipment supplier,2026-04-13
+41,hub,hub_zmm_approval,hk_zmm_approval,ZMM_APPROVAL_LOG,,Hub: ZMM Approval (custom Z-table approval events),2026-06-28
+42,link,link_billing_accounting,hk_billing_doc,BKPF+VBRK,,"FI Link 2/3: SD Billing ↔ Accounting Document (revenue side, BLART='RV')",2026-06-28
+43,link,link_billing_customer,hk_billing_doc,VBRK,,Link: Billing Document ↔ Customer (who is billed — payer),2026-06-28
+44,link,link_billing_sales_order,hk_billing_doc,VBRP,,Link: Billing Document ↔ Sales Order (bill back to the contract),2026-06-28
+21,link,link_equipment_gr,hk_equipment_gr,MKPF+SERI,,Link: Equipment ↔ Material Document (GR),2026-04-15
+9,link,link_equipment_material,EQUNR+MATNR,EQUI,Device-to-material type relationship,Which material type is this specific device,2026-04-13
+45,link,link_gr_accounting,hk_material_document,BKPF+MKPF,,"FI Link 3/3: Goods Receipt ↔ Accounting Document (inventory side, BLART='WE')",2026-06-28
+22,link,link_gr_material,hk_gr_material,MSEG,,Link: Goods Receipt ↔ Material,2026-04-15
+8,link,link_gr_po,MBLNR+EBELN,MSEG,Goods receipt-to-PO relationship,Which GR fulfills which PO,2026-04-13
+46,link,link_invoice_accounting,hk_invoice,BKPF+RBKP,,"FI Link 1/3: MM Invoice ↔ Accounting Document (cost side, BLART='RE')",2026-06-28
+23,link,link_invoice_po,hk_invoice_po,RBKP,,Link: Invoice ↔ Purchase Order,2026-04-15
+34,link,link_po_item,hk_purchase_order,EKPO,,Link: Purchase Order Item,2026-04-15
+7,link,link_po_material,EBELN+EBELP+MATNR,EKPO,PO item-to-material relationship,What materials are on each PO,2026-04-13
+24,link,link_po_plant,hk_po_plant,EKPO,,Link: Purchase Order ↔ Plant,2026-04-15
+6,link,link_po_vendor,EBELN+LIFNR,EKKO,PO-to-vendor relationship,Which vendor supplies which PO,2026-04-13
+25,link,link_pr_po,hk_pr_po,EKPO,,Link: Purchase Requisition ↔ Purchase Order,2026-04-15
+47,link,link_sales_order_customer,hk_sales_order,VBAK,,Link: Sales Order ↔ Customer (who holds the contract),2026-06-28
+48,link,link_sales_order_equipment,hk_sales_order,EQUI+VBAP,,Link: Sales Order Item ↔ Equipment (the marquee tie),2026-06-28
+49,satellite,sat_accounting_header,hk_accounting_document,BKPF,,Satellite: Accounting Document Header (FI journal — WE / RE / RV),2026-06-28
+50,satellite,sat_billing_document,hk_billing_doc,VBRK,,Satellite: Billing Document (monthly service invoice),2026-06-28
+51,satellite,sat_customer,hk_customer,KNA1,,Satellite: Customer,2026-06-28
+26,satellite,sat_equipment_general,hk_equipment,EQUI,,Satellite: Equipment General (static device info),2026-04-15
+16,satellite,sat_equipment_status,hub_equipment_key,EQUI+EQBS,CPE device status over time,Installed/returned/defective/in-stock with dates,2026-04-13
+27,satellite,sat_gr_header,hk_material_document,MKPF,,Satellite: GR / Material Document Header,2026-04-15
+28,satellite,sat_gr_item,document_item,MSEG,,Satellite: Material Document Item,2026-04-15
+29,satellite,sat_invoice_header,hk_invoice,RBKP,,Satellite: Invoice Header,2026-04-15
+52,satellite,sat_invoice_item,hk_invoice,RSEG,,Satellite: Invoice Item (RSEG line-item details),2026-06-28
+53,satellite,sat_material_business,hk_material,ZMM_MATERIAL_BUSINESS,,Satellite: Material Business Enrichment (HT-domain),2026-06-28
+11,satellite,sat_material_description,hub_material_key,MAKT,Material descriptions per language,Long text description by language key,2026-04-13
+10,satellite,sat_material_general,hub_material_key,MARA,Material core attributes,Weight material_group material_type base_uom,2026-04-13
+30,satellite,sat_material_plant,hk_material_plant,MARC,,"Satellite: Material Plant-Level Data (MRP settings, serial profile, lead time)",2026-04-15
+54,satellite,sat_movement_type,hk_movement_type,T156,,Satellite: Movement Type Configuration,2026-06-28
+55,satellite,sat_movement_type_text,hk_movement_type,T156T,,Satellite: Movement Type Text (multi-language),2026-06-28
+31,satellite,sat_po_account,hk_po_item,EKKN,,Satellite: PO Account Assignment,2026-04-15
+14,satellite,sat_po_header,hub_purchase_order_key,EKKO,PO header attributes,PO date type status purchasing_org,2026-04-13
+15,satellite,sat_po_item,hub_purchase_order_key,EKPO,PO line item details,Material quantity price plant,2026-04-13
+32,satellite,sat_po_schedule,hk_po_item,EKET,,Satellite: PO Delivery Schedule,2026-04-15
+33,satellite,sat_pr_detail,hk_purchase_requisition,EBAN,,Satellite: Purchase Requisition Detail,2026-04-15
+56,satellite,sat_sales_order,hk_sales_order,VBAK,,Satellite: Sales Order (contract header),2026-06-28
+57,satellite,sat_sales_order_item,service_plan_id,VBAP,,Satellite: Sales Order Item (service line + device),2026-06-28
+58,satellite,sat_service_plan,hk_service_plan,VBAP,,Satellite: Service Plan,2026-06-28
+17,satellite,sat_stock_level,hub_material_key+hub_plant_key,MARD,Current stock quantities,Unrestricted blocked quality inspection stock,2026-04-13
+59,satellite,sat_vendor_business,hk_vendor,ZMM_VENDOR_BUSINESS,,Satellite: Vendor Business Enrichment (HT-domain),2026-06-28
+13,satellite,sat_vendor_commercial,hub_vendor_key,LFB1,Vendor commercial data,Payment terms reconciliation account company code,2026-04-13
+12,satellite,sat_vendor_general,hub_vendor_key,LFA1,Vendor general data,Name country city address postal_code,2026-04-13
+60,satellite,sat_zmm_approval,hk_zmm_approval,ZMM_APPROVAL_LOG,,Satellite: ZMM Approval Attributes,2026-06-28

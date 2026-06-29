@@ -1,0 +1,24 @@
+{
+  "cost_usd": 0.005,
+  "input_tokens": 1500,
+  "output_tokens": 500,
+  "response": {
+    "conditions": [
+      {
+        "condition": "filter: test_cond_1",
+        "type": "filter",
+        "quote": "test_cond_1"
+      },
+      {
+        "condition": "filter: test_cond_2",
+        "type": "filter",
+        "quote": "test_cond_2"
+      },
+      {
+        "condition": "filter: test_cond_3",
+        "type": "filter",
+        "quote": "test_cond_3"
+      }
+    ]
+  }
+}

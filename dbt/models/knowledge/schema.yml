@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: knowledge_procurement_health
+    description: "Live procurement KPIs with health assessments (GREEN/YELLOW/RED)."
+
+  - name: knowledge_vendor_performance
+    description: "One row per vendor with performance grade A/B/C/D."
+
+  - name: knowledge_cpe_lifecycle_metrics
+    description: "CPE lifecycle stats per equipment category. Defect and return rates with health thresholds."
+
+  - name: knowledge_inventory_alerts
+    description: "Flagged inventory locations: zero stock, blocked stock, excess stock."
+
+  - name: knowledge_pipeline_summary
+    description: "Object counts per layer for session context overview."

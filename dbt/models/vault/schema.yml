@@ -1,0 +1,223 @@
+version: 2
+
+models:
+  # --- HUBS ---
+  - name: hub_purchase_order
+    description: "Hub: one row per unique purchase order. Business key: EBELN."
+    columns:
+      - name: hk_purchase_order
+        tests: [not_null, unique]
+      - name: purchase_order_number
+        tests: [not_null, unique]
+
+  - name: hub_vendor
+    description: "Hub: one row per unique vendor. Business key: LIFNR."
+    columns:
+      - name: hk_vendor
+        tests: [not_null, unique]
+      - name: vendor_id
+        tests: [not_null, unique]
+
+  - name: hub_material
+    description: "Hub: one row per unique material/CPE type. Business key: MATNR."
+    columns:
+      - name: hk_material
+        tests: [not_null, unique]
+      - name: material_number
+        tests: [not_null, unique]
+
+  - name: hub_equipment
+    description: "Hub: one row per individual CPE device. Business key: EQUNR."
+    columns:
+      - name: hk_equipment
+        tests: [not_null, unique]
+      - name: equipment_number
+        tests: [not_null, unique]
+
+  - name: hub_plant
+    description: "Hub: one row per warehouse/plant. Business key: WERKS."
+    columns:
+      - name: hk_plant
+        tests: [not_null, unique]
+      - name: plant_code
+        tests: [not_null, unique]
+
+  - name: hub_material_document
+    description: "Hub: one row per goods movement document. Composite key: MBLNR + MJAHR."
+    columns:
+      - name: hk_material_document
+        tests: [not_null, unique]
+
+  - name: hub_invoice
+    description: "Hub: one row per invoice document. Composite key: BELNR + GJAHR."
+    columns:
+      - name: hk_invoice
+        tests: [not_null, unique]
+
+  - name: hub_purchase_requisition
+    description: "Hub: one row per purchase requisition. Business key: BANFN."
+    columns:
+      - name: hk_purchase_requisition
+        tests: [not_null, unique]
+
+  # --- LINKS ---
+  - name: link_po_vendor
+    description: "Link: Purchase Order ↔ Vendor."
+    columns:
+      - name: hk_po_vendor
+        tests: [not_null, unique]
+
+  - name: link_po_material
+    description: "Link: PO ↔ Material at item level."
+    columns:
+      - name: hk_po_material
+        tests: [not_null, unique]
+
+  - name: link_po_plant
+    description: "Link: PO ↔ Plant."
+    columns:
+      - name: hk_po_plant
+        tests: [not_null, unique]
+
+  - name: link_gr_po
+    description: "Link: Goods Receipt ↔ PO."
+    columns:
+      - name: hk_gr_po
+        tests: [not_null, unique]
+
+  - name: link_gr_material
+    description: "Link: Goods Receipt ↔ Material."
+    columns:
+      - name: hk_gr_material
+        tests: [not_null, unique]
+
+  - name: link_equipment_material
+    description: "Link: Equipment ↔ Material."
+    columns:
+      - name: hk_equipment_material
+        tests: [not_null, unique]
+
+  - name: link_equipment_gr
+    description: "Link: Equipment ↔ GR. Enables device-to-PO traceability."
+    columns:
+      - name: hk_equipment_gr
+        tests: [not_null, unique]
+
+  - name: link_invoice_po
+    description: "Link: Invoice ↔ PO."
+    columns:
+      - name: hk_invoice_po
+        tests: [not_null, unique]
+
+  - name: link_pr_po
+    description: "Link: Purchase Requisition ↔ PO."
+    columns:
+      - name: hk_pr_po
+        tests: [not_null, unique]
+
+  - name: link_po_item
+    description: "Link: PO header ↔ PO item. Connects line items to their parent PO. Parent for sat_po_schedule and sat_po_account."
+    columns:
+      - name: hk_po_item
+        tests: [not_null, unique]
+      - name: hk_purchase_order
+        tests: [not_null]
+
+  # --- SATELLITES ---
+  - name: sat_vendor_general
+    description: "Satellite: vendor name, address, country. Hangs off hub_vendor."
+    columns:
+      - name: hk_vendor
+        tests: [not_null]
+
+  - name: sat_vendor_commercial
+    description: "Satellite: payment terms, recon account."
+    columns:
+      - name: hk_vendor
+        tests: [not_null]
+
+  - name: sat_material_general
+    description: "Satellite: material type, group, weight."
+    columns:
+      - name: hk_material
+        tests: [not_null]
+
+  - name: sat_material_description
+    description: "Satellite: material description text."
+    columns:
+      - name: hk_material
+        tests: [not_null]
+
+  - name: sat_material_plant
+    description: "Satellite: MRP settings, serial profile per material per plant."
+    columns:
+      - name: hk_material_plant
+        tests: [not_null]
+
+  - name: sat_po_header
+    description: "Satellite: PO date, type, status, value."
+    columns:
+      - name: hk_purchase_order
+        tests: [not_null]
+
+  - name: sat_po_item
+    description: "Satellite: PO line item quantity, price, value."
+    columns:
+      - name: hk_po_material
+        tests: [not_null]
+
+  - name: sat_po_schedule
+    description: "Satellite: delivery schedule dates and quantities."
+    columns:
+      - name: hk_po_item
+        tests: [not_null]
+
+  - name: sat_po_account
+    description: "Satellite: GL account and cost center assignment."
+    columns:
+      - name: hk_po_item
+        tests: [not_null]
+
+  - name: sat_gr_header
+    description: "Satellite: GR posting date, user, reference document."
+    columns:
+      - name: hk_material_document
+        tests: [not_null]
+
+  - name: sat_gr_item
+    description: "Satellite: movement type, quantity, amount per GR line."
+    columns:
+      - name: hk_gr_material
+        tests: [not_null]
+
+  - name: sat_equipment_general
+    description: "Satellite: serial number, manufacturer, model."
+    columns:
+      - name: hk_equipment
+        tests: [not_null]
+
+  - name: sat_equipment_status
+    description: "Satellite: CPE lifecycle status history (SCD2)."
+    columns:
+      - name: hk_equipment
+        tests: [not_null]
+      - name: status_from_date
+        tests: [not_null]
+
+  - name: sat_invoice_header
+    description: "Satellite: invoice date, amount, vendor reference."
+    columns:
+      - name: hk_invoice
+        tests: [not_null]
+
+  - name: sat_stock_level
+    description: "Satellite: current stock quantities per location."
+    columns:
+      - name: hk_stock_location
+        tests: [not_null]
+
+  - name: sat_pr_detail
+    description: "Satellite: PR material, quantity, status, requester."
+    columns:
+      - name: hk_purchase_requisition
+        tests: [not_null]

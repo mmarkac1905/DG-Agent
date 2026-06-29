@@ -1,0 +1,7 @@
+dbt-duckdb==1.10.1
+duckdb==1.5.1
+pandas>=2.0
+streamlit>=1.30
+plotly>=5.18
+faker>=22.0
+requests>=2.31

@@ -1,0 +1,42 @@
+name: 'cpe_procurement_analytics'
+version: '0.1.0'
+config-version: 2
+profile: 'cpe_procurement_analytics'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+seeds:
+  cpe_procurement_analytics:
+    +schema: seeds
+
+models:
+  cpe_procurement_analytics:
+    staging:
+      +materialized: view
+      +schema: staging
+    vault:
+      +materialized: incremental
+      +schema: vault
+    marts:
+      +materialized: table
+      +schema: marts
+    obt:
+      +materialized: view
+      +schema: obt
+    knowledge:
+      +materialized: view
+      +schema: knowledge
+    # Phase 12 / Rule 33: archived term artefacts move to
+    # dbt/models/archive/<ARC-...>/. Disabled so dbt never compiles or
+    # materialises them, but files remain on disk for audit.
+    archive:
+      +enabled: false

@@ -1,0 +1,267 @@
+id,from_model,from_layer,to_model,to_layer,relationship_type,join_key,label
+R0001,obt_active_cpe_count,other,dim_equipment,marts,pipeline,,reads from
+R0002,knowledge_cpe_lifecycle_metrics,knowledge,dim_equipment,marts,pipeline,,reads from
+R0003,knowledge_cpe_lifecycle_metrics,knowledge,dim_material,marts,pipeline,,reads from
+R0004,knowledge_inventory_alerts,knowledge,fact_inventory,marts,pipeline,,reads from
+R0005,knowledge_inventory_alerts,knowledge,dim_material,marts,pipeline,,reads from
+R0006,knowledge_inventory_alerts,knowledge,dim_plant,marts,pipeline,,reads from
+R0007,knowledge_procurement_health,knowledge,fact_purchase_orders,marts,pipeline,,reads from
+R0008,knowledge_procurement_health,knowledge,obt_vendor_scorecard,obt,pipeline,,reads from
+R0009,knowledge_procurement_health,knowledge,fact_inventory,marts,pipeline,,reads from
+R0010,knowledge_vendor_performance,knowledge,dim_vendor,marts,pipeline,,reads from
+R0011,knowledge_vendor_performance,knowledge,fact_purchase_orders,marts,pipeline,,reads from
+R0012,dim_customer,marts,hub_customer,vault,pipeline,,reads from
+R0013,dim_customer,marts,sat_customer,vault,pipeline,,reads from
+R0014,dim_customer,marts,sat_customer,vault,pipeline,,reads from
+R0015,dim_equipment,marts,sat_equipment_status,vault,pipeline,,reads from
+R0016,dim_equipment,marts,hub_equipment,vault,pipeline,,reads from
+R0017,dim_equipment,marts,sat_equipment_general,vault,pipeline,,reads from
+R0018,dim_equipment,marts,sat_equipment_general,vault,pipeline,,reads from
+R0019,dim_equipment,marts,link_equipment_material,vault,pipeline,,reads from
+R0020,dim_material,marts,hub_material,vault,pipeline,,reads from
+R0021,dim_material,marts,sat_material_general,vault,pipeline,,reads from
+R0022,dim_material,marts,sat_material_general,vault,pipeline,,reads from
+R0023,dim_material,marts,sat_material_description,vault,pipeline,,reads from
+R0024,dim_material,marts,sat_material_description,vault,pipeline,,reads from
+R0025,dim_movement_type,marts,sat_movement_type,vault,pipeline,,reads from
+R0026,dim_movement_type,marts,sat_movement_type,vault,pipeline,,reads from
+R0027,dim_movement_type,marts,sat_movement_type_text,vault,pipeline,,reads from
+R0028,dim_movement_type,marts,sat_movement_type_text,vault,pipeline,,reads from
+R0029,dim_movement_type,marts,hub_movement_type,vault,pipeline,,reads from
+R0030,dim_plant,marts,hub_plant,vault,pipeline,,reads from
+R0031,dim_plant,marts,raw_sap.t001w,raw,source,,reads from raw_sap.t001w
+R0032,dim_plant,marts,raw_sap.t001,raw,source,,reads from raw_sap.t001
+R0033,dim_service_plan,marts,hub_service_plan,vault,pipeline,,reads from
+R0034,dim_service_plan,marts,sat_service_plan,vault,pipeline,,reads from
+R0035,dim_service_plan,marts,sat_service_plan,vault,pipeline,,reads from
+R0036,dim_storage_location,marts,raw_sap.t001l,raw,source,,reads from raw_sap.t001l
+R0037,dim_storage_location,marts,raw_sap.t001w,raw,source,,reads from raw_sap.t001w
+R0038,dim_vendor,marts,hub_vendor,vault,pipeline,,reads from
+R0039,dim_vendor,marts,sat_vendor_general,vault,pipeline,,reads from
+R0040,dim_vendor,marts,sat_vendor_general,vault,pipeline,,reads from
+R0041,dim_vendor,marts,sat_vendor_commercial,vault,pipeline,,reads from
+R0042,dim_vendor,marts,sat_vendor_commercial,vault,pipeline,,reads from
+R0043,fact_contribution_margin_by_segment,marts,sat_billing_document,vault,pipeline,,reads from
+R0044,fact_contribution_margin_by_segment,marts,link_billing_sales_order,vault,pipeline,,reads from
+R0045,fact_contribution_margin_by_segment,marts,sat_billing_document,vault,pipeline,,reads from
+R0046,fact_contribution_margin_by_segment,marts,link_sales_order_equipment,vault,pipeline,,reads from
+R0047,fact_contribution_margin_by_segment,marts,sat_sales_order_item,vault,pipeline,,reads from
+R0048,fact_contribution_margin_by_segment,marts,sat_equipment_general,vault,pipeline,,reads from
+R0049,fact_contribution_margin_by_segment,marts,link_sales_order_equipment,vault,pipeline,,reads from
+R0050,fact_contribution_margin_by_segment,marts,link_equipment_gr,vault,pipeline,,reads from
+R0051,fact_contribution_margin_by_segment,marts,link_gr_po,vault,pipeline,,reads from
+R0052,fact_contribution_margin_by_segment,marts,link_po_material,vault,pipeline,,reads from
+R0053,fact_contribution_margin_by_segment,marts,sat_po_item,vault,pipeline,,reads from
+R0054,fact_equipment_lifecycle,marts,sat_equipment_status,vault,pipeline,,reads from
+R0055,fact_equipment_lifecycle,marts,hub_equipment,vault,pipeline,,reads from
+R0056,fact_equipment_lifecycle,marts,sat_equipment_general,vault,pipeline,,reads from
+R0057,fact_equipment_lifecycle,marts,sat_equipment_general,vault,pipeline,,reads from
+R0058,fact_equipment_lifecycle,marts,link_equipment_material,vault,pipeline,,reads from
+R0059,fact_goods_movements,marts,link_gr_material,vault,pipeline,,reads from
+R0060,fact_goods_movements,marts,hub_material_document,vault,pipeline,,reads from
+R0061,fact_goods_movements,marts,sat_gr_header,vault,pipeline,,reads from
+R0062,fact_goods_movements,marts,sat_gr_item,vault,pipeline,,reads from
+R0063,fact_goods_receipt_accuracy,marts,sat_gr_item,vault,pipeline,,reads from
+R0064,fact_goods_receipt_accuracy,marts,sat_gr_item,vault,pipeline,,reads from
+R0065,fact_goods_receipt_accuracy,marts,sat_gr_header,vault,pipeline,,reads from
+R0066,fact_goods_receipt_accuracy,marts,sat_gr_header,vault,pipeline,,reads from
+R0067,fact_goods_receipt_accuracy,marts,sat_po_item,vault,pipeline,,reads from
+R0068,fact_goods_receipt_accuracy,marts,sat_po_item,vault,pipeline,,reads from
+R0069,fact_goods_receipt_accuracy,marts,link_gr_material,vault,pipeline,,reads from
+R0070,fact_goods_receipt_accuracy,marts,link_po_material,vault,pipeline,,reads from
+R0071,fact_goods_receipts_monthly,marts,sat_gr_item,vault,pipeline,,reads from
+R0072,fact_goods_receipts_monthly,marts,sat_gr_item,vault,pipeline,,reads from
+R0073,fact_goods_receipts_monthly,marts,sat_gr_header,vault,pipeline,,reads from
+R0074,fact_goods_receipts_monthly,marts,sat_gr_header,vault,pipeline,,reads from
+R0075,fact_goods_receipts_monthly,marts,link_gr_material,vault,pipeline,,reads from
+R0076,fact_inventory,marts,sat_stock_level,vault,pipeline,,reads from
+R0077,fact_inventory,marts,hub_material,vault,pipeline,,reads from
+R0078,fact_inventory,marts,hub_plant,vault,pipeline,,reads from
+R0079,fact_inventory,marts,sat_stock_level,vault,pipeline,,reads from
+R0080,fact_invoices,marts,hub_invoice,vault,pipeline,,reads from
+R0081,fact_invoices,marts,sat_invoice_header,vault,pipeline,,reads from
+R0082,fact_invoices,marts,sat_invoice_header,vault,pipeline,,reads from
+R0083,fact_invoices,marts,link_invoice_po,vault,pipeline,,reads from
+R0084,fact_invoices,marts,sat_po_header,vault,pipeline,,reads from
+R0085,fact_invoices,marts,sat_po_header,vault,pipeline,,reads from
+R0086,fact_po_invoice_match_variance,marts,sat_po_header,vault,pipeline,,reads from
+R0087,fact_po_invoice_match_variance,marts,sat_po_header,vault,pipeline,,reads from
+R0088,fact_po_invoice_match_variance,marts,sat_po_item,vault,pipeline,,reads from
+R0089,fact_po_invoice_match_variance,marts,sat_po_item,vault,pipeline,,reads from
+R0090,fact_po_invoice_match_variance,marts,sat_gr_item,vault,pipeline,,reads from
+R0091,fact_po_invoice_match_variance,marts,sat_gr_item,vault,pipeline,,reads from
+R0092,fact_po_invoice_match_variance,marts,sat_invoice_item,vault,pipeline,,reads from
+R0093,fact_po_invoice_match_variance,marts,sat_invoice_item,vault,pipeline,,reads from
+R0094,fact_po_invoice_match_variance,marts,sat_zmm_approval,vault,pipeline,,reads from
+R0095,fact_po_invoice_match_variance,marts,sat_zmm_approval,vault,pipeline,,reads from
+R0096,fact_po_invoice_match_variance,marts,link_po_material,vault,pipeline,,reads from
+R0097,fact_po_invoice_match_variance,marts,link_po_vendor,vault,pipeline,,reads from
+R0098,fact_purchase_orders,marts,sat_po_header,vault,pipeline,,reads from
+R0099,fact_purchase_orders,marts,sat_po_header,vault,pipeline,,reads from
+R0100,fact_purchase_orders,marts,sat_po_item,vault,pipeline,,reads from
+R0101,fact_purchase_orders,marts,sat_po_item,vault,pipeline,,reads from
+R0102,fact_purchase_orders,marts,sat_po_schedule,vault,pipeline,,reads from
+R0103,fact_purchase_orders,marts,sat_po_schedule,vault,pipeline,,reads from
+R0104,fact_purchase_orders,marts,sat_po_account,vault,pipeline,,reads from
+R0105,fact_purchase_orders,marts,sat_po_account,vault,pipeline,,reads from
+R0106,fact_purchase_orders,marts,link_gr_po,vault,pipeline,,reads from
+R0107,fact_purchase_orders,marts,sat_gr_header,vault,pipeline,,reads from
+R0108,fact_purchase_orders,marts,sat_gr_item,vault,pipeline,,reads from
+R0109,fact_purchase_orders,marts,link_pr_po,vault,pipeline,,reads from
+R0110,fact_purchase_orders,marts,sat_pr_detail,vault,pipeline,,reads from
+R0111,fact_purchase_orders,marts,link_po_vendor,vault,pipeline,,reads from
+R0112,fact_purchase_orders,marts,link_po_material,vault,pipeline,,reads from
+R0113,obt_cpe_contribution_margin_by_segment,obt,fact_contribution_margin_by_segment,marts,pipeline,,reads from
+R0114,obt_cpe_lifecycle,obt,dim_equipment,marts,pipeline,,reads from
+R0115,obt_cpe_lifecycle,obt,dim_material,marts,pipeline,,reads from
+R0116,obt_goods_movements,obt,fact_goods_movements,marts,pipeline,,reads from
+R0117,obt_goods_movements,obt,dim_material,marts,pipeline,,reads from
+R0118,obt_goods_movements,obt,dim_date,marts,pipeline,,reads from
+R0119,obt_goods_movements,obt,dim_movement_type,marts,pipeline,,reads from
+R0120,obt_goods_movements,obt,dim_plant,marts,pipeline,,reads from
+R0121,obt_inventory_health,obt,fact_inventory,marts,pipeline,,reads from
+R0122,obt_inventory_health,obt,dim_material,marts,pipeline,,reads from
+R0123,obt_inventory_health,obt,dim_plant,marts,pipeline,,reads from
+R0124,obt_inventory_health,obt,dim_storage_location,marts,pipeline,,reads from
+R0125,obt_procurement_overview,obt,fact_purchase_orders,marts,pipeline,,reads from
+R0126,obt_procurement_overview,obt,dim_vendor,marts,pipeline,,reads from
+R0127,obt_procurement_overview,obt,dim_material,marts,pipeline,,reads from
+R0128,obt_procurement_overview,obt,dim_date,marts,pipeline,,reads from
+R0129,obt_vendor_scorecard,obt,fact_purchase_orders,marts,pipeline,,reads from
+R0130,obt_vendor_scorecard,obt,dim_vendor,marts,pipeline,,reads from
+R0131,obt_vendor_scorecard,obt,dim_date,marts,pipeline,,reads from
+R0132,stg_sap__bkpf,staging,raw_sap.bkpf,raw,source,,reads from raw_sap.bkpf
+R0133,stg_sap__bseg,staging,raw_sap.bseg,raw,source,,reads from raw_sap.bseg
+R0134,stg_sap__eban,staging,raw_sap.eban,raw,source,,reads from raw_sap.eban
+R0135,stg_sap__ebkn,staging,raw_sap.ebkn,raw,source,,reads from raw_sap.ebkn
+R0136,stg_sap__ekbe,staging,raw_sap.ekbe,raw,source,,reads from raw_sap.ekbe
+R0137,stg_sap__eket,staging,raw_sap.eket,raw,source,,reads from raw_sap.eket
+R0138,stg_sap__ekkn,staging,raw_sap.ekkn,raw,source,,reads from raw_sap.ekkn
+R0139,stg_sap__ekko,staging,raw_sap.ekko,raw,source,,reads from raw_sap.ekko
+R0140,stg_sap__ekpo,staging,raw_sap.ekpo,raw,source,,reads from raw_sap.ekpo
+R0141,stg_sap__eqbs,staging,raw_sap.eqbs,raw,source,,reads from raw_sap.eqbs
+R0142,stg_sap__equi,staging,raw_sap.equi,raw,source,,reads from raw_sap.equi
+R0143,stg_sap__kna1,staging,raw_sap.kna1,raw,source,,reads from raw_sap.kna1
+R0144,stg_sap__lfa1,staging,raw_sap.lfa1,raw,source,,reads from raw_sap.lfa1
+R0145,stg_sap__lfb1,staging,raw_sap.lfb1,raw,source,,reads from raw_sap.lfb1
+R0146,stg_sap__lfm1,staging,raw_sap.lfm1,raw,source,,reads from raw_sap.lfm1
+R0147,stg_sap__makt,staging,raw_sap.makt,raw,source,,reads from raw_sap.makt
+R0148,stg_sap__mara,staging,raw_sap.mara,raw,source,,reads from raw_sap.mara
+R0149,stg_sap__marc,staging,raw_sap.marc,raw,source,,reads from raw_sap.marc
+R0150,stg_sap__mard,staging,raw_sap.mard,raw,source,,reads from raw_sap.mard
+R0151,stg_sap__marm,staging,raw_sap.marm,raw,source,,reads from raw_sap.marm
+R0152,stg_sap__mkpf,staging,raw_sap.mkpf,raw,source,,reads from raw_sap.mkpf
+R0153,stg_sap__mseg,staging,raw_sap.mseg,raw,source,,reads from raw_sap.mseg
+R0154,stg_sap__objk,staging,raw_sap.objk,raw,source,,reads from raw_sap.objk
+R0155,stg_sap__rbkp,staging,raw_sap.rbkp,raw,source,,reads from raw_sap.rbkp
+R0156,stg_sap__resb,staging,raw_sap.resb,raw,source,,reads from raw_sap.resb
+R0157,stg_sap__rkpf,staging,raw_sap.rkpf,raw,source,,reads from raw_sap.rkpf
+R0158,stg_sap__rseg,staging,raw_sap.rseg,raw,source,,reads from raw_sap.rseg
+R0159,stg_sap__ser01,staging,raw_sap.ser01,raw,source,,reads from raw_sap.ser01
+R0160,stg_sap__ser03,staging,raw_sap.ser03,raw,source,,reads from raw_sap.ser03
+R0161,stg_sap__seri,staging,raw_sap.seri,raw,source,,reads from raw_sap.seri
+R0162,stg_sap__t001,staging,raw_sap.t001,raw,source,,reads from raw_sap.t001
+R0163,stg_sap__t001l,staging,raw_sap.t001l,raw,source,,reads from raw_sap.t001l
+R0164,stg_sap__t001w,staging,raw_sap.t001w,raw,source,,reads from raw_sap.t001w
+R0165,stg_sap__t023,staging,raw_sap.t023,raw,source,,reads from raw_sap.t023
+R0166,stg_sap__t024,staging,raw_sap.t024,raw,source,,reads from raw_sap.t024
+R0167,stg_sap__t024e,staging,raw_sap.t024e,raw,source,,reads from raw_sap.t024e
+R0168,stg_sap__t156,staging,raw_sap.t156,raw,source,,reads from raw_sap.t156
+R0169,stg_sap__t156t,staging,raw_sap.t156t,raw,source,,reads from raw_sap.t156t
+R0170,stg_sap__vbak,staging,raw_sap.vbak,raw,source,,reads from raw_sap.vbak
+R0171,stg_sap__vbap,staging,raw_sap.vbap,raw,source,,reads from raw_sap.vbap
+R0172,stg_sap__vbrk,staging,raw_sap.vbrk,raw,source,,reads from raw_sap.vbrk
+R0173,stg_sap__vbrp,staging,raw_sap.vbrp,raw,source,,reads from raw_sap.vbrp
+R0174,stg_sap__zmm_approval_log,staging,raw_sap.zmm_approval_log,raw,source,,reads from raw_sap.zmm_approval_log
+R0175,stg_sap__zmm_material_business,staging,raw_sap.zmm_material_business,raw,source,,reads from raw_sap.zmm_material_business
+R0176,stg_sap__zmm_vendor_business,staging,raw_sap.zmm_vendor_business,raw,source,,reads from raw_sap.zmm_vendor_business
+R0177,hub_accounting_document,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0178,hub_billing_document,vault,stg_sap__vbrk,staging,pipeline,,reads from
+R0179,hub_customer,vault,stg_sap__kna1,staging,pipeline,,reads from
+R0180,hub_equipment,vault,stg_sap__equi,staging,pipeline,,reads from
+R0181,hub_invoice,vault,stg_sap__rbkp,staging,pipeline,,reads from
+R0182,hub_material,vault,stg_sap__mara,staging,pipeline,,reads from
+R0183,hub_material_document,vault,stg_sap__mkpf,staging,pipeline,,reads from
+R0184,hub_movement_type,vault,stg_sap__t156,staging,pipeline,,reads from
+R0185,hub_plant,vault,stg_sap__t001w,staging,pipeline,,reads from
+R0186,hub_purchase_order,vault,stg_sap__ekko,staging,pipeline,,reads from
+R0187,hub_purchase_requisition,vault,stg_sap__eban,staging,pipeline,,reads from
+R0188,hub_sales_order,vault,stg_sap__vbak,staging,pipeline,,reads from
+R0189,hub_service_plan,vault,stg_sap__vbap,staging,pipeline,,reads from
+R0190,hub_vendor,vault,stg_sap__lfa1,staging,pipeline,,reads from
+R0191,hub_zmm_approval,vault,stg_sap__zmm_approval_log,staging,pipeline,,reads from
+R0192,link_billing_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0193,link_billing_accounting,vault,stg_sap__vbrk,staging,pipeline,,reads from
+R0194,link_billing_customer,vault,stg_sap__vbrk,staging,pipeline,,reads from
+R0195,link_billing_sales_order,vault,stg_sap__vbrp,staging,pipeline,,reads from
+R0196,link_equipment_gr,vault,stg_sap__seri,staging,pipeline,,reads from
+R0197,link_equipment_gr,vault,stg_sap__mkpf,staging,pipeline,,reads from
+R0198,link_equipment_material,vault,stg_sap__equi,staging,pipeline,,reads from
+R0199,link_gr_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0200,link_gr_accounting,vault,stg_sap__mkpf,staging,pipeline,,reads from
+R0201,link_gr_material,vault,stg_sap__mseg,staging,pipeline,,reads from
+R0202,link_gr_po,vault,stg_sap__mseg,staging,pipeline,,reads from
+R0203,link_invoice_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0204,link_invoice_accounting,vault,stg_sap__rbkp,staging,pipeline,,reads from
+R0205,link_invoice_po,vault,stg_sap__rbkp,staging,pipeline,,reads from
+R0206,link_po_item,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0207,link_po_material,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0208,link_po_plant,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0209,link_po_vendor,vault,stg_sap__ekko,staging,pipeline,,reads from
+R0210,link_pr_po,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0211,link_sales_order_customer,vault,stg_sap__vbak,staging,pipeline,,reads from
+R0212,link_sales_order_equipment,vault,stg_sap__vbap,staging,pipeline,,reads from
+R0213,link_sales_order_equipment,vault,stg_sap__equi,staging,pipeline,,reads from
+R0214,sat_accounting_header,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0215,sat_billing_document,vault,stg_sap__vbrk,staging,pipeline,,reads from
+R0216,sat_customer,vault,stg_sap__kna1,staging,pipeline,,reads from
+R0217,sat_equipment_general,vault,stg_sap__equi,staging,pipeline,,reads from
+R0218,sat_equipment_status,vault,stg_sap__eqbs,staging,pipeline,,reads from
+R0219,sat_gr_header,vault,stg_sap__mkpf,staging,pipeline,,reads from
+R0220,sat_gr_item,vault,stg_sap__mseg,staging,pipeline,,reads from
+R0221,sat_invoice_header,vault,stg_sap__rbkp,staging,pipeline,,reads from
+R0222,sat_invoice_item,vault,stg_sap__rseg,staging,pipeline,,reads from
+R0223,sat_material_business,vault,stg_sap__zmm_material_business,staging,pipeline,,reads from
+R0224,sat_material_description,vault,stg_sap__makt,staging,pipeline,,reads from
+R0225,sat_material_general,vault,stg_sap__mara,staging,pipeline,,reads from
+R0226,sat_material_plant,vault,stg_sap__marc,staging,pipeline,,reads from
+R0227,sat_movement_type,vault,stg_sap__t156,staging,pipeline,,reads from
+R0228,sat_movement_type_text,vault,stg_sap__t156t,staging,pipeline,,reads from
+R0229,sat_po_account,vault,stg_sap__ekkn,staging,pipeline,,reads from
+R0230,sat_po_header,vault,stg_sap__ekko,staging,pipeline,,reads from
+R0231,sat_po_item,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0232,sat_po_schedule,vault,stg_sap__eket,staging,pipeline,,reads from
+R0233,sat_pr_detail,vault,stg_sap__eban,staging,pipeline,,reads from
+R0234,sat_sales_order,vault,stg_sap__vbak,staging,pipeline,,reads from
+R0235,sat_sales_order_item,vault,stg_sap__vbap,staging,pipeline,,reads from
+R0236,sat_service_plan,vault,stg_sap__vbap,staging,pipeline,,reads from
+R0237,sat_stock_level,vault,stg_sap__mard,staging,pipeline,,reads from
+R0238,sat_vendor_business,vault,stg_sap__zmm_vendor_business,staging,pipeline,,reads from
+R0239,sat_vendor_commercial,vault,stg_sap__lfb1,staging,pipeline,,reads from
+R0240,sat_vendor_general,vault,stg_sap__lfa1,staging,pipeline,,reads from
+R0241,sat_zmm_approval,vault,stg_sap__zmm_approval_log,staging,pipeline,,reads from
+R0242,fact_equipment_lifecycle,marts,dim_material,marts,star,MATNR,joined on material
+R0243,fact_equipment_lifecycle,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0244,fact_goods_movements,marts,dim_material,marts,star,MATNR,joined on material
+R0245,fact_goods_movements,marts,dim_movement_type,marts,star,BWART,joined on movement type
+R0246,fact_goods_movements,marts,dim_plant,marts,star,WERKS,joined on plant
+R0247,fact_goods_movements,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0248,fact_goods_movements,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0249,fact_goods_receipt_accuracy,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0250,fact_goods_receipts_monthly,marts,dim_material,marts,star,MATNR,joined on material
+R0251,fact_goods_receipts_monthly,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0252,fact_goods_receipts_monthly,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0253,fact_inventory,marts,dim_material,marts,star,MATNR,joined on material
+R0254,fact_inventory,marts,dim_plant,marts,star,WERKS,joined on plant
+R0255,fact_inventory,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0256,fact_invoices,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0257,fact_po_invoice_match_variance,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0258,fact_purchase_orders,marts,dim_material,marts,star,MATNR,joined on material
+R0259,fact_purchase_orders,marts,dim_plant,marts,star,WERKS,joined on plant
+R0260,fact_purchase_orders,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0261,fact_purchase_orders,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0262,fact_equipment_lifecycle,marts,dim_date,marts,date,status_from_date,joined on status_from_date
+R0263,fact_goods_movements,marts,dim_date,marts,date,posting_date,joined on posting_date
+R0264,fact_goods_receipt_accuracy,marts,dim_date,marts,date,first_receipt_date,joined on first_receipt_date
+R0265,fact_invoices,marts,dim_date,marts,date,posting_date,joined on posting_date
+R0266,fact_purchase_orders,marts,dim_date,marts,date,po_date,joined on po_date

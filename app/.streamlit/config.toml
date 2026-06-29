@@ -1,0 +1,17 @@
+[theme]
+# Force dark theme regardless of user's OS / browser preference.
+# This matches the custom CSS in Home.py so the dashboard looks identical
+# in every environment (headed browser, headless Playwright, mobile, etc).
+base = "dark"
+primaryColor = "#3b82f6"
+backgroundColor = "#0a0e17"
+secondaryBackgroundColor = "#131a2e"
+textColor = "#e0e0e0"
+font = "sans serif"
+
+[server]
+headless = true
+runOnSave = false
+
+[browser]
+gatherUsageStats = false

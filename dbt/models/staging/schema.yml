@@ -1,0 +1,170 @@
+version: 2
+
+models:
+  - name: stg_sap__ekko
+    description: "1:1 staging of EKKO (Purchasing Document Header). Adds hash keys, hashdiff, type casting, metadata. Original SAP column names preserved."
+    columns:
+      - name: hk_purchase_order
+        description: "MD5 hash of EBELN — join key for hub_purchase_order"
+        tests: [not_null]
+      - name: EBELN
+        description: "Purchasing document number (business key)"
+        tests: [not_null, unique]
+      - name: LIFNR
+        description: "Vendor account number (FK to LFA1)"
+        tests: [not_null]
+
+  - name: stg_sap__ekpo
+    description: "1:1 staging of EKPO (Purchasing Document Item). Hash keys for PO, material, and PO-item composite."
+    columns:
+      - name: hk_po_item
+        description: "MD5 hash of EBELN||EBELP — composite key for PO line item"
+        tests: [not_null]
+      - name: EBELN
+        description: "Purchasing document number (FK to EKKO)"
+        tests: [not_null]
+      - name: MATNR
+        description: "Material number (FK to MARA)"
+        tests: [not_null]
+
+  - name: stg_sap__eket
+    description: "1:1 staging of EKET (Delivery Schedule). Date casting for EINDT."
+
+  - name: stg_sap__ekkn
+    description: "1:1 staging of EKKN (Account Assignment). GL account and cost center."
+
+  - name: stg_sap__eban
+    description: "1:1 staging of EBAN (Purchase Requisition). Date casting for BADAT/FRGDT."
+    columns:
+      - name: hk_purchase_requisition
+        description: "MD5 hash of BANFN"
+        tests: [not_null]
+      - name: BANFN
+        description: "Purchase requisition number (business key)"
+        tests: [not_null]
+
+  - name: stg_sap__ebkn
+    description: "1:1 staging of EBKN (PR Account Assignment)."
+
+  - name: stg_sap__mkpf
+    description: "1:1 staging of MKPF (Material Document Header). Composite hash key MBLNR||MJAHR."
+    columns:
+      - name: hk_material_document
+        description: "MD5 hash of MBLNR||MJAHR — composite business key"
+        tests: [not_null]
+
+  - name: stg_sap__mseg
+    description: "1:1 staging of MSEG (Material Document Item). Hash keys for material doc, material, plant, PO."
+    columns:
+      - name: BWART
+        description: "Movement type: 101=GR, 102=reversal, 122=vendor return, 161=customer return, 201=deployment, 301=transfer"
+        tests: [not_null]
+
+  - name: stg_sap__ekbe
+    description: "1:1 staging of EKBE (PO History). Links POs to GR/invoice events."
+
+  - name: stg_sap__lfa1
+    description: "1:1 staging of LFA1 (Vendor General Data)."
+    columns:
+      - name: hk_vendor
+        description: "MD5 hash of LIFNR"
+        tests: [not_null, unique]
+      - name: LIFNR
+        description: "Vendor account number (business key)"
+        tests: [not_null, unique]
+
+  - name: stg_sap__lfb1
+    description: "1:1 staging of LFB1 (Vendor Company Code Data). Payment terms and recon account."
+
+  - name: stg_sap__lfm1
+    description: "1:1 staging of LFM1 (Vendor Purchasing Data)."
+
+  - name: stg_sap__mara
+    description: "1:1 staging of MARA (Material General Data)."
+    columns:
+      - name: hk_material
+        description: "MD5 hash of MATNR"
+        tests: [not_null, unique]
+      - name: MATNR
+        description: "Material number (business key)"
+        tests: [not_null, unique]
+
+  - name: stg_sap__makt
+    description: "1:1 staging of MAKT (Material Descriptions). Multiple rows per material (one per language)."
+
+  - name: stg_sap__marc
+    description: "1:1 staging of MARC (Material Plant Data). One row per material per plant."
+
+  - name: stg_sap__marm
+    description: "1:1 staging of MARM (Material Units of Measure)."
+
+  - name: stg_sap__rbkp
+    description: "1:1 staging of RBKP (Invoice Header). Composite hash key BELNR||GJAHR."
+    columns:
+      - name: hk_invoice
+        description: "MD5 hash of BELNR||GJAHR"
+        tests: [not_null]
+
+  - name: stg_sap__rseg
+    description: "1:1 staging of RSEG (Invoice Item)."
+
+  - name: stg_sap__equi
+    description: "1:1 staging of EQUI (Equipment Master). Individual CPE devices."
+    columns:
+      - name: hk_equipment
+        description: "MD5 hash of EQUNR"
+        tests: [not_null, unique]
+      - name: EQUNR
+        description: "Equipment number (business key)"
+        tests: [not_null, unique]
+
+  - name: stg_sap__eqbs
+    description: "1:1 staging of EQBS (Equipment Status History). One row per status change."
+
+  - name: stg_sap__mard
+    description: "1:1 staging of MARD (Stock per Storage Location)."
+
+  - name: stg_sap__bkpf
+    description: "1:1 staging of BKPF (Accounting Document Header)."
+
+  - name: stg_sap__bseg
+    description: "1:1 staging of BSEG (Accounting Document Line Item)."
+
+  - name: stg_sap__rkpf
+    description: "1:1 staging of RKPF (Reservation Header)."
+
+  - name: stg_sap__resb
+    description: "1:1 staging of RESB (Reservation Item)."
+
+  - name: stg_sap__objk
+    description: "1:1 staging of OBJK (Object List — serial to equipment cross-reference)."
+
+  - name: stg_sap__seri
+    description: "1:1 staging of SERI (Serial Number Assignments)."
+
+  - name: stg_sap__ser01
+    description: "1:1 staging of SER01 (Serial Number Doc Header — PO reference)."
+
+  - name: stg_sap__ser03
+    description: "1:1 staging of SER03 (Serial Number Doc Header — Material Document reference)."
+
+  - name: stg_sap__t001
+    description: "1:1 staging of T001 (Company Codes). Reference table."
+
+  - name: stg_sap__t001w
+    description: "1:1 staging of T001W (Plants). Reference table."
+
+  - name: stg_sap__t001l
+    description: "1:1 staging of T001L (Storage Locations). Reference table."
+
+  - name: stg_sap__t024
+    description: "1:1 staging of T024 (Purchasing Groups). Reference table."
+
+  - name: stg_sap__t024e
+    description: "1:1 staging of T024E (Purchasing Organizations). Reference table."
+
+  - name: stg_sap__t023
+    description: "1:1 staging of T023 (Material Groups). Reference table."
+
+  - name: stg_sap__t156
+    description: "1:1 staging of T156 (Movement Types). Reference table."

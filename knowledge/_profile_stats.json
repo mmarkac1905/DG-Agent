@@ -1,0 +1,82 @@
+{
+  "DP001": {
+    "table": "main_marts.fact_purchase_orders",
+    "column": "lead_time_days",
+    "row_count": 2200,
+    "count": 2200,
+    "avg": 44.82,
+    "min": "8",
+    "max": "64",
+    "p25": 39.0,
+    "p50": 45.0,
+    "p75": 52.0,
+    "null_pct": 2.0
+  },
+  "DP002": {
+    "table": "main_marts.fact_purchase_orders",
+    "column": "is_on_time",
+    "row_count": 2200,
+    "count": 2200,
+    "sum": 1198.0,
+    "avg": 0.56
+  },
+  "DP003": {
+    "table": "fact_equipment_movements",
+    "column": "is_vendor_return",
+    "error": "Table not found in any schema"
+  },
+  "DP004": {
+    "table": "fact_inventory_snapshots",
+    "column": "unrestricted_stock",
+    "error": "Table not found in any schema"
+  },
+  "DP005": {
+    "table": "main_obt.obt_inventory_health",
+    "column": "days_of_stock",
+    "row_count": 60,
+    "count": 60,
+    "error": "Column query failed: Binder Error: Referenced column \"days_of_stock\" not found in FROM clause!\nCandidate bindings: \"is_zero_stock\", \"has_qi_stock\", \"total_stock\", \"has_blocked_stock\", \"quality_inspection_stock\"\n\nLINE 1: SELECT AVG(CAST(days_of_stock AS DOUBLE)) FROM main_obt.obt_inventory_healt...\n                        ^"
+  },
+  "DP006": {
+    "table": "main_marts.dim_equipment",
+    "column": "lifecycle_status",
+    "row_count": 45000,
+    "count": 45000,
+    "distinct": 4,
+    "value_counts": {
+      "deployed": 24857,
+      "in_stock": 18000,
+      "returned": 1495,
+      "defective": 648
+    }
+  },
+  "DP007": {
+    "table": "main_marts.fact_purchase_orders",
+    "column": "po_cycle_days",
+    "row_count": 2200,
+    "count": 2200,
+    "avg": 3.96,
+    "min": "1",
+    "max": "7",
+    "p25": 2.0,
+    "p50": 4.0,
+    "p75": 6.0
+  },
+  "DP008": {
+    "table": "main_obt.obt_vendor_scorecard",
+    "column": "vendor_spend_share",
+    "row_count": 72,
+    "count": 72,
+    "max": "0.8506"
+  },
+  "DP009": {
+    "table": "raw_ekko",
+    "column": "BEDAT",
+    "error": "Table not found in any schema"
+  },
+  "DP010": {
+    "table": "raw_mkpf",
+    "column": "BUDAT",
+    "error": "Table not found in any schema"
+  }
+}

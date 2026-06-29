@@ -1,0 +1,104 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: "Date dimension. Generated calendar covering 2023-2027."
+    columns:
+      - name: date_key
+        tests: [not_null, unique]
+
+  - name: dim_vendor
+    description: "Vendor dimension. Current state from vault satellites. One row per vendor."
+    columns:
+      - name: hk_vendor
+        tests: [not_null, unique]
+      - name: vendor_id
+        tests: [not_null, unique]
+
+  - name: dim_material
+    description: "Material/CPE type dimension. Includes equipment_category derivation."
+    columns:
+      - name: hk_material
+        tests: [not_null, unique]
+      - name: material_number
+        tests: [not_null, unique]
+
+  - name: dim_plant
+    description: "Plant/warehouse dimension with company context."
+    columns:
+      - name: hk_plant
+        tests: [not_null, unique]
+
+  - name: dim_equipment
+    description: "Individual CPE device dimension with current lifecycle status."
+    columns:
+      - name: hk_equipment
+        tests: [not_null, unique]
+      - name: equipment_number
+        tests: [not_null, unique]
+
+  - name: dim_movement_type
+    description: "Movement type reference from business-defined seed."
+    columns:
+      - name: movement_type
+        tests: [not_null, unique]
+
+  - name: dim_storage_location
+    description: "Storage location dimension with derived location_type."
+
+  - name: fact_purchase_orders
+    description: "Central procurement fact at PO item grain. Includes lead_time_days (BG001), is_on_time (BG002), po_cycle_days (BG008)."
+    columns:
+      - name: hk_po_material
+        tests: [not_null]
+      - name: purchase_order_number
+        tests: [not_null]
+
+  - name: fact_goods_movements
+    description: "All material movements with signed_quantity for stock impact calculation."
+    columns:
+      - name: material_document_number
+        tests: [not_null]
+
+  - name: fact_equipment_lifecycle
+    description: "CPE lifecycle events with days_in_status and deployment timing. Feeds BG003 (defect rate) and BG006 (lifecycle status)."
+    columns:
+      - name: hk_equipment
+        tests: [not_null]
+
+  - name: fact_inventory
+    description: "Current stock levels with health flags."
+
+  - name: fact_invoices
+    description: "Invoice fact with PO reference for three-way match analysis."
+
+  - name: fact_po_invoice_match_variance
+    description: >
+      Three-way match variance percentages by vendor and month, tracking
+      procurement controls with PO, goods receipt, and invoice quantities
+      aligning within 5% tolerance threshold. Exception tracking shows
+      approved variances through ZMM_APPROVAL_LOG workflow.
+    meta:
+      bar_id: BAR-00002
+      iteration_count: 1
+      confidence: high
+      promoted_from: po_invoice_three_way_match_variance
+      generated_by: piece_8_5_create_s2t_from_bar
+      generated_at_utc: 2026-04-22
+    columns:
+      - name: vendor_id
+        description: Vendor account number (EKKO.LIFNR).
+        tests: [not_null]
+      - name: month
+        description: PO creation month (DATE_TRUNC of BEDAT).
+        tests: [not_null]
+      - name: total_po_lines
+        description: Count of PO lines joined vendor x month.
+      - name: matched_pct
+        description: Percentage of PO lines where PO/GR/invoice qty match within 5%.
+      - name: exception_count
+        description: Count of ZMM_APPROVAL_LOG records for these POs.
+      - name: approved_exception_count
+        description: Subset of exception_count with APPR_STATUS='02'.
+      - name: open_exception_count
+        description: Exceptions not yet approved (exception_count - approved_exception_count).

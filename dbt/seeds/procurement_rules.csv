@@ -1,0 +1,8 @@
+rule_id,rule_name,description,threshold,action,applies_to,source,validated
+PR001,reorder_point_routers,Reorder when router stock falls below threshold,500,create_purchase_requisition,CPE-RTR,warehouse_manager,true
+PR002,reorder_point_onts,Reorder when ONT stock falls below threshold,300,create_purchase_requisition,CPE-ONT,warehouse_manager,true
+PR003,safety_stock_weeks,Maintain minimum weeks of safety stock,2,alert_procurement,all_cpe,planning_policy,true
+PR004,vendor_dual_source,Critical CPE types must have 2+ approved vendors,2,vendor_qualification,router;ont,risk_management,true
+PR005,defect_rate_threshold,Investigate vendor if defect rate exceeds threshold,0.05,vendor_review,all_cpe,quality_management,true
+PR006,lead_time_buffer,Add buffer days to vendor quoted lead time,7,planning_parameter,all_cpe,logistics,true
+PR007,serial_tracking_mandatory,All CPE must be serial-tracked at goods receipt,mandatory,enforce_sernp_profile,all_cpe,asset_management,true

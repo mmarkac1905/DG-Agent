@@ -1,0 +1,8 @@
+gl_account,account_name,account_type,flow_category,notes
+1400000,Inventory - CPE stock,asset,neutral,Stock valuation debited at goods receipt (WE shadow). Not a P&L account.
+1410000,Trade receivables - customers,asset,neutral,"Customer AR debited by the RV billing shadow. Balance-sheet, not margin."
+1600000,Trade payables - vendors,liability,neutral,"Vendor AP credited by the RE invoice shadow. Balance-sheet, not margin."
+1750000,Output VAT payable,liability,neutral,"VAT collected on service billing (RV shadow). Pass-through, excluded from margin."
+1900000,GR/IR clearing,liability,neutral,"Goods-receipt/invoice-receipt clearing. Debited by RE, credited by WE. Nets to zero."
+5000000,COGS - CPE device cost,expense,cost,"Categorisation slot for device cost of goods. In this MVP the margin model sources device cost from procurement (RSEG) amortised over the 24-month contract, not from a standalone COGS posting."
+8000000,Service revenue - broadband,revenue,revenue,Monthly service subscription revenue credited by the RV billing shadow. The revenue side of CPE net margin.

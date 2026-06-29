@@ -1,0 +1,38 @@
+{
+  "cost_usd": 0.04,
+  "input_tokens": 800,
+  "output_tokens": 400,
+  "cache_read_input_tokens": 0,
+  "cache_creation_input_tokens": 0,
+  "response": {
+    "ontology_consumed": [],
+    "domain_facts_consumed": [],
+    "analysis_findings_consumed": [],
+    "dar_consumed": [],
+    "prior_bar_consumed": [],
+    "semantic_model_consumed": [],
+    "dbt_semantic_model_consumed": [],
+    "term_condition_assessment": [
+      {
+        "condition": "test",
+        "status": "COVERED",
+        "evidence": "covered by SELECT"
+      }
+    ],
+    "semantic_alignment_score": 70,
+    "shadow_rubric_score": 80,
+    "shadow_rubric_breakdown": {
+      "grain": 16,
+      "scope": 16,
+      "filters": 16,
+      "aggregation": 16,
+      "joins": 16
+    },
+    "justified_zero": true,
+    "justified_zero_rationale": "",
+    "scope_sanity_answer": "no",
+    "scope_sanity_rationale": "mock reflection",
+    "convergence_signal": "stable",
+    "reasoning_summary": "mock reflection for regression harness"
+  }
+}

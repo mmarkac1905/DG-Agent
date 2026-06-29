@@ -1,0 +1,17 @@
+{
+  "cost_usd": 0.05,
+  "input_tokens": 1000,
+  "output_tokens": 300,
+  "cache_read_input_tokens": 0,
+  "cache_creation_input_tokens": 0,
+  "response": {
+    "ontology_consumed": [],
+    "domain_facts_consumed": [],
+    "analysis_findings_consumed": [],
+    "prior_bar_consumed": [],
+    "semantic_model_consumed": [],
+    "dbt_semantic_model_consumed": [],
+    "query_sql": "SELECT 1",
+    "reasoning_summary": "mock iteration response for regression harness"
+  }
+}

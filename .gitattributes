@@ -1,0 +1,4 @@
+dbt/seeds/*.csv text eol=lf
+dbt/tests/*.sql text eol=lf
+dbt/models/**/*.sql text eol=lf
+*.py text eol=lf

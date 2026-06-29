@@ -1,0 +1,7 @@
+cpe_procurement_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: '../cpe_analytics.duckdb'
+      threads: 4

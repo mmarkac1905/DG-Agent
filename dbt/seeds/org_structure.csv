@@ -1,0 +1,8 @@
+company_code,company_name,plant,plant_name,storage_location,storage_location_name,purchasing_org,purchasing_group,country
+HT00,Helios Telecom d.d.,HT10,Zagreb Central Warehouse,HT11,CPE Main Storage,HT01,001,HR
+HT00,Helios Telecom d.d.,HT10,Zagreb Central Warehouse,HT12,CPE Defective/Return,HT01,001,HR
+HT00,Helios Telecom d.d.,HT10,Zagreb Central Warehouse,HT13,CPE Ready for Deploy,HT01,001,HR
+HT00,Helios Telecom d.d.,HT20,Split Regional Warehouse,HT21,CPE Regional Storage,HT01,002,HR
+HT00,Helios Telecom d.d.,HT20,Split Regional Warehouse,HT22,CPE Regional Returns,HT01,002,HR
+HT00,Helios Telecom d.d.,HT30,Osijek Regional Warehouse,HT31,CPE Regional Storage,HT01,003,HR
+HT00,Helios Telecom d.d.,HT40,Rijeka Regional Warehouse,HT41,CPE Regional Storage,HT01,004,HR

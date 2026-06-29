@@ -1,0 +1,26 @@
+{
+  "cost_usd": 0.03,
+  "input_tokens": 600,
+  "output_tokens": 400,
+  "cache_read_input_tokens": 0,
+  "cache_creation_input_tokens": 0,
+  "response": {
+    "ontology_consumed": [],
+    "domain_facts_consumed": [],
+    "analysis_findings_consumed": [],
+    "dar_consumed": [],
+    "prior_bar_consumed": [],
+    "semantic_model_consumed": [],
+    "dbt_semantic_model_consumed": [],
+    "final_metric_value": 1.0,
+    "final_metric_unit": "count",
+    "final_metric_interpretation": "mock finalization output",
+    "term_conditions_covered": [
+      "cond1"
+    ],
+    "term_conditions_missed": [],
+    "confidence_rationale": "mock rationale",
+    "analyst_review_needed": true,
+    "analyst_review_reason": "mock review reason"
+  }
+}

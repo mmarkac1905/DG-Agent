@@ -1,0 +1,58 @@
+.venv/
+*.duckdb
+*.duckdb.wal
+
+# Parquet export (regenerated from cpe_analytics.duckdb by scripts/export_parquet.py)
+data/parquet/
+
+__pycache__/
+.env
+target/
+dbt_packages/
+logs/
+.tokenizer_cache.json
+*.pyc
+.DS_Store
+context/**/*.md
+!context/post_demo_roadmap.md
+# context/direction_d_spec.md is referenced from scripts/run_join_cardinality_analysis.py
+!context/direction_d_spec.md
+knowledge/**/*.md
+!knowledge/.gitkeep
+!knowledge/**/.gitkeep
+# Hand-maintained source-of-truth wiki pages (NOT auto-regenerated):
+!knowledge/knowledge_rules.md
+!knowledge/anti_patterns.md
+!knowledge/seeds_catalog.md
+!knowledge/dv_verification_report.md
+
+# Debug / session logs (8.5.1 hygiene)
+*.log
+bg001_*.log
+bg002_*.log
+deploy_debug.log
+
+# Analyzer caches
+.source_column_roles_cache.json
+.catalog_backfill_cache/
+
+# Scratch
+/tmp/*
+
+# demo_planning/ is mostly tactical phase-planning scratch; only the
+# public-facing demo walkthrough is tracked.
+demo_planning/*.md
+!demo_planning/demo_script.md
+
+# NEXT_SESSION.md is session-handoff state, local-only
+NEXT_SESSION.md
+
+# Ad-hoc debug scripts (one-off inspection utilities; reusable ones get proper docstrings + no inspect_ prefix)
+scripts/inspect_*.py
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+.s2t_plain_cache.json
+dbt/seeds/.s2t_plain_cache.json
