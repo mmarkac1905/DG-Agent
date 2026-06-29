@@ -88,6 +88,7 @@ cp .env.example .env        # then edit .env and set ANTHROPIC_API_KEY
 
 # 3. generate the synthetic SAP dataset (creates cpe_analytics.duckdb)
 python scripts/generate_sap_sample_data.py     # MM: PO, GR, inventory, equipment
+python scripts/generate_zmm_approval_log.py    # ZMM: custom approval-log Z-table
 python scripts/generate_sd_billing.py          # SD: customers, sales orders, billing
 python scripts/generate_fi_shadows.py          # FI: accounting-document shadows
 
