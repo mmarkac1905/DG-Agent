@@ -56,3 +56,9 @@ scripts/inspect_*.py
 
 .s2t_plain_cache.json
 dbt/seeds/.s2t_plain_cache.json
+
+# Pruned dev/session/demo artifacts (regenerable / not core to Stage A->E)
+screenshots/
+logs/
+context/
+validation/

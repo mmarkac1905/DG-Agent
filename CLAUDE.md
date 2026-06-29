@@ -198,12 +198,11 @@ Do NOT assume data availability from memory — query it.
 
 ## Project Structure
 ```
-dbt/           — models, seeds (knowledge graph), tests, macros
-scripts/       — session_context.sql, build_knowledge_wiki.py, end_of_task.py
+dbt/           — models (staging/vault/marts/obt/knowledge), seeds (knowledge graph), tests
+scripts/       — data generators, EDA analyzers, build_knowledge_wiki.py, end_of_task.py
+app/           — Streamlit dashboard + claude_api.py (the LLM pipeline)
 knowledge/     — auto-generated wiki from dbt/seeds/ (do not hand-edit)
-app/           — Streamlit dashboard
-context/       — auto-generated state markdown (via scripts/export_context.py)
-validation/    — analysis results archive
+tests/         — unit + regression tests
 ```
 
 ## After EVERY Session (MANDATORY before ending)
