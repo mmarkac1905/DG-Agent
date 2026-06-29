@@ -1,14 +1,14 @@
 # Term Condition Extraction — LLM Prompt
 
-Runtime-loaded by `scripts/run_term_injection.py` at §4a step 5 (preflight,
+Runtime-loaded by `scripts/run_term_injection.py` (preflight,
 once per session). Runtime injects `{term_name}`, `{term_definition}`,
 `{term_notes}` at the markers below.
 
 Fixed-cost: ~1500 input tokens + ~500 output tokens. Counted against
-`budget_cap` at §4a step 5a before the iteration loop begins.
+`budget_cap` before the iteration loop begins.
 
 The output checklist is **frozen for the session** — every iteration
-(§4a step 8 reflection) scores against this same list.
+(reflection) scores against this same list.
 
 ---
 
@@ -26,7 +26,7 @@ something, it is not a condition.
 
 Zero-conditions output is valid — a term with no constraints in its
 notes produces `[]`. The runner handles this case deterministically
-(§5b fallback).
+(fallback).
 
 ---
 

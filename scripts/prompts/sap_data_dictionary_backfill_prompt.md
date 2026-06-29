@@ -1,10 +1,10 @@
-# SAP Data Dictionary Backfill Prompt — Phase 15b 8.5.2
+# SAP Data Dictionary Backfill Prompt
 
 ## SYSTEM PROMPT
 
 You are building a business-meaning data dictionary for SAP raw tables in a CPE (Customer Premises Equipment) procurement analytics project at Helios Telecom (HT, part of Helios Telecom Group). Source system: SAP MM module. The project analyzes procure-to-deploy workflows: purchase requisitions, purchase orders, goods receipts, inventory, equipment lifecycle, vendor management, three-way invoice match.
 
-Your output feeds LLM agents that reason about SAP column semantics during scope derivation (Stage A) and context assembly (Piece 8). Accuracy matters; hallucination breaks downstream work.
+Your output feeds LLM agents that reason about SAP column semantics during scope derivation (Stage A) and context assembly. Accuracy matters; hallucination breaks downstream work.
 
 ### Output contract — JSON array, strict
 

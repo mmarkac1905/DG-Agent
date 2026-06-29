@@ -1,6 +1,6 @@
 # Term Injection — Iteration Prompt
 
-Runtime-loaded by `scripts/run_term_injection.py` at §4a step 6a (every
+Runtime-loaded by `scripts/run_term_injection.py` (every
 iteration). Runtime injects `{bundle}`, `{term_definition}`, `{term_notes}`,
 `{term_conditions}`, `{scope_tables}`, `{prior_iterations_summary}`
 at the markers below.
@@ -14,11 +14,11 @@ echoing what you observed in the bundle:
 
 - `ontology_consumed`:       list of existing_models names seen
 - `domain_facts_consumed`:   list of DF-NNNN ids seen
-- `analysis_findings_consumed`: list of AFNNN ids seen (NO hyphen — per §19.4)
+- `analysis_findings_consumed`: list of AFNNN ids seen (NO hyphen)
 - `dar_consumed`:            list of DAR-NNNNN ids seen
 - `prior_bar_consumed`:      list of BAR-NNNNN ids seen (term-scoped)
-- `semantic_model_consumed`: list of semantic_model.table_name rows consulted (Layer A; v3.6 §22.7)
-- `dbt_semantic_model_consumed`: list of dbt_semantic_model.model_name rows consulted (Layer B; v3.7 §23.7)
+- `semantic_model_consumed`: list of semantic_model.table_name rows consulted (Layer A)
+- `dbt_semantic_model_consumed`: list of dbt_semantic_model.model_name rows consulted (Layer B)
 - `bridge_coverage_consulted`: list of DAR-NNNNN ids consulted from bridge_coverage_by_filter rows (Phase 3)
 - `tars_consulted`:          list of TAR-NNNNN ids consulted from the TERM EDA section (C3)
 - `stage_a_blockers_consumed`: list of `iter{N}.b{I}` ids consulted from the Stage A blockers section (C4)
@@ -27,13 +27,13 @@ If a source type has zero relevant items, emit `[]`, **not null**. A
 null in any of these ten fields is a failed attestation and the
 runner hard-stops the session with `hard_stop_attestation_failure`.
 
-## CITATION ID FORMAT (decision #73)
+## CITATION ID FORMAT
 
 Every ID you cite MUST be the primary-key string present verbatim in
 the bundle text:
 
 - `DF-NNNN`       — `domain_facts.fact_id` (4-digit, hyphen)
-- `AFNNN`         — `analysis_findings.id` (3-digit, **no hyphen** per §19.4)
+- `AFNNN`         — `analysis_findings.id` (3-digit, **no hyphen**)
 - `DAR-NNNNN`     — `domain_analysis_results.id` (5-digit, hyphen)
 - `BAR-NNNNN`     — `business_term_analysis_results.id` (5-digit, hyphen)
 - `<model_name>`  — `existing_models` (e.g. `fact_purchase_orders`)
@@ -41,7 +41,7 @@ the bundle text:
 No slugs. No descriptions. If you cannot find the row in the bundle,
 do NOT cite it.
 
-## CONSUMPTION DIRECTIVES (decision #73)
+## CONSUMPTION DIRECTIVES
 
 **1. DOMAIN_FACTS.** If a domain_fact constrains the term's
 grain/filter/unit, your SQL MUST reflect it. Example: DF-0003 says
@@ -144,11 +144,11 @@ use Jinja `{{ ref() }}` syntax** — the mechanical gate runs raw
 DuckDB, which does not render Jinja. **Do NOT emit `CREATE TABLE
 <name>` or `CREATE VIEW <name>` where `<name>` matches an
 existing_models entry** — collision with a production model is a
-failure (known_issue #29 + v3.5 §21 path (c)). The runner greps
+failure. The runner greps
 your SQL for `CREATE TABLE/VIEW <name>` patterns and hard-stops
 with `hard_stop_ontology_collision` if collision detected.
 
-**6. CONSUMER PRIORITY (v3.7 §23.7 — updated for Layer B).**
+**6. CONSUMER PRIORITY (updated for Layer B).**
 Three-tier priority for where to source per-table / per-model
 conventions when writing SQL:
   1. **Layer B first** — if the scope table has dbt coverage, consult
@@ -166,7 +166,7 @@ for a given scope table by design (Layer A compile skips
 ontology-covered tables). Directive 5 (existing_models literal-name
 rule) still applies — do not use Jinja `{{ ref() }}` in iteration SQL.
 
-**7. SEMANTIC MODEL (LAYER A) (v3.6 §22.7).** For raw tables in your
+**7. SEMANTIC MODEL (LAYER A).** For raw tables in your
 scope that lack dbt ontology coverage, consult the "Semantic Model
 (Layer A)" block in the static layer. Use its `canonical_alias` when
 aliasing the table (e.g. `FROM raw_sap.ekbe e` where `e` is the Layer
@@ -179,14 +179,14 @@ you consulted in the `semantic_model_consumed` attestation field
 (list of `table_name` strings); emit `[]` if no Layer A rows were
 relevant to your SQL.
 
-**8. DBT SEMANTIC MODEL (LAYER B) (v3.7 §23.7).** For scope tables
+**8. DBT SEMANTIC MODEL (LAYER B).** For scope tables
 with dbt coverage, consult the "dbt Semantic Model (Layer B)" block
 in the static layer. The block's `reference_sql` field is **already
 rewritten to literal schema-qualified form** (e.g.
 `FROM main_staging.stg_sap__ekbe e`) for this purpose — the raw
 seed stores `{{ ref() }}` Jinja but the assembler rewrites it for
-iteration consumers per §23.10.
-Per directive item 5 (§21.1), use literal schema-qualified references
+iteration consumers.
+Per directive item 5, use literal schema-qualified references
 (e.g. `FROM main_staging.stg_sap__ekbe e`) as shown in the Layer B
 block. **Do NOT use `{{ ref() }}`** — the mechanical gate executes
 raw DuckDB which does not render Jinja.
@@ -197,14 +197,14 @@ Cite the `dbt_semantic_model` rows you consulted in
 `dbt_semantic_model_consumed` (list of `model_name` strings); emit
 `[]` if no Layer B rows were relevant to your SQL.
 
-## CITATION AUDIT (§7d safeguard 4)
+## CITATION AUDIT
 
 Every table name, column name, literal value, and ID cited in your
 SQL must trace to the bundle text. The runner greps the bundle for
 each identifier and hard-stops with `hard_stop_citation_audit_failure`
 if any reference is unknown.
 
-## TERM EDA ANALYTICAL CHARACTERIZATION (Piece 9 Stage C §28.11.7)
+## TERM EDA ANALYTICAL CHARACTERIZATION
 
 If the bundle contains a "Term EDA analytical characterization" section,
 it represents Stage C's pre-computed analytical grounding for this term.
@@ -296,7 +296,7 @@ sharpen a PARTIAL one.
 Respond in **JSON only** — no free-form prose outside the JSON object,
 no markdown headers, no explanations before or after. The
 `reasoning_summary` field is the ONLY narrative surface and MUST be
-≤ 80 words (hard cap — v3.6 Prereq B):
+≤ 80 words (hard cap):
 
 ```json
 {

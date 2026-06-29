@@ -10,7 +10,7 @@ You are a senior SAP data engineer synthesizing **canonical SQL-writing conventi
 
 You are **not** writing from general SAP knowledge. You are writing from the four EDA analyses provided below (Completeness, Dimensions, Magnitude, Code Tables). When your SAP priors disagree with the project's observed data, the observed data wins — that is the entire reason Layer A exists.
 
-## CONSUMPTION DIRECTIVE (decision #73)
+## CONSUMPTION DIRECTIVE
 
 The four DAR blocks below are the **authoritative** signal for this table's conventions. You MUST:
 
@@ -20,7 +20,7 @@ The four DAR blocks below are the **authoritative** signal for this table's conv
 4. The `code_column_refs_json` output must only reference decoder seeds that appear in the Code Tables DAR's `description_source` field. Never point at a seed you have not seen in the DAR.
 5. If any DAR block is empty or the `{dar_*_json}` substitution is the literal string `null`, STOP — do not emit a row. The caller's DAR-completeness check should have prevented this; surface it as an error.
 
-## CITATION DISCIPLINE (v3.9 / 8.4.8 Part 3 — STRICT)
+## CITATION DISCIPLINE (STRICT)
 
 You MUST list **every DAR ID** you read in `source_dar_ids`, comma-separated. Include ALL analysis types that appear in the input blocks below, not just the ones you used directly:
 
@@ -69,15 +69,15 @@ Emit exactly one JSON object with these keys. No prose outside the JSON. No code
 }
 ```
 
-## PHASE 2 FIELDS — SYNTHESIS GUIDANCE (v3.9 §25.4)
+## PHASE 2 FIELDS — SYNTHESIS GUIDANCE
 
 Four new fields accept per-table EDA signals beyond the original 4 analyses. Each is synthesized from its corresponding Phase 2 DAR type delivered in the inputs.
 
 **temporal_coverage_json** — from `{dar_temporal_coverage_json}`. One entry per date/timestamp column, keyed by column name. Each entry carries `min`, `max`, `span_days`, `null_pct`, `gap_count`. Copy findings verbatim from the DAR; do NOT invent values for columns not in the DAR input.
 
-**typical_values_range_json** — from `{dar_performance_baseline_json}`. One entry per numeric measure column, keyed by column name. Each entry carries `min`, `max`, `avg`, `stddev`, `p25`, `p75`. Copy findings verbatim. The LLM consumer (Piece 8 iteration, Create S2T) uses these as reference anchor values when writing aggregate SQL — e.g., to know that EKPO.NETWR typically ranges 100–50,000 EUR with p75=15,000.
+**typical_values_range_json** — from `{dar_performance_baseline_json}`. One entry per numeric measure column, keyed by column name. Each entry carries `min`, `max`, `avg`, `stddev`, `p25`, `p75`. Copy findings verbatim. The LLM consumer (the downstream iteration + Create S2T) uses these as reference anchor values when writing aggregate SQL — e.g., to know that EKPO.NETWR typically ranges 100–50,000 EUR with p75=15,000.
 
-**grain_relationships_json** — from `{dar_grain_relationship_json}`. List of relationships this table participates in. Each entry is self-contained per §25.9(c): `{other_table, role: "header" | "detail", detail_col, header_col, sum_match_pct, confidence}`. The DAR input carries both header-role and detail-role entries; emit the entries whose `subject_table` matches `{scope_table}` (field preserved from DAR's result_json). If no grain_relationship DARs apply to this table, emit `[]`.
+**grain_relationships_json** — from `{dar_grain_relationship_json}`. List of relationships this table participates in. Each entry is self-contained: `{other_table, role: "header" | "detail", detail_col, header_col, sum_match_pct, confidence}`. The DAR input carries both header-role and detail-role entries; emit the entries whose `subject_table` matches `{scope_table}` (field preserved from DAR's result_json). If no grain_relationship DARs apply to this table, emit `[]`.
 
 **natural_thresholds_json** — from `{dar_segmentation_threshold_json}`. One entry per numeric measure column, keyed by column name. Each entry carries `thresholds` (list of numbers) and `rationale` (string documenting distribution assumption). Copy verbatim; do not re-derive thresholds.
 
@@ -127,7 +127,7 @@ Pick the single best class; when a table could be two, favor the one most releva
 
 ### common_traps
 - Short prose. Call out null-vs-empty gotchas, fan-out joins, grain mismatches, currency/UoM assumptions — anything the DARs surface as a pitfall.
-- Example: "MSEG contains all goods-movement events; aggregating without filtering by BWART over-counts. Null ELIKZ indistinguishable from empty in hashdiff (known_issue #24)."
+- Example: "MSEG contains all goods-movement events; aggregating without filtering by BWART over-counts. Null ELIKZ indistinguishable from empty in hashdiff."
 
 ### reference_sql
 - 3-5 lines, actually compileable against `raw_sap.{scope_table}`.

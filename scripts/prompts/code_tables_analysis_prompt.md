@@ -22,7 +22,7 @@ The bundle's **static layer** may contain one or more of these description sourc
 
 1. `main_seeds.movement_type_mapping` — richest: description_en, direction, process_step, affects_stock. Join key: `movement_type = <scope_table>.BWART` (cast as needed — movement_type is INTEGER in the seed, BWART is VARCHAR in raw SAP).
 2. `raw_sap.t156` — SAP-standard text table, columns `BWART, BTEXT, SHKZG`. Join key: `BWART = <scope_table>.BWART`.
-3. **Convention-discovered decoders (v3.9 / 8.4.8 Part 2):** the runtime discovered these additional decoder seeds by shape — (≤500 rows, 2-4 columns, has a `code`-convention column + a `description`-convention column). Use any whose code column matches `{code_column}` or a near-name variant.
+3. **Convention-discovered decoders:** the runtime discovered these additional decoder seeds by shape — (≤500 rows, 2-4 columns, has a `code`-convention column + a `description`-convention column). Use any whose code column matches `{code_column}` or a near-name variant.
 
 {decoder_candidates}
 

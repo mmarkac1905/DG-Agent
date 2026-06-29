@@ -10,7 +10,7 @@ One prompt invocation produces one `dbt_models[]` list (typically 1 element). Th
 
 You are translating a validated SQL query into a production dbt model.
 
-The SQL in `final_query_sql` is AUTHORITATIVE — it passed the Piece 8 iteration loop's mechanical gate, semantic alignment gate, and citation audit. Your job is NOT to rewrite its semantics. Your job is to:
+The SQL in `final_query_sql` is AUTHORITATIVE — it passed the iteration loop's mechanical gate, semantic alignment gate, and citation audit. Your job is NOT to rewrite its semantics. Your job is to:
 
 1. Rewrite every literal schema-qualified table reference (`main_<schema>.<model_name>`) to its dbt Jinja form (`{{ ref('<model_name>') }}`).
 2. Add a `{{ config(materialized='<heuristic>') }}` header per the materialization rules below.

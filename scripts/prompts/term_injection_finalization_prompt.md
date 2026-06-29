@@ -1,6 +1,6 @@
 # Term Injection — Finalization Prompt
 
-Runtime-loaded by `scripts/run_term_injection.py` at §4a step 12 (once
+Runtime-loaded by `scripts/run_term_injection.py` (once
 per session, after iteration loop terminates). Runtime injects the full
 `{iteration_trace}` and the `{convergence_reason}` enum value at the
 markers below.
@@ -19,9 +19,8 @@ Same seven as iteration + reflection (`ontology_consumed`,
 `dar_consumed`, `prior_bar_consumed`, `semantic_model_consumed`,
 `dbt_semantic_model_consumed`). These represent the **union** across
 all iterations — the set of every source the iteration loop actually
-touched. Empty list `[]` is valid. `semantic_model_consumed` (Layer A;
-v3.6 §22.7) is the union of raw `table_name` rows. `dbt_semantic_model_consumed`
-(Layer B; v3.7 §23.7) is the union of dbt `model_name` rows.
+touched. Empty list `[]` is valid. `semantic_model_consumed` (Layer A) is the union of raw `table_name` rows. `dbt_semantic_model_consumed`
+(Layer B) is the union of dbt `model_name` rows.
 
 Finalization does **not** attest `bridge_coverage_consulted` — that
 field captures the iteration LLM's consultation of bridge_coverage
