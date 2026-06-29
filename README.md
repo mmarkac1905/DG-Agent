@@ -121,15 +121,16 @@ catalog, lineage, and S2T mappings directly on GitHub without building anything.
 ## Repository structure
 
 ```
-app/            Streamlit UI — dashboards + governance pages (glossary, catalog, data analysis)
-                claude_api.py = the LLM pipeline (Stage A scope, EDA, Stage D generation)
+app/            Streamlit UI + claude_api.py — the LLM pipeline (scope · EDA · S2T generation)
 dbt/
   models/       staging / vault / marts / obt / knowledge  (the 6 data layers)
-  seeds/        the knowledge graph (glossary, s2t_mapping, decisions, catalog, ...)
-scripts/        data generators, EDA analyzers, knowledge-wiki builder, session tooling
-knowledge/      auto-generated governance wiki (do not hand-edit)
-tests/          unit + regression tests
-CLAUDE.md       agent operating instructions + architecture (read first if you use an AI agent here)
+  seeds/        the knowledge graph — governance content (glossary, s2t_mapping, catalog,
+                rules) + the AI pipeline's run-state (domain/term analysis results, findings)
+scripts/        data generators, EDA analyzers, S2T pipeline runners, wiki builder
+  prompts/      LLM prompt templates — one per pipeline stage/analyzer, loaded at runtime
+knowledge/      generated governance wiki — committed so it's browsable on GitHub
+tests/          pytest suite + fixtures
+CLAUDE.md       agent & contributor guide (conventions for working in the repo)
 ```
 
 ---
