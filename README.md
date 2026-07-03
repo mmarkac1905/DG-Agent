@@ -2,6 +2,10 @@
 
 [![CI](https://github.com/mmarkac1905/DG-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/mmarkac1905/DG-Agent/actions/workflows/ci.yml)
 
+![Procurement Overview dashboard](docs/img/dashboard.png)
+*The Streamlit app on the generated data: procurement KPIs on the left-nav Dashboard pages, the
+governance layer (glossary, S2T, catalog, lineage) under Data Governance.*
+
 **Point it at a source system. It profiles the schema, learns the relationships from the actual data,
 then generates the source-to-target mappings and the transformation SQL itself — verified, deployed,
 lineage-tracked.** A business metric goes from a one-line definition to a tested data mart with no human
@@ -146,6 +150,10 @@ Layer 6  STREAMLIT  dashboard + governance UI reading from OBT / knowledge
 `s2t_mapping`, `sap_data_dictionary`, `data_vault_design`, …) and what the pipeline *learns* (per-table
 analysis results, join/cardinality findings, semantic models). The wiki under `knowledge/` is generated
 from these seeds; the source of truth is always the seeds + DuckDB.
+
+![Business Glossary](docs/img/business_glossary.png)
+*The Business Glossary UI: term definitions with grain + approval status, and the tabs where a term goes
+from definition → analysis → S2T specification → deploy.*
 
 ---
 
