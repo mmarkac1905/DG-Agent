@@ -5,3 +5,7 @@ streamlit>=1.30
 plotly>=5.18
 faker>=22.0
 requests>=2.31
+sqlglot>=25.0     # F.3 cardinality validator + bridge-coverage gate (SQL AST parsing)
+sqlparse>=0.5     # SQL formatting in the term-analysis (BAR) runner
+tiktoken>=0.7     # token counting for LLM context budgets
+PyYAML>=6.0       # dbt manifest/schema parsing helpers (also a dbt dependency)
