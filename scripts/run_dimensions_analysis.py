@@ -32,6 +32,7 @@ from pathlib import Path
 from collections import defaultdict
 
 import duckdb
+from _source_config import SOURCE_SCHEMA
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -115,13 +116,13 @@ def _max_source_ingestion(conn, table: str) -> str:
     try:
         has_col = conn.execute(
             "SELECT COUNT(*) FROM information_schema.columns "
-            "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+            f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
             "AND LOWER(column_name)='ingestion_date'",
             [table],
         ).fetchone()[0]
         if not has_col:
             return ""
-        r = conn.execute(f'SELECT MAX("ingestion_date") FROM raw_sap.{table}').fetchone()
+        r = conn.execute(f'SELECT MAX("ingestion_date") FROM {SOURCE_SCHEMA}.{table}').fetchone()
         return str(r[0]) if r and r[0] is not None else ""
     except Exception:
         return ""
@@ -130,7 +131,7 @@ def _max_source_ingestion(conn, table: str) -> str:
 def _schema_version(conn, table: str) -> str:
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position",
         [table],
     ).fetchall()
@@ -172,7 +173,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
         return 1
 
     t0 = time.perf_counter()
-    print(f"--- Dimensions analysis: raw_sap.{table} ---")
+    print(f"--- Dimensions analysis: {SOURCE_SCHEMA}.{table} ---")
 
     # known_issue #75: degrade gracefully on fresh tables (zero prior DARs)
     # — strict=True would raise ContextDegradedError and crash silently.
@@ -285,14 +286,14 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
                 # Provide actual columns of the table for repair
                 cols_rows = conn.execute(
                     "SELECT column_name FROM information_schema.columns "
-                    "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+                    f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
                     "ORDER BY ordinal_position",
                     [table],
                 ).fetchall()
                 cols_dump = ", ".join(c[0] for c in cols_rows)
                 retry_feedback = (
                     f"Prior SQL failed: {exec_error}\n\n"
-                    f"Actual columns of raw_sap.{table}: {cols_dump}\n\n"
+                    f"Actual columns of {SOURCE_SCHEMA}.{table}: {cols_dump}\n\n"
                     "Only reference columns from this list. Fix the SQL."
                 )
                 print(f"    [retry] execution error: {exec_error[:200]}")
@@ -351,7 +352,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
         )
         # More accurate total_rows: query the table once
         total_rows_val = conn.execute(
-            f"SELECT COUNT(*) FROM raw_sap.{table}"
+            f"SELECT COUNT(*) FROM {SOURCE_SCHEMA}.{table}"
         ).fetchone()[0]
 
         blockers_addressed, contract_violation, contract_reason = \

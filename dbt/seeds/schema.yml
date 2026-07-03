@@ -968,7 +968,7 @@ seeds:
         tests:
           - not_null
           - accepted_values:
-              values: [sap_standard, column_name_convention, source_column_roles, inferred, existing]
+              values: [sap_standard, column_name_convention, source_column_roles, inferred, existing, olist_kaggle_documentation]
       - name: needs_review
         description: >
           Integer boolean. 1 when description_source='inferred' OR the

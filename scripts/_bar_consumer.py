@@ -131,7 +131,7 @@ def resolve_promoted_bar(
                    dbt_semantic_model_consumed, semantic_model_consumed,
                    term_conditions_covered, final_metric_interpretation,
                    iteration_trace, confidence, iterations_count,
-                   executed_at_utc
+                   executed_at_utc, scope_tables
               FROM main_seeds.business_term_analysis_results
              WHERE business_term_id = ?
                AND status = 'promoted'
@@ -140,6 +140,24 @@ def resolve_promoted_bar(
             """,
             [term_id],
         ).fetchone()
+        # Greenfield check: does ANY Layer B (dbt_semantic_model) coverage
+        # exist for this BAR's scope tables? On a freshly onboarded source
+        # there is none, so an empty dbt_semantic_model_consumed is the
+        # expected state, not a suspect promotion.
+        layer_b_covered = False
+        if row is not None and row[11]:
+            scope = [t.strip().lower() for t in str(row[11]).split(",") if t.strip()]
+            if scope:
+                placeholders = ",".join("?" for _ in scope)
+                try:
+                    n = conn.execute(
+                        f"SELECT COUNT(*) FROM main_seeds.dbt_column_lineage "
+                        f"WHERE LOWER(origin_table) IN ({placeholders})",
+                        scope,
+                    ).fetchone()[0]
+                    layer_b_covered = bool(n)
+                except duckdb.Error:
+                    layer_b_covered = True  # can't verify -> keep strict contract
     finally:
         if owned:
             conn.close()
@@ -149,7 +167,7 @@ def resolve_promoted_bar(
 
     (bar_id, term, final_sql, dsm_consumed_raw, sm_consumed_raw,
      conditions_raw, metric_interp, trace_raw, confidence,
-     iter_count, executed_at) = row
+     iter_count, executed_at, _scope_tables_raw) = row
 
     # Required-field validation
     if not final_sql or not final_sql.strip():
@@ -169,10 +187,12 @@ def resolve_promoted_bar(
     trace = _parse_json_trace(trace_raw, bar_id)
 
     # At least one dbt_semantic_model_consumed ref target must exist
-    # for a promoted BAR (every term-analysis run on an ontology-covered
-    # scope produces at least one Layer B citation). If absent, the
-    # promotion is suspect — refuse to consume.
-    if not dsm_consumed:
+    # for a promoted BAR on an ontology-covered scope (every term-analysis
+    # run there produces at least one Layer B citation). If absent while
+    # coverage exists, the promotion is suspect — refuse to consume.
+    # Greenfield exception: a freshly onboarded source has no Layer B
+    # coverage at all, so an empty citation list is the expected state.
+    if not dsm_consumed and layer_b_covered:
         raise BarConsumptionError(
             f"{bar_id}: dbt_semantic_model_consumed is empty — a promoted "
             f"BAR should reference at least one Layer B model; "

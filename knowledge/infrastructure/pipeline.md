@@ -1,10 +1,10 @@
 # Infrastructure: pipeline
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Keywords: `pipeline, etl, ingestion, refresh, scheduler`
 
-## Related Decisions (32)
+## Related Decisions (33)
 
 - **#11** (2026-04-14) — knowledge_models_built: Intelligence layer complete. Session startup now surfaces live system state with health assessments. Context export ready for chat sessions.
 - **#13** (2026-04-14) — governance_streamlit_pages: Fixed page 7 layer->pipeline matching (spec had substring bug that missed vault/knowledge). Added denied status color. denied status is new enum — build_knowledge_wiki.py buckets only approved/draft so denied terms invisible in wiki index (cosmetic backlog).
@@ -38,6 +38,7 @@ Keywords: `pipeline, etl, ingestion, refresh, scheduler`
 - **#111** (2026-05-14) **[NEVER_REPEAT]** — pipeline_ops_must_consult_manifest_reverse_refs: Pipeline operations that mutate the dbt output graph MUST consult target/manifest.json reverse-ref data + s2t_mapping ownership data BEFORE any irreversible mutation. Operations blind to their own output graph corrupt downstream state. Known instances: KI #65 (scope re-derivation deletes Deploy rows), KI #71 (archive cascade). Reference impl: app/archive_dependency_analyzer.analyze_archive_impact.
 - **#112** (2026-06-25) — path3_sd_fi_infra_build: SD + FI are now first-class in the warehouse. Margin term cost side v1 = revenue - procurement cost; returns (MSEG 161/122 are DMBTR=0, unvalued) and warranty (ZHT_WARRANTY_LOG catalog-only, no data) deferred. Reference: scripts/generate_sd_billing.py, scripts/generate_fi_shadows.py, dbt/models/vault/link_sales_order_equipment.sql.
 - **#115** (2026-06-27) **[NEVER_REPEAT]** — pin_current_sonnet_not_dated_model_id: Dated model ids (claude-sonnet-4-20250514) get retired and 404 the whole pipeline. Pin the rolling alias claude-sonnet-4-6; better, centralize the id in one config so a retirement is a 1-line fix.
+- **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
 
 ## Related Domain Relationships (0)
 

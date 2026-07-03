@@ -1,6 +1,6 @@
 # Data Vault: link_design
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Keywords: `link_, relationship, link design, many-to-many, link_po_vendor, link_po_material, link_gr_po`
 
@@ -49,7 +49,7 @@ Keywords: `link_, relationship, link design, many-to-many, link_po_vendor, link_
 
 _(none)_
 
-## Open Issues (6)
+## Open Issues (8)
 
 - **#5** [open/medium] Vendor-equipment attribution requires vault traceability — Q4 discovery showed obt_procurement_overview alone cannot attribute equipment outcomes to vendors because multiple vendors share material numbers (join fan-out). Need a fact_equipment_with_vendor model built from link_equipment_gr -> link_gr_po -> link_po_vendor. Backlog for next…
 - **#66** [open/low] s2t_mapping undocumented in schema.yml — schema.yml has no entry for s2t_mapping. The 14-column shape (id, business_term_id, business_term_name, source_table, source_field, source_description, target_model, target_column, transformation_logic_plain, transformation_logic_sql, join_description, filter_description, notes, …
@@ -57,6 +57,8 @@ _(none)_
 - **#70** [open/low] Grain_relationship analyzer discovery function subsumed by schema_discovery — schema_discovery (Stage F) includes sum-match evidence in its relationship_shapes output for 1:N header-detail classifications, fully subsuming grain_relationship's discovery function. Grain_relationship remains potentially useful for term-scoped verification (verify relationship…
 - **#95** [open/medium] LIMIT-50 generic DAR cap silently starves entire scope tables when batches run on a subset of scope — Discovered 2026-04-26 during step 4 of Theme 1 (post-C1 + post-#93 verification). For BG027's scope (equi/mseg/mkpf/objk/mard), 12 in-scope EDA DARs sit at ranks 51-62 and never reach the bundle. 11 of the 12 are mard rows; the 12th is objk performance_baseline. All 12 are status…
 - **#122** [open/medium] dim_equipment uniqueness fails - link_equipment_material fan-out (1 device -> multiple materials) — link_equipment_material has 75236 rows for 45000 distinct equipment; 30236 devices (~67%) link to >1 material (e.g. CPE-00000330, an ONT, links to both CPE-ONT-003 and CPE-RTR-001). This fans dim_equipment out to 75236 rows, breaking unique_dim_equipment_equipment_number and uniq…
+- **#131** [open/medium] grain_relationship pre-filter requires shared numeric column names (SAP-shaped) — The analyzer's pair pre-filter needs a shared numeric column NAME between two tables (SAP header/detail convention). On Olist, where numeric column names never repeat across tables, it emitted 0 pairs — the sum-match heuristic produces no evidence on sources with distinct naming.…
+- **#133** [open/medium] schema_discovery relationship shapes use distinct-key ratios, not row multiplicity — orders<->order_payments was shaped one_to_one (distinct order_id counts match) although 2,961 orders have multiple payment rows (avg 1.03, max 3). join_cardinality's per-direction measurements are the authoritative evidence; the shape field is cosmetic-but-misleading. Consider de…
 
 ## DO NOT (Anti-patterns)
 

@@ -1,10 +1,10 @@
 # Data Product: cost_analysis
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Keywords: `cost, price, invoice, rbkp, rseg, netpr, netwr, tco, margin, budget, trošak, cijena`
 
-## Related Decisions (39)
+## Related Decisions (40)
 
 - **#9** (2026-04-14) — marts_and_obt_built: Full analytical stack complete: raw -> staging -> vault -> marts -> OBT. Fixed three spec bugs: hk_po_item vs hk_po_material mismatch gr_totals hk_material_document join fact_invoices hk_vendor not in sat.
 - **#16** (2026-04-14) — business_glossary_audience_split: Two-audience split is the default pattern for any governance UI in this project. Never collapse back into a single tab.
@@ -45,6 +45,7 @@ Keywords: `cost, price, invoice, rbkp, rseg, netpr, netwr, tco, margin, budget, 
 - **#119** (2026-06-28) **[NEVER_REPEAT]** — deployment_date_coalesce_inbdt_then_first_bill: When deployment movements are not serial-linked, first service-bill date is the most defensible deployment proxy (aligns cost recognition with revenue). Resolves the INBDT-null analyst_decision blocker.
 - **#120** (2026-06-28) **[NEVER_REPEAT]** — drop_returns_leg_unvalued_in_data: Drop a margin component when the source movements carry no valuation. Like warranty earlier - synthetic data only values inbound (101) movements.
 - **#121** (2026-06-28) **[NEVER_REPEAT]** — bg030_deployed_contribution_margin_mart: Customer-centric CPE contribution margin (service_plan x tenure_band x month) deployed end-to-end Stage 0->E. Always reconcile suspected magnitude bugs to source before declaring a defect.
+- **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
 
 ## Related Domain Relationships (0)
 

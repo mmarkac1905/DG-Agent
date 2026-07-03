@@ -39,6 +39,8 @@ from typing import Optional
 
 import duckdb
 
+from _source_config import SOURCE_SCHEMA
+
 from _dar_supersede import supersede_prior_dars_for_table
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -108,7 +110,7 @@ def _next_dar_id() -> str:
 def _schema_version(conn, table: str) -> str:
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position",
         [table],
     ).fetchall()
@@ -116,10 +118,10 @@ def _schema_version(conn, table: str) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
 
 
-def _raw_sap_tables(conn) -> list[str]:
+def _source_tables(conn) -> list[str]:
     rows = conn.execute(
         "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema='raw_sap' ORDER BY table_name"
+        f"WHERE table_schema='{SOURCE_SCHEMA}' ORDER BY table_name"
     ).fetchall()
     return [r[0].lower() for r in rows]
 
@@ -155,7 +157,7 @@ def _date_columns(conn, table: str) -> list[tuple[str, str]]:
     SAP-convention VARCHAR(YYYYMMDD)."""
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position",
         [table],
     ).fetchall()
@@ -181,7 +183,7 @@ def _analyze_column(conn, table: str, col: str, detect_mode: str = "date_type") 
         treated as missing; invalid formats return NULL from strptime.
     """
     safe_col = f'"{col}"'
-    safe_table = f'raw_sap."{table}"'
+    safe_table = f'{SOURCE_SCHEMA}."{table}"'
     # Expression representing the column as a TIMESTAMP
     if detect_mode == "sap_varchar":
         # strptime returns NULL on parse failure; NULLIF handles empty string
@@ -308,7 +310,7 @@ def analyze_table(conn, table: str) -> int:
             "promoted_at_utc": "",
             "promoted_to_target_id": "",
             "run_id": run_id,
-            "query_sql": f"-- date-range aggregation on raw_sap.{table}.{col}",
+            "query_sql": f"-- date-range aggregation on {SOURCE_SCHEMA}.{table}.{col}",
             "row_count": "",
             "error_message": "",
             "status": "success",
@@ -352,8 +354,8 @@ def main(argv: Optional[list[str]] = None, conn=None) -> int:
         if args.tables:
             tables = [t.strip().lower() for t in args.tables.split(",") if t.strip()]
         else:
-            tables = _raw_sap_tables(conn)
-        print(f"Analyzing {len(tables)} raw_sap tables for temporal_coverage...")
+            tables = _source_tables(conn)
+        print(f"Analyzing {len(tables)} {SOURCE_SCHEMA} tables for temporal_coverage...")
         for t in tables:
             total += analyze_table(conn, t)
     finally:

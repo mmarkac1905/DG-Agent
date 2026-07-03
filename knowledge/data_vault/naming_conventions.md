@@ -1,10 +1,10 @@
 # Data Vault: naming_conventions
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Keywords: `naming, convention, prefix, dv standard, dv naming`
 
-## Related Decisions (12)
+## Related Decisions (13)
 
 - **#7** (2026-04-14) — staging_layer_1to1: Staging follows purist Data Vault approach: mechanical transformation only. Business naming and logic deferred to vault layer. Dropped hk_po_vendor from stg_sap__ekpo — vault-time resolution via EKKO join.
 - **#8** (2026-04-14) — data_vault_layer_built: Data Vault complete. 33 incremental models (spec said 32 but listed 16 satellites so actual total is 33). Hubs insert-only. Satellites use hashdiff for SCD2 change detection. Fixed link_equipment_gr to hash MBLNR+MJAHR via SERI->MKPF join so hk_material_document matches hub definition. Ready for marts layer.
@@ -18,12 +18,13 @@ Keywords: `naming, convention, prefix, dv standard, dv naming`
 - **#96** (2026-05-05) — rule3_enforcement_checker_plus_two_mart_refactors: RULE 3 now has a checker. Two of three violators refactored to vault-sourced patterns matching fact_purchase_orders / fact_invoices conventions. The third is allowlisted with a clear fix path (KI-121: build sat_invoice_item + zmm_approval_log staging+vault, then refactor). Future model changes that introduce new RULE 3 violations will hard-fail end_of_task.py.
 - **#98** (2026-05-05) — rule_43_codify_facts_carry_hk_plus_natural_keys_not_other_dim_attrs: Codified rather than refactored. RULE 43 is paired with RULE 3 (vault-only refs from marts, enforced by scripts/check_rule3_layer_violations.py) to give the architectural layering a complete written contract: facts ref vault, facts carry hash + natural keys only, no dim attributes leak into facts. If a future code reviewer wants strict Kimball, RULE 43 is the explicit decision to override — they'd need a new decision row supplanting this one. No checker for RULE 43 yet (would need to model the dim-attribute set per dim); could be added if violations surface in practice.
 - **#102** (2026-05-05) — seeds_catalog_streamlit_page_per_table_lineage_documentation: Per-table seed inspection now available in the dashboard. Analyst doesn't need to leave Streamlit to answer 'where does this data come from?'. Complementary to knowledge/seeds_catalog.md (markdown for narrative, dashboard for live data + grep-discovered lineage). dbt docs (`dbt docs generate && dbt docs serve`) would add native column-level lineage viz with the DAG graph — kept as a separate optional tooling; not wired into end_of_task.py yet because the docs page runs on a different port and most navigation needs land at the Streamlit dashboard.
+- **#126** (2026-07-04) — greenfield_source_generation_contracts: Every generation-time contract needs a defined greenfield behavior. Grounding must cover everything the model is allowed to ref().
 
 ## Related Domain Relationships (0)
 
 _(none)_
 
-## Open Issues (6)
+## Open Issues (8)
 
 - **#29** [open/medium] Create S2T directives cover 4 dynamic sources but not ontology layer — LLM can pick production-model names and create duplicates — The Create S2T A/B test showed the new path on BG001 generated a model named fact_purchase_orders, which already exists in dbt/models/marts/fact_purchase_orders.sql. The bundle ontology layer contained the existing_models list — LLM had access to it — but picked a colliding name.…
 - **#50** [open/low] sap_data_dictionary backfill produced zero inferred rows - LLM self-confidence uncalibrated — The catalog backfill produced 269 generated rows, all claimed description_source in {sap_standard, column_name_convention, source_column_roles} with needs_review=0. Zero rows flagged as 'inferred'. LLM self-confidence is uncalibrated - not a calibrated coverage-gap signal. Stage …
@@ -31,6 +32,8 @@ _(none)_
 - **#62** [open/medium] Re-run S2T flow — deferred from Stage D.2 — Stage D.2 originally specified a Re-run S2T button for approved+non-empty terms. Dropped because re-running collides with deployed .sql files and existing s2t_mapping rows — `create_s2t_with_implementation` has no archival semantics. Safe re-run requires (a) renaming existing `db…
 - **#66** [open/low] s2t_mapping undocumented in schema.yml — schema.yml has no entry for s2t_mapping. The 14-column shape (id, business_term_id, business_term_name, source_table, source_field, source_description, target_model, target_column, transformation_logic_plain, transformation_logic_sql, join_description, filter_description, notes, …
 - **#120** [open/low] Wire orphan-relation cleanup into end_of_task.py so deleted models auto-drop — When a dbt model file is deleted (e.g., KI-101 deleted fact_active_deployed_cpe.sql on 2026-05-04), the materialized table in DuckDB persists as an orphan because dbt does NOT auto-drop relations for deleted model files. The orphan stays until someone explicitly DROPs it. Today's…
+- **#131** [open/medium] grain_relationship pre-filter requires shared numeric column names (SAP-shaped) — The analyzer's pair pre-filter needs a shared numeric column NAME between two tables (SAP header/detail convention). On Olist, where numeric column names never repeat across tables, it emitted 0 pairs — the sum-match heuristic produces no evidence on sources with distinct naming.…
+- **#132** [open/high] FK/join discovery misses semantically-joinable columns with different names — Olist geolocation.geolocation_zip_code_prefix joins customers.customer_zip_code_prefix / sellers.seller_zip_code_prefix — the dataset's most dangerous fanout (up to 1,146 rows per key) — but shared-name matching and schema_discovery FK detection both miss it. No cardinality evide…
 
 ## DO NOT (Anti-patterns)
 

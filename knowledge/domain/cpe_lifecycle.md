@@ -1,10 +1,10 @@
 # Domain: cpe_lifecycle
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Keywords: `cpe lifecycle, device lifecycle, installed, returned, defective, in-stock, deployed, provisioned`
 
-## Related Decisions (19)
+## Related Decisions (20)
 
 - **#3** (2026-04-14) — abap_logic_catalog_created: ABAP documentation layer complete — covers serial validation equipment lifecycle provisioning bridge vendor scoring warranty tracking and financial depreciation. In real engagement this would be auto-populated by Claude scanning exported ABAP source.
 - **#9** (2026-04-14) — marts_and_obt_built: Full analytical stack complete: raw -> staging -> vault -> marts -> OBT. Fixed three spec bugs: hk_po_item vs hk_po_material mismatch gr_totals hk_material_document join fact_invoices hk_vendor not in sat.
@@ -25,6 +25,7 @@ Keywords: `cpe lifecycle, device lifecycle, installed, returned, defective, in-s
 - **#112** (2026-06-25) — path3_sd_fi_infra_build: SD + FI are now first-class in the warehouse. Margin term cost side v1 = revenue - procurement cost; returns (MSEG 161/122 are DMBTR=0, unvalued) and warranty (ZHT_WARRANTY_LOG catalog-only, no data) deferred. Reference: scripts/generate_sd_billing.py, scripts/generate_fi_shadows.py, dbt/models/vault/link_sales_order_equipment.sql.
 - **#118** (2026-06-28) **[NEVER_REPEAT]** — cpe_margin_is_customer_centric_not_material_centric: CPE profitability is a customer/segment + retention question, not a per-material one. Amortize device capex straight-line over the 24-month giveaway period and match to deployed devices.
 - **#121** (2026-06-28) **[NEVER_REPEAT]** — bg030_deployed_contribution_margin_mart: Customer-centric CPE contribution margin (service_plan x tenure_band x month) deployed end-to-end Stage 0->E. Always reconcile suspected magnitude bugs to source before declaring a defect.
+- **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
 
 ## Related Domain Relationships (0)
 

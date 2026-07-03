@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import duckdb
+from _source_config import SOURCE_SCHEMA
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -103,7 +104,7 @@ def _next_dar_id() -> str:
 def _schema_version(conn, table: str) -> str:
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position",
         [table],
     ).fetchall()
@@ -114,7 +115,7 @@ def _schema_version(conn, table: str) -> str:
 def _table_columns(conn, table: str) -> list[str]:
     rows = conn.execute(
         "SELECT column_name FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position",
         [table],
     ).fetchall()
@@ -131,14 +132,14 @@ def _max_source_ingestion(conn, table: str) -> str:
     try:
         has_col = conn.execute(
             "SELECT COUNT(*) FROM information_schema.columns "
-            "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+            f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
             "AND LOWER(column_name)='ingestion_date'",
             [table],
         ).fetchone()[0]
         if not has_col:
             return ""
         r = conn.execute(
-            f'SELECT MAX("ingestion_date") FROM raw_sap.{table}'
+            f'SELECT MAX("ingestion_date") FROM {SOURCE_SCHEMA}.{table}'
         ).fetchone()
         return str(r[0]) if r and r[0] is not None else ""
     except Exception:
@@ -218,7 +219,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
         return 1
 
     t0 = time.perf_counter()
-    print(f"--- Completeness analysis: raw_sap.{table} ---")
+    print(f"--- Completeness analysis: {SOURCE_SCHEMA}.{table} ---")
 
     # Stage 1: scope + bundle
     # known_issue #75: strict=True raises ContextDegradedError when the
@@ -276,7 +277,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
         schema_version = _schema_version(conn, table)
         columns = _table_columns(conn, table)
         if not columns:
-            print(f"[error] raw_sap.{table} has no columns (or doesn't exist)")
+            print(f"[error] {SOURCE_SCHEMA}.{table} has no columns (or doesn't exist)")
             return 2
 
         total_input_tokens = 0
@@ -338,7 +339,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
                 retry_feedback = (
                     f"Prior SQL failed execution:\n"
                     f"  Error: {exec_error}\n\n"
-                    f"Actual columns of raw_sap.{table}:\n{schema_dump}\n\n"
+                    f"Actual columns of {SOURCE_SCHEMA}.{table}:\n{schema_dump}\n\n"
                     "Fix the SQL so it runs against only these columns and "
                     "returns one row per column with (column_name, null_count, "
                     "total_rows)."
@@ -472,7 +473,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--table", required=True, metavar="NAME",
-                    help="raw_sap table to analyze (lowercase)")
+                    help=f"{SOURCE_SCHEMA} table to analyze (lowercase)")
     ap.add_argument("--term-id", metavar="ID", default=None,
                     help="optional business_term_id for scope cascade")
     ap.add_argument("--verbose", action="store_true")

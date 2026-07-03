@@ -39,6 +39,8 @@ from typing import Optional
 
 import duckdb
 
+from _source_config import SOURCE_SCHEMA
+
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _SEED_DIR = _PROJECT_ROOT / "dbt" / "seeds"
 _DB_PATH = _PROJECT_ROOT / "cpe_analytics.duckdb"
@@ -117,10 +119,10 @@ def _type_family(data_type: str) -> str:
 
 # ─── schema introspection ──────────────────────────────────────────────
 
-def _raw_sap_tables(conn) -> list[str]:
+def _source_tables(conn) -> list[str]:
     rows = conn.execute(
         "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema='raw_sap' ORDER BY table_name"
+        f"WHERE table_schema='{SOURCE_SCHEMA}' ORDER BY table_name"
     ).fetchall()
     return [r[0].lower() for r in rows]
 
@@ -129,14 +131,14 @@ def _table_columns(conn, table: str) -> dict[str, str]:
     """Returns {original_case_column_name: data_type_uppercase}."""
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?)",
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?)",
         [table],
     ).fetchall()
     return {c: (t or "").upper() for c, t in rows}
 
 
 def _row_count(conn, table: str) -> int:
-    safe = f'raw_sap."{table}"'
+    safe = f'{SOURCE_SCHEMA}."{table}"'
     return int(conn.execute(f"SELECT COUNT(*) FROM {safe}").fetchone()[0] or 0)
 
 
@@ -144,7 +146,7 @@ def _schema_version_pair(conn, t1: str, t2: str) -> str:
     rows = conn.execute(
         "SELECT table_name, column_name, data_type "
         "FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' "
         "AND LOWER(table_name) IN (LOWER(?), LOWER(?)) "
         "ORDER BY table_name, ordinal_position",
         [t1, t2],
@@ -399,8 +401,8 @@ def _measure_direct(conn, t_small: str, k_small: list[str],
     Per §5.3: 50–500 distinct keys, floor at 50 (or all if <50).
     Returns measurement dict consumed by _classify and the DAR builder.
     """
-    safe_small = f'raw_sap."{t_small}"'
-    safe_large = f'raw_sap."{t_large}"'
+    safe_small = f'{SOURCE_SCHEMA}."{t_small}"'
+    safe_large = f'{SOURCE_SCHEMA}."{t_large}"'
     small_keys_sql = ", ".join(f's."{c}"' for c in k_small)
     large_keys_sql = ", ".join(f'l."{c}"' for c in k_large)
     join_on = " AND ".join(
@@ -480,9 +482,9 @@ def _measure_bridge(conn, t1: str, k1: list[str],
 
     t1.k1 ↔ t3.k3_left, then t3.k3_right ↔ t2.k2.
     """
-    safe_t1 = f'raw_sap."{t1}"'
-    safe_t2 = f'raw_sap."{t2}"'
-    safe_t3 = f'raw_sap."{t3}"'
+    safe_t1 = f'{SOURCE_SCHEMA}."{t1}"'
+    safe_t2 = f'{SOURCE_SCHEMA}."{t2}"'
+    safe_t3 = f'{SOURCE_SCHEMA}."{t3}"'
     join_t1_t3 = " AND ".join(
         f's."{a}" = three."{b}"' for a, b in zip(k1, k3_left)
     )
@@ -639,7 +641,8 @@ def _append_dar(row: dict) -> None:
 
 def _build_dar(t1: str, t2: str, candidate: dict, m: dict,
                schema_version: str, run_id: str,
-               row_counts: dict[str, int]) -> dict:
+               row_counts: dict[str, int],
+               extra: Optional[dict] = None) -> dict:
     fanout_class = _classify(m)
     finding = {
         "t1": t1,
@@ -666,6 +669,8 @@ def _build_dar(t1: str, t2: str, candidate: dict, m: dict,
     if candidate["kind"] == "bridge":
         finding["bridge_keys_left"] = candidate.get("bridge_keys_left", [])
         finding["bridge_keys_right"] = candidate.get("bridge_keys_right", [])
+    if extra:
+        finding.update(extra)
     return {
         "id": _next_dar_id(),
         "analysis_type": _ANALYSIS_TYPE,
@@ -713,7 +718,7 @@ def analyze_pair(conn, t1: str, t2: str,
         t1, t2 = t2, t1
 
     if all_tables is None:
-        all_tables = _raw_sap_tables(conn)
+        all_tables = _source_tables(conn)
 
     direct = _direct_candidates(conn, t1, t2)
 
@@ -731,15 +736,42 @@ def analyze_pair(conn, t1: str, t2: str,
     def _measure_and_emit(cand: dict) -> Optional[str]:
         """Measure the candidate, build + append the DAR, return its
         fanout_class (or None on failure)."""
+        extra: Optional[dict] = None
         if cand["kind"] == "direct":
             k1_orig = _resolve_case_keys(t1_cols, cand["key_columns_t1"])
             k2_orig = _resolve_case_keys(t2_cols, cand["key_columns_t2"])
             if k1_orig is None or k2_orig is None:
                 return None
-            if n1 <= n2:
-                m = _measure_direct(conn, t1, k1_orig, t2, k2_orig)
-            else:
-                m = _measure_direct(conn, t2, k2_orig, t1, k1_orig)
+            # Fanout is direction-specific: joining FROM the detail side
+            # is a safe N:1 lookup even when the reverse direction
+            # explodes. Measure both directions; keep the legacy
+            # smaller->larger measurement as the top-level (conservative)
+            # numbers, and record per-direction classes so consumers can
+            # accept joins written in the safe direction.
+            m12 = _measure_direct(conn, t1, k1_orig, t2, k2_orig)
+            m21 = _measure_direct(conn, t2, k2_orig, t1, k1_orig)
+            m = m12 if n1 <= n2 else m21
+            c12, c21 = _classify(m12), _classify(m21)
+            safe_direction = None
+            for wanted in ("per_record_key", "header_detail"):
+                for direction, cls in ((f"{t1}->{t2}", c12),
+                                       (f"{t2}->{t1}", c21)):
+                    if cls == wanted:
+                        safe_direction = direction
+                        break
+                if safe_direction:
+                    break
+            extra = {
+                "direction_fanout": {
+                    f"{t1}->{t2}": {"avg_fanout": round(m12["avg_fanout"], 2),
+                                    "max_fanout": m12["max_fanout"],
+                                    "fanout_class": c12},
+                    f"{t2}->{t1}": {"avg_fanout": round(m21["avg_fanout"], 2),
+                                    "max_fanout": m21["max_fanout"],
+                                    "fanout_class": c21},
+                },
+                "safe_direction": safe_direction,
+            }
         else:  # bridge
             t3 = cand["bridge_via"]
             t3_cols = _table_columns(conn, t3)
@@ -756,7 +788,7 @@ def analyze_pair(conn, t1: str, t2: str,
                                 k3_right_orig, t2, k2_orig)
         try:
             dar = _build_dar(t1, t2, cand, m, schema_version, run_id,
-                             row_counts)
+                             row_counts, extra=extra)
         except Exception as e:  # noqa: BLE001
             print(f"  [err]  {t1}<->{t2} candidate {cand}: {e}")
             return None
@@ -806,8 +838,8 @@ def analyze_pair(conn, t1: str, t2: str,
 def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="join_cardinality analyzer.")
     p.add_argument("--tables", type=str, default=None,
-                   help="Comma-separated subset of raw_sap tables to "
-                        "analyze. Default: all raw_sap tables.")
+                   help=f"Comma-separated subset of {SOURCE_SCHEMA} tables to "
+                        f"analyze. Default: all {SOURCE_SCHEMA} tables.")
     p.add_argument("--pairs", type=str, default=None,
                    help="Single pair (e.g. equi,mseg). Mutually exclusive "
                         "with --tables.")
@@ -825,7 +857,7 @@ def main(argv: Optional[list[str]] = None,
         conn = duckdb.connect(str(_DB_PATH), read_only=True)
     total = 0
     try:
-        all_tables = _raw_sap_tables(conn)
+        all_tables = _source_tables(conn)
         if args.pairs:
             parts = [t.strip().lower() for t in args.pairs.split(",")]
             if len(parts) != 2:

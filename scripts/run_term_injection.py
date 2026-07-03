@@ -43,6 +43,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import duckdb
+from _source_config import SOURCE_SCHEMA
 import requests
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -576,7 +577,7 @@ _SQL_KEYWORDS = frozenset({
     "boolean", "bool", "json", "array", "list", "struct", "map",
     # Schema prefixes used in project
     "main", "main_seeds", "main_staging", "main_vault", "main_marts",
-    "main_obt", "main_knowledge", "raw_sap", "information_schema",
+    "main_obt", "main_knowledge", f"{SOURCE_SCHEMA}", "information_schema",
     # DML + DDL keywords (CREATE TABLE/VIEW used in collision scenarios)
     "default", "values", "insert", "update", "delete",
     "create", "table", "view", "drop", "alter", "if", "exists",
@@ -817,7 +818,7 @@ def _ast_audit(
         qualified_cols.add(col)
         # Skip schema-qualified table refs handled as tables above
         if prefix in ("main_seeds", "main_staging", "main_vault",
-                      "main_marts", "main_obt", "main_knowledge", "raw_sap",
+                      "main_marts", "main_obt", "main_knowledge", f"{SOURCE_SCHEMA}",
                       "main", "information_schema"):
             continue
         # If prefix is a known alias / CTE / table, validate column

@@ -38,6 +38,8 @@ from typing import Optional
 
 import duckdb
 
+from _source_config import SOURCE_SCHEMA
+
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _SEED_DIR = _PROJECT_ROOT / "dbt" / "seeds"
 _DB_PATH = _PROJECT_ROOT / "cpe_analytics.duckdb"
@@ -88,7 +90,7 @@ def _next_dar_id() -> str:
 def _schema_version_pair(conn, t1: str, t2: str) -> str:
     rows = conn.execute(
         "SELECT table_name, column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' "
         "AND LOWER(table_name) IN (LOWER(?), LOWER(?)) "
         "ORDER BY table_name, ordinal_position",
         [t1, t2],
@@ -100,16 +102,16 @@ def _schema_version_pair(conn, t1: str, t2: str) -> str:
 def _table_columns(conn, table: str) -> dict[str, str]:
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?)",
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?)",
         [table],
     ).fetchall()
     return {c: (t or "") for c, t in rows}
 
 
-def _raw_sap_tables(conn) -> list[str]:
+def _source_tables(conn) -> list[str]:
     rows = conn.execute(
         "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema='raw_sap' ORDER BY table_name"
+        f"WHERE table_schema='{SOURCE_SCHEMA}' ORDER BY table_name"
     ).fetchall()
     return [r[0].lower() for r in rows]
 
@@ -153,8 +155,8 @@ def _compute_sum_match(
     matches header-sum within ±_TOLERANCE. Returns None if no matching
     keys (insufficient signal).
     """
-    safe_t1 = f'raw_sap."{t1}"'
-    safe_t2 = f'raw_sap."{t2}"'
+    safe_t1 = f'{SOURCE_SCHEMA}."{t1}"'
+    safe_t2 = f'{SOURCE_SCHEMA}."{t2}"'
     safe_t1_join = f'"{t1_join}"'
     safe_t1_col = f'"{t1_col}"'
     safe_t2_join = f'"{t2_join}"'
@@ -440,7 +442,7 @@ def main(argv: Optional[list[str]] = None, conn=None) -> int:
             if args.tables:
                 tables = [t.strip().lower() for t in args.tables.split(",") if t.strip()]
             else:
-                tables = _raw_sap_tables(conn)
+                tables = _source_tables(conn)
             pairs = _candidate_pairs(conn, tables)
             print(f"Analyzing {len(pairs)} candidate table pairs for grain_relationship "
                   f"(pre-filtered from {len(tables)} raw tables)...")

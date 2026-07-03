@@ -1,10 +1,10 @@
 # Infrastructure: dbt_project
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Keywords: `dbt, model, seed, test, macro, schema.yml, dbt_project`
 
-## Related Decisions (89)
+## Related Decisions (91)
 
 - **#1** (2026-04-13) — project_initialized: Framework ready for SAP sample data generation and Data Vault modeling
 - **#7** (2026-04-14) — staging_layer_1to1: Staging follows purist Data Vault approach: mechanical transformation only. Business naming and logic deferred to vault layer. Dropped hk_po_vendor from stg_sap__ekpo — vault-time resolution via EKKO join.
@@ -95,6 +95,8 @@ Keywords: `dbt, model, seed, test, macro, schema.yml, dbt_project`
 - **#118** (2026-06-28) **[NEVER_REPEAT]** — cpe_margin_is_customer_centric_not_material_centric: CPE profitability is a customer/segment + retention question, not a per-material one. Amortize device capex straight-line over the 24-month giveaway period and match to deployed devices.
 - **#121** (2026-06-28) **[NEVER_REPEAT]** — bg030_deployed_contribution_margin_mart: Customer-centric CPE contribution margin (service_plan x tenure_band x month) deployed end-to-end Stage 0->E. Always reconcile suspected magnitude bugs to source before declaring a defect.
 - **#123** (2026-06-29) **[NEVER_REPEAT]** — enforce_rule3_and_vault_columns_at_generation: Enforce architecture rules at GENERATION with deterministic pre-flights + bounded repair-retry; dbt build is the hard backstop.
+- **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
+- **#126** (2026-07-04) — greenfield_source_generation_contracts: Every generation-time contract needs a defined greenfield behavior. Grounding must cover everything the model is allowed to ref().
 
 ## Related Domain Relationships (0)
 

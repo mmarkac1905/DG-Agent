@@ -1,6 +1,7 @@
 """Stage F — schema_discovery analyzer.
 
-Per-table DAR characterizing the relational structure of a raw_sap table:
+Per-table DAR characterizing the relational structure of a source-schema
+table (default raw_sap):
   - PK candidates (single-column + composite, role='key' pruned)
   - FK candidates (with referential integrity % vs all other raw tables)
   - Relationship shapes (1:1 / 1:N / N:M with sum-match for header-detail)
@@ -50,6 +51,7 @@ from typing import Optional
 import duckdb
 
 from _dar_supersede import supersede_prior_dars_for_table
+from _source_config import SOURCE_SCHEMA
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _SEED_DIR = _PROJECT_ROOT / "dbt" / "seeds"
@@ -114,7 +116,7 @@ def _next_dar_id() -> str:
 def _schema_version(conn, table: str) -> str:
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position",
         [table],
     ).fetchall()
@@ -122,17 +124,17 @@ def _schema_version(conn, table: str) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
 
 
-def _raw_sap_tables(conn) -> list[str]:
+def _source_tables(conn) -> list[str]:
     rows = conn.execute(
         "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema='raw_sap' ORDER BY table_name"
+        f"WHERE table_schema='{SOURCE_SCHEMA}' ORDER BY table_name"
     ).fetchall()
     return [r[0].lower() for r in rows]
 
 
 def _row_count(conn, table: str) -> int:
     try:
-        r = conn.execute(f'SELECT COUNT(*) FROM raw_sap."{table}"').fetchone()
+        r = conn.execute(f'SELECT COUNT(*) FROM {SOURCE_SCHEMA}."{table}"').fetchone()
         return int(r[0]) if r else 0
     except duckdb.Error:
         return 0
@@ -142,7 +144,7 @@ def _table_columns(conn, table: str) -> list[tuple[str, str]]:
     """(column_name, data_type) for a raw_sap table."""
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position",
         [table],
     ).fetchall()
@@ -200,7 +202,7 @@ def _col_distinct_and_nulls(conn, table: str, cols: list[str]) -> Optional[tuple
         r = conn.execute(
             f'SELECT COUNT(*), COUNT(DISTINCT ({col_list})), '
             f'COUNT(*) FILTER (WHERE {null_pred}) '
-            f'FROM raw_sap."{table}"'
+            f'FROM {SOURCE_SCHEMA}."{table}"'
         ).fetchone()
         return (int(r[0]), int(r[1]), int(r[2]))
     except duckdb.Error:
@@ -279,7 +281,7 @@ def _discover_pk_candidates(conn, table: str) -> list[dict]:
         for col in non_mandt:
             try:
                 r = conn.execute(
-                    f'SELECT COUNT(DISTINCT "{col}") FROM raw_sap."{table}"'
+                    f'SELECT COUNT(DISTINCT "{col}") FROM {SOURCE_SCHEMA}."{table}"'
                 ).fetchone()
                 distincts.append((col, int(r[0]) if r else 0))
             except duckdb.Error:
@@ -370,10 +372,10 @@ def _discover_fk_candidates(
                 try:
                     r = conn.execute(
                         f'SELECT '
-                        f'  (SELECT COUNT(DISTINCT "{from_col}") FROM raw_sap."{table}" '
+                        f'  (SELECT COUNT(DISTINCT "{from_col}") FROM {SOURCE_SCHEMA}."{table}" '
                         f'   WHERE "{from_col}" IS NOT NULL) AS from_distinct, '
-                        f'  (SELECT COUNT(DISTINCT a."{from_col}") FROM raw_sap."{table}" a '
-                        f'   WHERE a."{from_col}" IN (SELECT "{to_col}" FROM raw_sap."{other}") '
+                        f'  (SELECT COUNT(DISTINCT a."{from_col}") FROM {SOURCE_SCHEMA}."{table}" a '
+                        f'   WHERE a."{from_col}" IN (SELECT "{to_col}" FROM {SOURCE_SCHEMA}."{other}") '
                         f'     AND a."{from_col}" IS NOT NULL) AS overlap'
                     ).fetchone()
                 except duckdb.Error:
@@ -438,11 +440,11 @@ def _classify_relationship_shapes(
         try:
             r = conn.execute(
                 f'SELECT '
-                f'  (SELECT COUNT(*) FROM raw_sap."{table}") AS n_from, '
-                f'  (SELECT COUNT(DISTINCT "{from_col}") FROM raw_sap."{table}" '
+                f'  (SELECT COUNT(*) FROM {SOURCE_SCHEMA}."{table}") AS n_from, '
+                f'  (SELECT COUNT(DISTINCT "{from_col}") FROM {SOURCE_SCHEMA}."{table}" '
                 f'   WHERE "{from_col}" IS NOT NULL) AS from_distinct, '
-                f'  (SELECT COUNT(*) FROM raw_sap."{to_table}") AS n_to, '
-                f'  (SELECT COUNT(DISTINCT "{to_col}") FROM raw_sap."{to_table}" '
+                f'  (SELECT COUNT(*) FROM {SOURCE_SCHEMA}."{to_table}") AS n_to, '
+                f'  (SELECT COUNT(DISTINCT "{to_col}") FROM {SOURCE_SCHEMA}."{to_table}" '
                 f'   WHERE "{to_col}" IS NOT NULL) AS to_distinct'
             ).fetchone()
         except duckdb.Error:
@@ -488,10 +490,10 @@ def _classify_relationship_shapes(
                     r2 = conn.execute(
                         f'WITH h AS ( '
                         f'  SELECT "{to_col if shape == "header_detail" else from_col}" AS k, '
-                        f'         "{num_col}" AS v FROM raw_sap."{header_t}" '
+                        f'         "{num_col}" AS v FROM {SOURCE_SCHEMA}."{header_t}" '
                         f'), d AS ( '
                         f'  SELECT "{from_col if shape == "header_detail" else to_col}" AS k, '
-                        f'         SUM("{num_col}") AS s FROM raw_sap."{detail_t}" GROUP BY 1 '
+                        f'         SUM("{num_col}") AS s FROM {SOURCE_SCHEMA}."{detail_t}" GROUP BY 1 '
                         f') '
                         f'SELECT '
                         f'  (SELECT COUNT(*) FROM h JOIN d USING(k) '
@@ -639,7 +641,7 @@ def _build_dar_row(
         "promoted_at_utc": "",
         "promoted_to_target_id": "",
         "run_id": run_id,
-        "query_sql": f"-- schema_discovery on raw_sap.{table}",
+        "query_sql": f"-- schema_discovery on {SOURCE_SCHEMA}.{table}",
         "row_count": "",
         "error_message": error_message,
         "status": status,
@@ -696,7 +698,7 @@ def analyze_table(conn, table: str) -> int:
         print(f"  [skip] {table}: {skipped['id']}")
         return 0
 
-    all_tables = _raw_sap_tables(conn)
+    all_tables = _source_tables(conn)
     pks = _discover_pk_candidates(conn, table)
     fks = _discover_fk_candidates(conn, table, all_tables)
     shapes = _classify_relationship_shapes(conn, table, fks)
@@ -785,7 +787,7 @@ def refresh_bridges(conn, table: str) -> int:
 def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Schema discovery analyzer.")
     p.add_argument("--table", required=True, metavar="NAME",
-                   help="raw_sap table to analyze (lowercase)")
+                   help=f"{SOURCE_SCHEMA} table to analyze (lowercase)")
     p.add_argument("--mode", choices=("full", "bridges_only"), default="full",
                    help="full (default) runs PK/FK/shape/bridge; "
                         "bridges_only re-runs only bridge detection and "

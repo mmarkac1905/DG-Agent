@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: raw_olist
+    schema: raw_olist
+    description: "Raw Olist e-commerce tables (second-source experiment). Public Brazilian E-Commerce dataset by Olist; loaded from CSVs into DuckDB."
+    tables:
+      - name: orders
+        description: "Order header: one row per order (status, purchase/delivery timestamps)"
+      - name: order_items
+        description: "Order line items: one row per item within an order (price, freight, product, seller)"
+      - name: order_payments
+        description: "Payment records: one or MORE rows per order (payment method, installments, value)"
+      - name: order_reviews
+        description: "Post-purchase reviews (review_id not unique — can span multiple orders)"
+      - name: customers
+        description: "Customer keys at order grain (customer_id per order; customer_unique_id per person)"
+      - name: sellers
+        description: "Marketplace sellers"
+      - name: products
+        description: "Product catalog (category in Portuguese, dimensions, weight)"
+      - name: category_translation
+        description: "Decoder: product category Portuguese -> English"
+      - name: geolocation
+        description: "Zip-prefix geolocation points (many rows per prefix — aggregate before joining)"

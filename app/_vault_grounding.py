@@ -41,6 +41,21 @@ def _vault_columns(conn) -> dict[str, list[str]]:
     return out
 
 
+def _mart_columns(conn) -> dict[str, list[str]]:
+    """Sibling-mart schemas: cross-mart refs (e.g. shared dims) are allowed
+    by the layering directives, so their REAL columns must be grounded too —
+    otherwise the generator can ref a dim and assume columns it doesn't have."""
+    rows = conn.execute(
+        "SELECT table_name, column_name FROM information_schema.columns "
+        "WHERE table_schema = 'main_marts' "
+        "ORDER BY table_name, ordinal_position"
+    ).fetchall()
+    out: dict[str, list[str]] = {}
+    for t, c in rows:
+        out.setdefault(t, []).append(c)
+    return out
+
+
 def vault_schema_block(conn=None) -> str:
     """Compact 'vault model -> real columns' catalog for the generation prompt."""
     owned = conn is None
@@ -48,6 +63,7 @@ def vault_schema_block(conn=None) -> str:
         conn = duckdb.connect(str(_DB), read_only=True)
     try:
         cols = _vault_columns(conn)
+        mart_cols = _mart_columns(conn)
     finally:
         if owned:
             conn.close()
@@ -62,6 +78,20 @@ def vault_schema_block(conn=None) -> str:
     ]
     for t in sorted(cols):
         lines.append(f"  {t}({', '.join(cols[t])})")
+    if mart_cols:
+        lines += [
+            "",
+            "## SIBLING MART column schemas (cross-mart refs, e.g. shared dims)",
+            "These are the EXACT columns of existing marts. If you ref() one of "
+            "these, use ONLY these columns. If the identifier or measure your "
+            "term needs is absent from every vault model AND every sibling mart "
+            "below, the source lacks vault coverage — propose the missing "
+            "staging + vault models in dbt_models[] instead of forcing a join "
+            "onto a model that lacks the column.",
+            "",
+        ]
+        for t in sorted(mart_cols):
+            lines.append(f"  {t}({', '.join(mart_cols[t])})")
     return "\n".join(lines)
 
 

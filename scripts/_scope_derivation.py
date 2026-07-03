@@ -51,6 +51,7 @@ from pathlib import Path
 from typing import Optional
 
 import duckdb
+from _source_config import SOURCE_SCHEMA
 import requests
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -151,7 +152,7 @@ def _render_sap_catalog(conn, exclude_tables: Optional[list[str]] = None) -> str
     would be redundant. Caller passes the compiled-table list.
     """
     excluded = {t.lower() for t in (exclude_tables or [])}
-    rows = conn.execute("""
+    rows = conn.execute(f"""
         SELECT d.table_name, d.field_name, d.data_type, d.length,
                COALESCE(r.role, '?') AS role,
                COALESCE(d.domain_area, '?') AS domain,
@@ -160,6 +161,10 @@ def _render_sap_catalog(conn, exclude_tables: Optional[list[str]] = None) -> str
         LEFT JOIN main_seeds.source_column_roles r
           ON LOWER(d.table_name) = LOWER(r.table_name)
          AND UPPER(d.field_name) = UPPER(r.column_name)
+        WHERE LOWER(d.table_name) IN (
+            SELECT LOWER(table_name) FROM information_schema.tables
+            WHERE table_schema='{SOURCE_SCHEMA}'
+        )
         ORDER BY d.table_name, d.field_name
     """).fetchall()
     lines = []
@@ -248,7 +253,7 @@ def _render_semantic_model_block(conn) -> str:
         rows = []
 
     compiled_names = {r[0].lower() for r in rows}
-    all_live_tables = _raw_sap_tables(conn)
+    all_live_tables = _source_tables(conn)
     not_yet = [t for t in all_live_tables if t.lower() not in compiled_names]
 
     if not rows:
@@ -317,7 +322,7 @@ def _render_schema_discovery_block(conn) -> str:
         if tbl and tbl not in latest_per_table:
             latest_per_table[tbl] = r
 
-    all_live_tables = _raw_sap_tables(conn)
+    all_live_tables = _source_tables(conn)
     not_yet = [t for t in all_live_tables if t not in latest_per_table]
 
     if not latest_per_table:
@@ -384,7 +389,7 @@ def _render_schema_discovery_block(conn) -> str:
     return "\n".join(out_lines).rstrip()
 
 
-# _raw_sap_tables() is defined below at the public-API block; the
+# _source_tables() is defined below at the public-API block; the
 # semantic_model + schema_discovery renderers reuse it.
 
 
@@ -507,6 +512,8 @@ def _render_join_cardinality_block(
             stddev = c.get("stddev_fanout") or 0
             ratio = c.get("matched_keys_ratio") or 0
             cls = c.get("fanout_class", "?")
+            if c.get("safe_direction"):
+                cls += f" (safe direction: {c['safe_direction']})"
             if kind == "bridge":
                 bl = "+".join(c.get("bridge_keys_left") or [])
                 br = "+".join(c.get("bridge_keys_right") or [])
@@ -567,7 +574,7 @@ def _render_dar_coverage_block(
         try:
             tables = sorted({r[0].lower() for r in conn.execute(
                 "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema='raw_sap'"
+                f"WHERE table_schema='{SOURCE_SCHEMA}'"
             ).fetchall()})
         except duckdb.Error:
             tables = sorted(coverage.keys())
@@ -599,20 +606,20 @@ def _render_dar_coverage_block(
 def _render_dbt_coverage(conn) -> str:
     """Which raw_sap tables have downstream staging/vault/mart coverage."""
     try:
-        rows = conn.execute("""
+        rows = conn.execute(f"""
             SELECT LOWER(origin_table) AS t,
                    COUNT(DISTINCT model_name) AS models
             FROM main_seeds.dbt_column_lineage
             WHERE LOWER(origin_table) IN (
                 SELECT LOWER(table_name) FROM information_schema.tables
-                WHERE table_schema='raw_sap'
+                WHERE table_schema='{SOURCE_SCHEMA}'
             )
             GROUP BY 1 ORDER BY 1
         """).fetchall()
     except Exception:
         return "(dbt_column_lineage unavailable)"
     if not rows:
-        return "(no raw_sap origin rows in dbt_column_lineage)"
+        return f"(no {SOURCE_SCHEMA} origin rows in dbt_column_lineage)"
     return "\n".join(f"  {t}: {n} downstream models" for t, n in rows)
 
 
@@ -727,7 +734,7 @@ def _validate_response(payload: dict, live_tables: set[str],
     else:
         bad = [t for t in pt if t.lower() not in live_tables]
         if bad:
-            issues.append(f"proposed_tables not in raw_sap: {bad}")
+            issues.append(f"proposed_tables not in {SOURCE_SCHEMA}: {bad}")
 
     pft = payload.get("primary_field_per_table") or {}
     if not isinstance(pft, dict):
@@ -867,8 +874,11 @@ def _validate_cardinality_join_path(
                 f = json.loads(rj or "{}")
             except (json.JSONDecodeError, TypeError):
                 continue
-            if f.get("fanout_class") not in (
-                "per_record_key", "header_detail"):
+            if (f.get("fanout_class") not in
+                    ("per_record_key", "header_detail")
+                    and not f.get("safe_direction")):
+                # Catastrophic in the measured direction AND no safe
+                # lookup direction recorded — genuinely unviable.
                 continue
             # Staleness check.
             stale = False
@@ -876,7 +886,7 @@ def _validate_cardinality_join_path(
             for tn, n_old in src_counts.items():
                 try:
                     n_now = int(conn.execute(
-                        f'SELECT COUNT(*) FROM raw_sap."{tn}"'
+                        f'SELECT COUNT(*) FROM {SOURCE_SCHEMA}."{tn}"'
                     ).fetchone()[0] or 0)
                 except duckdb.Error:
                     continue
@@ -910,10 +920,10 @@ def _validate_cardinality_join_path(
 
 # ─── public API ────────────────────────────────────────────────────────
 
-def _raw_sap_tables(conn) -> set[str]:
+def _source_tables(conn) -> set[str]:
     rows = conn.execute(
         "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema='raw_sap'"
+        f"WHERE table_schema='{SOURCE_SCHEMA}'"
     ).fetchall()
     return {r[0].lower() for r in rows}
 
@@ -981,7 +991,7 @@ def _propose_or_revise(term_id: str, mode: str,
 
         system_prompt, user_template = _load_prompt()
         term = _load_term(conn, term_id)
-        live_tables = _raw_sap_tables(conn)
+        live_tables = _source_tables(conn)
 
         # semantic_model overrides dictionary rows for compiled
         # tables (tiered rendering). schema_discovery ships
@@ -1215,14 +1225,14 @@ def confirm_scope(term_id: str, iter_num: int, confirmed_by: str,
         pft = resp.get("primary_field_per_table", {})
         rat = resp.get("rationale_per_table", {})
 
-        live = _raw_sap_tables(conn)
+        live = _source_tables(conn)
         bad = [t for t in tables if t.lower() not in live]
         if bad:
             return ConfirmationResult(
                 term_id=term_id, confirmed_iter_num=iter_num,
                 confirmed_at_utc="", confirmed_by=confirmed_by,
                 s2t_rows_written=0, success=False,
-                error=f"proposed tables not in raw_sap: {bad}",
+                error=f"proposed tables not in {SOURCE_SCHEMA}: {bad}",
             )
 
         # known_issue #65 guard: refuse to re-derive scope on a term

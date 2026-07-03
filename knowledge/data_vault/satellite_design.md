@@ -1,6 +1,6 @@
 # Data Vault: satellite_design
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Keywords: `sat_, satellite, hashdiff, descriptive, satellite design, sat_material, sat_vendor, sat_po`
 
@@ -38,7 +38,7 @@ Keywords: `sat_, satellite, hashdiff, descriptive, satellite design, sat_materia
 | #60 | `sat_zmm_approval` | `hk_zmm_approval` | `ZMM_APPROVAL_LOG` |  | Satellite: ZMM Approval Attributes | 2026-06-28 |
 
 
-## Related Decisions (14)
+## Related Decisions (15)
 
 - **#7** (2026-04-14) — staging_layer_1to1: Staging follows purist Data Vault approach: mechanical transformation only. Business naming and logic deferred to vault layer. Dropped hk_po_vendor from stg_sap__ekpo — vault-time resolution via EKKO join.
 - **#8** (2026-04-14) — data_vault_layer_built: Data Vault complete. 33 incremental models (spec said 32 but listed 16 satellites so actual total is 33). Hubs insert-only. Satellites use hashdiff for SCD2 change detection. Fixed link_equipment_gr to hash MBLNR+MJAHR via SERI->MKPF join so hk_material_document matches hub definition. Ready for marts layer.
@@ -54,6 +54,7 @@ Keywords: `sat_, satellite, hashdiff, descriptive, satellite design, sat_materia
 - **#106** (2026-05-12) — phase_gamma_pre_public_release_drop_decorative_seeds: Pre-public-release cleanup pass 1 of main_seeds complete. The drop list started at 7 candidates and narrowed to 3 after sharper auditing; the reversal kept 4 seeds that initially looked decorative but actually drive UI behavior. Remaining hand-maintained seeds (procurement_rules, org_structure, abap_logic_catalog, z_tables_catalog, zmm_approval_status, zmm_reason_codes, data_contracts, data_vault_design) all have either load-bearing readers or auto-sync mechanisms. Followup: data_vault_design is currently stale by 8 entities (hub_zmm_approval, sat_zmm_approval, sat_invoice_item, hub/sat/sat_text_movement_type, sat_vendor_business, sat_material_business) because end_of_task.py was bypassed on recent phase commits; the sync function in scan_dbt_models.py:sync_vault_design_seed exists and runs on end_of_task.
 - **#112** (2026-06-25) — path3_sd_fi_infra_build: SD + FI are now first-class in the warehouse. Margin term cost side v1 = revenue - procurement cost; returns (MSEG 161/122 are DMBTR=0, unvalued) and warranty (ZHT_WARRANTY_LOG catalog-only, no data) deferred. Reference: scripts/generate_sd_billing.py, scripts/generate_fi_shadows.py, dbt/models/vault/link_sales_order_equipment.sql.
 - **#122** (2026-06-28) **[NEVER_REPEAT]** — bg030_mart_refactored_to_vault_layer: Marts must build on the vault layer; enforce the layering rule at GENERATION (prompt), not only at the commit gate.
+- **#126** (2026-07-04) — greenfield_source_generation_contracts: Every generation-time contract needs a defined greenfield behavior. Grounding must cover everything the model is allowed to ref().
 
 ## Related Domain Relationships (0)
 

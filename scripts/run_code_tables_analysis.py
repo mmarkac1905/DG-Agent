@@ -33,6 +33,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import duckdb
+from _source_config import SOURCE_SCHEMA
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -116,7 +117,7 @@ def _next_dar_id() -> str:
 def _schema_version(conn, table: str) -> str:
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position", [table],
     ).fetchall()
     return hashlib.sha256(
@@ -129,13 +130,13 @@ def _max_source_ingestion(conn, table: str) -> str:
     try:
         has_col = conn.execute(
             "SELECT COUNT(*) FROM information_schema.columns "
-            "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+            f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
             "AND LOWER(column_name)='ingestion_date'", [table],
         ).fetchone()[0]
         if not has_col:
             return ""
         r = conn.execute(
-            f'SELECT MAX("ingestion_date") FROM raw_sap.{table}'
+            f'SELECT MAX("ingestion_date") FROM {SOURCE_SCHEMA}.{table}'
         ).fetchone()
         return str(r[0]) if r and r[0] is not None else ""
     except Exception:
@@ -197,7 +198,7 @@ def _discover_dimension_candidates_heuristic(conn, table: str) -> list[str]:
         rows = conn.execute(
             "SELECT column_name, data_type, character_maximum_length "
             "FROM information_schema.columns "
-            "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+            f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
             "ORDER BY ordinal_position",
             [table],
         ).fetchall()
@@ -257,7 +258,7 @@ def _auto_pick_code_column(conn, table: str) -> str | None:
     for col in candidate_cols:
         try:
             n = conn.execute(
-                f'SELECT COUNT(DISTINCT "{col}") FROM raw_sap.{table}'
+                f'SELECT COUNT(DISTINCT "{col}") FROM {SOURCE_SCHEMA}.{table}'
             ).fetchone()[0]
             if n and 2 <= n <= 50:
                 sized.append((col, int(n)))
@@ -392,7 +393,7 @@ def run(table: str, code_column: str | None, term_id: str | None,
         return 1
 
     t0 = time.perf_counter()
-    print(f"--- Code Tables analysis: raw_sap.{table} ---")
+    print(f"--- Code Tables analysis: {SOURCE_SCHEMA}.{table} ---")
 
     # known_issue #75: degrade gracefully on fresh tables (zero prior DARs)
     # — strict=True would raise ContextDegradedError and crash silently.
@@ -425,7 +426,7 @@ def run(table: str, code_column: str | None, term_id: str | None,
                 # fallback found a candidate in the [2,50] cardinality window.
                 # Stage D.1: emit canonical skipped DAR (prereq counts it as
                 # satisfying 'code_tables' requirement).
-                print(f"[info] no dimension candidates found on raw_sap.{table} "
+                print(f"[info] no dimension candidates found on {SOURCE_SCHEMA}.{table} "
                       f"(source_column_roles empty AND heuristic fallback "
                       f"returned nothing in the [2,50] cardinality window)")
                 from _skipped_dar import build_skipped_dar_row  # noqa: E402
@@ -554,13 +555,13 @@ def run(table: str, code_column: str | None, term_id: str | None,
                 retry_events += 1
                 cols_rows = conn.execute(
                     "SELECT column_name FROM information_schema.columns "
-                    "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+                    f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
                     "ORDER BY ordinal_position", [table],
                 ).fetchall()
                 cols_dump = ", ".join(c[0] for c in cols_rows)
                 retry_feedback = (
                     f"Prior SQL failed: {exec_error}\n\n"
-                    f"Actual columns of raw_sap.{table}: {cols_dump}\n\n"
+                    f"Actual columns of {SOURCE_SCHEMA}.{table}: {cols_dump}\n\n"
                     "Only reference columns from this list. Fix the SQL."
                 )
                 print(f"    [retry] execution error: {exec_error[:200]}")
@@ -606,7 +607,7 @@ def run(table: str, code_column: str | None, term_id: str | None,
             })
 
         total_rows = conn.execute(
-            f"SELECT COUNT(*) FROM raw_sap.{table}"
+            f"SELECT COUNT(*) FROM {SOURCE_SCHEMA}.{table}"
         ).fetchone()[0]
 
         # Collect distinct description_source values seen in output for audit

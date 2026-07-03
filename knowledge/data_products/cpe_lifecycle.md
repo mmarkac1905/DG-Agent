@@ -1,10 +1,10 @@
 # Data Product: cpe_lifecycle
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Keywords: `cpe, equipment, equi, serial, device, router, ont, set-top, stb, modem, lifecycle, installed, returned, defective`
 
-## Related Decisions (87)
+## Related Decisions (89)
 
 - **#1** (2026-04-13) — project_initialized: Framework ready for SAP sample data generation and Data Vault modeling
 - **#2** (2026-04-14) — sap_sample_data_generated: Sample data loaded into raw_sap schema in DuckDB. All 4 RI checks pass. Avg lead time 44.8d. Ready for staging layer.
@@ -93,12 +93,14 @@ Keywords: `cpe, equipment, equi, serial, device, router, ont, set-top, stb, mode
 - **#120** (2026-06-28) **[NEVER_REPEAT]** — drop_returns_leg_unvalued_in_data: Drop a margin component when the source movements carry no valuation. Like warranty earlier - synthetic data only values inbound (101) movements.
 - **#121** (2026-06-28) **[NEVER_REPEAT]** — bg030_deployed_contribution_margin_mart: Customer-centric CPE contribution margin (service_plan x tenure_band x month) deployed end-to-end Stage 0->E. Always reconcile suspected magnitude bugs to source before declaring a defect.
 - **#122** (2026-06-28) **[NEVER_REPEAT]** — bg030_mart_refactored_to_vault_layer: Marts must build on the vault layer; enforce the layering rule at GENERATION (prompt), not only at the commit gate.
+- **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
+- **#126** (2026-07-04) — greenfield_source_generation_contracts: Every generation-time contract needs a defined greenfield behavior. Grounding must cover everything the model is allowed to ref().
 
 ## Related Domain Relationships (0)
 
 _(none)_
 
-## Open Issues (22)
+## Open Issues (24)
 
 - **#4** [open/low] Inventory MoS values unrealistic in sample data — Q7 discovery query showed months-of-stock ranging 650-6455 months across all materials/plants. Generator GR inflow far exceeds deployment outflow (~45K serial-tracked deployments vs ~180K received qty). MARD stock computed from net movements so it balloons. Real HT data would sho…
 - **#5** [open/medium] Vendor-equipment attribution requires vault traceability — Q4 discovery showed obt_procurement_overview alone cannot attribute equipment outcomes to vendors because multiple vendors share material numbers (join fan-out). Need a fact_equipment_with_vendor model built from link_equipment_gr -> link_gr_po -> link_po_vendor. Backlog for next…
@@ -122,6 +124,8 @@ _(none)_
 - **#120** [open/low] Wire orphan-relation cleanup into end_of_task.py so deleted models auto-drop — When a dbt model file is deleted (e.g., KI-101 deleted fact_active_deployed_cpe.sql on 2026-05-04), the materialized table in DuckDB persists as an orphan because dbt does NOT auto-drop relations for deleted model files. The orphan stays until someone explicitly DROPs it. Today's…
 - **#122** [open/medium] dim_equipment uniqueness fails - link_equipment_material fan-out (1 device -> multiple materials) — link_equipment_material has 75236 rows for 45000 distinct equipment; 30236 devices (~67%) link to >1 material (e.g. CPE-00000330, an ONT, links to both CPE-ONT-003 and CPE-RTR-001). This fans dim_equipment out to 75236 rows, breaking unique_dim_equipment_equipment_number and uniq…
 - **#128** [open/low] Synthetic data: BWART=201 deployment movements lack serial-number linkage (only 101/GR linked) — All SERI (45000) and SER03 (2155) serial records point to BWART=101 goods-receipt movements; the 27000 BWART=201 deployment movements have ZERO serial/equipment linkage. So per-device deployment date cannot be derived from the 201 movement (forced the first-bill proxy for null EQ…
+- **#131** [open/medium] grain_relationship pre-filter requires shared numeric column names (SAP-shaped) — The analyzer's pair pre-filter needs a shared numeric column NAME between two tables (SAP header/detail convention). On Olist, where numeric column names never repeat across tables, it emitted 0 pairs — the sum-match heuristic produces no evidence on sources with distinct naming.…
+- **#134** [open/low] BG033 semantic validator warnings pending analyst review — fact_repeat_customer_rate passed semantic validation (match=true) with two warnings: (1) the first-order baseline excludes canceled/unavailable orders, so a person whose first-ever order was canceled is misclassified as first-time on their next order; (2) the mart also excludes s…
 
 ## DO NOT (Anti-patterns)
 

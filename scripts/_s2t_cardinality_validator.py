@@ -363,12 +363,12 @@ def trigger_lazy_analysis(t1: str, t2: str, conn) -> bool:
     """
     try:
         from run_join_cardinality_analysis import (
-            analyze_pair, _raw_sap_tables,
+            analyze_pair, _source_tables,
         )
     except ImportError:
         return False
     try:
-        all_tables = _raw_sap_tables(conn)
+        all_tables = _source_tables(conn)
         n = analyze_pair(conn, t1.lower(), t2.lower(),
                          all_tables=all_tables)
     except Exception:  # noqa: BLE001
@@ -471,7 +471,12 @@ def validate_s2t_sql(sql: str, scope_tables: list[str],
             if dar is None:
                 continue  # no evidence -> pass through
 
-        if dar.get("fanout_class") == "catastrophic_fanout":
+        if (dar.get("fanout_class") == "catastrophic_fanout"
+                and not dar.get("safe_direction")):
+            # Direction-aware: a pair whose evidence records a safe
+            # N:1 lookup direction is not auto-rejected — the grain /
+            # semantic gate at deploy remains the backstop for SQL
+            # that joins in the exploding direction.
             recommended = find_recommended_bridge(lt, rt, conn)
             rejection = {
                 "status": "rejected_catastrophic_join",

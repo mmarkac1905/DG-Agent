@@ -35,6 +35,24 @@ models:
     knowledge:
       +materialized: view
       +schema: knowledge
+    # Second-source demo (Olist e-commerce). Opt-in: the raw_olist schema
+    # is not part of bootstrap.py, so these models only build when the
+    # source has been loaded and DG_ENABLE_OLIST=true is set. See the
+    # README section "Pointing it at another source".
+    olist:
+      +enabled: "{{ env_var('DG_ENABLE_OLIST', 'false') == 'true' }}"
+      staging:
+        +materialized: view
+        +schema: staging
+      vault:
+        +materialized: incremental
+        +schema: vault
+      marts:
+        +materialized: table
+        +schema: marts
+      obt:
+        +materialized: view
+        +schema: obt
     # Rule 33: archived term artefacts move to
     # dbt/models/archive/<ARC-...>/. Disabled so dbt never compiles or
     # materialises them, but files remain on disk for audit.

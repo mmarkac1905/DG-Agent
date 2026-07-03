@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import duckdb
+from _source_config import SOURCE_SCHEMA
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -104,13 +105,13 @@ def _max_source_ingestion(conn, table: str) -> str:
     try:
         has_col = conn.execute(
             "SELECT COUNT(*) FROM information_schema.columns "
-            "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+            f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
             "AND LOWER(column_name)='ingestion_date'",
             [table],
         ).fetchone()[0]
         if not has_col:
             return ""
-        r = conn.execute(f'SELECT MAX("ingestion_date") FROM raw_sap.{table}').fetchone()
+        r = conn.execute(f'SELECT MAX("ingestion_date") FROM {SOURCE_SCHEMA}.{table}').fetchone()
         return str(r[0]) if r and r[0] is not None else ""
     except Exception:
         return ""
@@ -119,7 +120,7 @@ def _max_source_ingestion(conn, table: str) -> str:
 def _schema_version(conn, table: str) -> str:
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position", [table],
     ).fetchall()
     return hashlib.sha256(
@@ -164,10 +165,10 @@ def _discover_numeric_columns_heuristic(conn, table: str) -> list[str]:
     """
     try:
         rows = conn.execute(
-            """
+            f"""
             SELECT column_name
             FROM information_schema.columns
-            WHERE table_schema = 'raw_sap'
+            WHERE table_schema = '{SOURCE_SCHEMA}'
               AND LOWER(table_name) = LOWER(?)
               AND (
                   UPPER(data_type) LIKE 'DECIMAL%'
@@ -202,7 +203,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
         return 1
 
     t0 = time.perf_counter()
-    print(f"--- Magnitude analysis: raw_sap.{table} ---")
+    print(f"--- Magnitude analysis: {SOURCE_SCHEMA}.{table} ---")
 
     # known_issue #75: degrade gracefully on fresh tables (zero prior DARs)
     # — strict=True would raise ContextDegradedError and crash silently.
@@ -268,14 +269,14 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
                 from _skipped_dar import build_skipped_dar_row  # noqa: E402
                 print(f"[info] no measure columns on {table} "
                       f"(source_column_roles empty, no numeric columns "
-                      f"in information_schema for raw_sap.{table})")
+                      f"in information_schema for {SOURCE_SCHEMA}.{table})")
                 skipped = build_skipped_dar_row(
                     dar_id=_next_dar_id(),
                     analysis_type="magnitude",
                     source_tables=table,
                     skip_reason=(
                         "no measure columns in source_column_roles and no "
-                        "numeric columns in information_schema raw_sap"
+                        f"numeric columns in information_schema {SOURCE_SCHEMA}"
                     ),
                     schema_version=schema_version,
                     last_source_ingestion_at=_max_source_ingestion(conn, table),
@@ -367,13 +368,13 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
                 retry_events += 1
                 cols_rows = conn.execute(
                     "SELECT column_name FROM information_schema.columns "
-                    "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+                    f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
                     "ORDER BY ordinal_position", [table],
                 ).fetchall()
                 cols_dump = ", ".join(c[0] for c in cols_rows)
                 retry_feedback = (
                     f"Prior SQL failed: {exec_error}\n\n"
-                    f"Actual columns of raw_sap.{table}: {cols_dump}\n\n"
+                    f"Actual columns of {SOURCE_SCHEMA}.{table}: {cols_dump}\n\n"
                     "Only reference columns from this list. Fix the SQL."
                 )
                 print(f"    [retry] execution error: {exec_error[:200]}")
@@ -425,7 +426,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
             )
 
         total_rows = conn.execute(
-            f"SELECT COUNT(*) FROM raw_sap.{table}"
+            f"SELECT COUNT(*) FROM {SOURCE_SCHEMA}.{table}"
         ).fetchone()[0]
 
         # Verify roles post-hoc (for the Gate D1 check)
@@ -546,7 +547,7 @@ def _emit_performance_baseline_dars(
     }
     rows = conn.execute(
         "SELECT column_name, data_type FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER(?) "
+        f"WHERE table_schema='{SOURCE_SCHEMA}' AND LOWER(table_name)=LOWER(?) "
         "ORDER BY ordinal_position",
         [table],
     ).fetchall()
@@ -564,7 +565,7 @@ def _emit_performance_baseline_dars(
 
     for col in numeric_cols:
         safe_col = f'"{col}"'
-        safe_table = f'raw_sap."{table}"'
+        safe_table = f'{SOURCE_SCHEMA}."{table}"'
         try:
             r = conn.execute(
                 f"SELECT "
@@ -619,7 +620,7 @@ def _emit_performance_baseline_dars(
             "promoted_at_utc": "",
             "promoted_to_target_id": "",
             "run_id": run_id,
-            "query_sql": f"-- performance_baseline aggregation on raw_sap.{table}.{col}",
+            "query_sql": f"-- performance_baseline aggregation on {SOURCE_SCHEMA}.{table}.{col}",
             "row_count": "",
             "error_message": "",
             "status": "success",

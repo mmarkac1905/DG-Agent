@@ -28,6 +28,7 @@ _SCRIPTS_DIR = str(Path(__file__).resolve().parent.parent / "scripts")
 if _SCRIPTS_DIR not in _sys.path:
     _sys.path.insert(0, _SCRIPTS_DIR)
 from _model_config import MODEL
+from _source_config import SOURCE_SCHEMA, DOMAIN_CONTEXT
 
 
 def llm_retry_on_error(
@@ -979,7 +980,7 @@ def create_s2t_with_implementation(
     # ---------------------------------------------------------------
     # SYSTEM PROMPT — rewritten around bundle layers + directives
     # ---------------------------------------------------------------
-    system_prompt = r"""You are a senior data engineer creating both a source-to-target mapping AND a dbt implementation plan for a business metric in a telecom (Helios Telecom) CPE procurement data product.
+    system_prompt = r"""You are a senior data engineer creating both a source-to-target mapping AND a dbt implementation plan for a business metric in __DOMAIN_CONTEXT__.
 
 INPUTS are delivered as a single layered context bundle. Each layer serves a different purpose:
 
@@ -1154,6 +1155,12 @@ RESPOND ONLY IN JSON with this exact structure — no markdown fences, no preamb
     "join_cardinality_consulted": [],
     "bridge_coverage_consulted": []
 }"""
+
+    # The directive text names the raw schema and the business domain;
+    # keep both in sync with the configured source (env DG_SOURCE_SCHEMA /
+    # DG_DOMAIN_CONTEXT).
+    system_prompt = system_prompt.replace("raw_sap", SOURCE_SCHEMA)
+    system_prompt = system_prompt.replace("__DOMAIN_CONTEXT__", DOMAIN_CONTEXT)
 
     # ---------------------------------------------------------------
     # USER PROMPT — bundle delivered via helper
@@ -1352,12 +1359,16 @@ Return ONLY valid JSON matching the schema in the system prompt."""
         if rule3_issues and attempt < MAX_F3_RETRIES:
             result["_rule3_issues"] = rule3_issues
             rejection_hint = (
-                "Your mart/obt model refs STAGING (stg_sap__*), violating RULE 3 — "
-                "marts/obt MUST ref VAULT models only. Rebuild the transformation on "
-                "the vault: source measures from satellites (e.g. "
-                "sat_billing_document.revenue_amount is the billed revenue; there is no "
-                "separate billing-line sat, so aggregate at the available vault grain), "
-                "and traverse entities via links/hubs. Do NOT ref staging. Fix:\n  - "
+                "Your mart/obt model refs STAGING, violating RULE 3 — marts/obt "
+                "MUST ref() VAULT models only: source measures from satellites and "
+                "traverse entities via links/hubs. If the ontology layer shows "
+                "EXISTING vault models covering these sources, rebuild on those. "
+                "If NO vault models exist for these source tables yet (new source), "
+                "propose the FULL chain in dbt_models[] in dependency order: "
+                "staging views (clean/rename raw columns), then vault models "
+                "(hubs, links, satellites), then rebuild the mart to ref() ONLY "
+                "the vault models you just proposed. Do NOT ref staging from the "
+                "mart. Return the complete JSON. Fix:\n  - "
                 + "\n  - ".join(rule3_issues)
             )
             print(f"[create_s2t] RULE 3 staging-ref violation attempt "

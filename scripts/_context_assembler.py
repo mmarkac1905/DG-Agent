@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Optional
 
 import duckdb
+from _source_config import SOURCE_SCHEMA
 
 ROOT = Path(__file__).resolve().parent.parent
 SEED_DIR = ROOT / "dbt" / "seeds"
@@ -358,10 +359,10 @@ def _count_tokens(text: str) -> int:
 # Scope resolution — S1, S2, S3, S5; S4 = NotImplementedError
 # =========================================================================
 
-def _raw_sap_tables(conn) -> set[str]:
+def _source_tables(conn) -> set[str]:
     rows = conn.execute(
         "SELECT LOWER(table_name) FROM information_schema.tables "
-        "WHERE table_schema='raw_sap'"
+        f"WHERE table_schema='{SOURCE_SCHEMA}'"
     ).fetchall()
     return {r[0] for r in rows}
 
@@ -462,7 +463,7 @@ def resolve_scope(conn, term_id: Optional[str],
     Precedence: explicit scope_tables > S1 > S2 > S3 > (S4 NOT WIRED)
     > S5 (empty fallback). ContextScopeError when neither input given.
     """
-    live = _raw_sap_tables(conn)
+    live = _source_tables(conn)
 
     def _keep_live(ts: list[str]) -> list[str]:
         return sorted([t.lower() for t in ts if t.lower() in live])
@@ -817,7 +818,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
             like_exprs = " OR ".join(
                 ["LOWER(upstream_models) LIKE ?"] * len(scope)
             )
-            params = [f"%raw_sap.{t.lower()}%" for t in scope]
+            params = [f"%{SOURCE_SCHEMA}.{t.lower()}%" for t in scope]
             dbt_sem_rows = conn.execute(
                 f"SELECT model_name, dbt_layer, materialized, upstream_models, "
                 f"downstream_models, exposed_columns_json, primary_key_cols, "
@@ -876,7 +877,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
                     "WHERE EXISTS ("
                     "  SELECT 1 FROM main_seeds.dbt_column_lineage l "
                     "  WHERE LOWER(l.origin_table) = s.t "
-                    "     OR LOWER(l.origin_table) = 'raw_sap.' || s.t "
+                    f"     OR LOWER(l.origin_table) = '{SOURCE_SCHEMA}.' || s.t "
                     "     OR LOWER(l.origin_table) LIKE '%.' || s.t"
                     ")",
                     [scope],
@@ -899,7 +900,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
                     "WHERE NOT EXISTS ("
                     "  SELECT 1 FROM main_seeds.dbt_column_lineage l "
                     "  WHERE LOWER(l.origin_table) = s.t "
-                    "     OR LOWER(l.origin_table) = 'raw_sap.' || s.t "
+                    f"     OR LOWER(l.origin_table) = '{SOURCE_SCHEMA}.' || s.t "
                     "     OR LOWER(l.origin_table) LIKE '%.' || s.t"
                     ")",
                     [scope],
@@ -916,7 +917,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
             rows = conn.execute(
                 f"SELECT table_name, column_name, data_type "
                 f"FROM information_schema.columns "
-                f"WHERE table_schema='raw_sap' "
+                f"WHERE table_schema='{SOURCE_SCHEMA}' "
                 f"AND LOWER(table_name) IN ({_in_list(len(scope))}) "
                 f"ORDER BY table_name, ordinal_position",
                 scope,
@@ -934,7 +935,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
         try:
             rows = conn.execute(
                 "SELECT table_name, column_name, data_type "
-                "FROM information_schema.columns WHERE table_schema='raw_sap' "
+                f"FROM information_schema.columns WHERE table_schema='{SOURCE_SCHEMA}' "
                 "ORDER BY table_name, ordinal_position LIMIT 300"
             ).fetchall()
             details["information_schema"] = len(rows)
@@ -1663,7 +1664,7 @@ def _load_ontology(conn, scope: list[str], term_id: Optional[str],
             )
             params = (
                 list(scope)
-                + [f"raw_sap.{t}" for t in scope]
+                + [f"{SOURCE_SCHEMA}.{t}" for t in scope]
                 + [f"%.{t}" for t in scope]
             )
             rows = conn.execute(

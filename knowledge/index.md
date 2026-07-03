@@ -1,18 +1,18 @@
 # CPE Procurement Analytics — Knowledge Wiki
 
-_Last generated: 2026-07-03 21:52:59_
+_Last generated: 2026-07-04 01:42:32_
 
 Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand.
 
 ## System Snapshot
 
 - **Latest version (decisions seed):** `wire_dbt_compile_eot`
-- **Total decisions:** 122
+- **Total decisions:** 125
 - **Total domain relationships:** 0
-- **Total known issues:** 122 (34 open)
+- **Total known issues:** 126 (38 open)
 - **Data products tracked:** 0
 - **Data Vault entities designed:** 60 (15 hubs · 17 links · 28 satellites)
-- **Business glossary terms:** 30 (25 approved · 2 draft)
+- **Business glossary terms:** 33 (25 approved · 3 draft)
 - **ABAP custom programs:** 16 documented (2 critical · 4 high risk) · **Z-tables:** 11
 - **Data contracts:** 21 (15 daily · 6 weekly)
 - **dbt models scanned:** 135 (knowledge: 6, marts: 18, obt: 6, staging: 45, vault: 60)
@@ -53,6 +53,7 @@ Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand
 ### Draft Terms (awaiting approval)
 - [Total Cost of Ownership (TCO)](business_glossary/total_cost_of_ownership.md) — cost_analysis · draft
 - [Goods Receipt Accuracy](business_glossary/goods_receipt_accuracy.md) — quality · draft
+- [Olist On-Time Delivery Rate](business_glossary/olist_on_time_delivery_rate.md) — ecommerce_sales · draft
 
 ## SAP Tables
 

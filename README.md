@@ -230,23 +230,46 @@ CLAUDE.md       agent & contributor guide (conventions for working in the repo)
 | **F.3** | the post-generation join validator — rejects SQL whose joins the cardinality evidence classifies as `catastrophic_fanout` |
 | **Grain** | the row-level unit a metric is measured at (e.g. *vendor × month*) — validated at deploy |
 
+## Pointing it at another source
+
+The pipeline is **source-agnostic by configuration** — proven by onboarding the public
+[Olist Brazilian e-commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
+(9 tables, ~100k orders, data this repo's authors did not generate) and taking two business terms
+from definition to deployed, reconciled dbt marts for ~$3 in LLM cost. The recipe:
+
+1. **Load** the source's tables into a new DuckDB schema (e.g. `raw_olist`) in `cpe_analytics.duckdb`.
+2. **Document** them: add per-column rows to `sap_data_dictionary.csv` (see
+   `scripts/generate_olist_data_dictionary.py` as a template — types from `information_schema`,
+   descriptions from the source's docs) and `dbt seed`.
+3. **Point the pipeline**: `DG_SOURCE_SCHEMA=raw_olist` (every analyzer and stage reads it), plus
+   optional `DG_DOMAIN_CONTEXT="a Brazilian e-commerce order-to-delivery data product"` for prompt
+   framing and `DG_AGENT_MODEL` to switch models.
+4. **Learn it**: run the deterministic analyzers (`run_schema_discovery_analysis`,
+   `run_join_cardinality_analysis`, `run_date_analysis`, `run_segmentation_analysis`) per table —
+   free, no LLM — then the LLM analyzers (`run_completeness/dimensions/magnitude/code_tables_analysis`)
+   for the tables your terms need.
+5. **Define terms** in `business_glossary.csv` (status `draft`) and run the stages: scope → term
+   EDA → S2T → deploy. New sources get their staging + vault + mart chain proposed automatically.
+
+The Olist example is opt-in: its 16 generated dbt models live under `dbt/models/olist/` behind
+`DG_ENABLE_OLIST=true`, so the default SAP build is untouched.
+
 ## Honest limitations
 
 Read this before extrapolating from the demo:
 
-- **One source, and it's synthetic.** The *schema* is real SAP — the table/field catalog is scraped from
-  public SAP references (`scripts/scrape_sap_catalog.py`); the *rows* are generated. The EDA runs blind
+- **Two sources; the primary one is synthetic.** The SAP demo's *schema* is real (scraped from public
+  SAP references via `scripts/scrape_sap_catalog.py`) but its *rows* are generated. The EDA runs blind
   (the LLM only ever sees live query results — never the generator code), so the join graph really is
-  *discovered*, not leaked. But generated data is cleaner than production SAP: near-perfect referential
-  integrity, one client, no orphaned FKs or archived-row weirdness. What's demonstrated is the
-  **mechanism**, not robustness against real-world data quality.
-- **No "point it at your system" connector yet.** The DuckDB path and the `raw_sap` schema are
-  hardwired. Adapting to another source today means editing config and generator/staging code, not
-  passing a connection string.
-- **N = 1 evaluation.** One term (BG030) is fully worked end-to-end in the repo. There is no
-  success-rate eval across dozens of term definitions and no failure-mode catalog yet. Every run does
-  record its evidence, convergence status, and cost into the seeds, so the substrate for that eval
-  exists — it just hasn't been run at scale.
+  *discovered*, not leaked. The second source (Olist, see above) is real public data with real dirt —
+  duplicate reviews, multi-row payments, an order-scoped customer key — and the pipeline handled it,
+  including choosing the correct person identifier where the naive key yields a 0% repeat rate.
+- **Sources are selected per run, not federated.** `DG_SOURCE_SCHEMA` points the whole pipeline at one
+  source at a time. A consolidated multi-source catalog (source_system as a first-class column, terms
+  scoped across the union of sources) is the designed next step, not the current state.
+- **N = 3 worked terms, no systematic eval.** BG030 (SAP) plus BG031/BG033 (Olist) are fully worked
+  end-to-end. There is no success-rate eval across dozens of term definitions yet. Every run records
+  its evidence, convergence status, and cost into the seeds, so the substrate for that eval exists.
 - **Token cost.** Recorded term-analysis runs in the shipped seeds cost **$0.08–$0.74 each**
   (`business_term_analysis_results.llm_total_cost_usd`); a full Stage A→E pass makes several LLM calls —
   budget a few dollars per term.

@@ -89,6 +89,18 @@ EDA → term EDA (C′) → generation → deploy. F.3 = the post-generation joi
 validator that rejects `catastrophic_fanout` joins. See the README's
 vocabulary table for the longer version.
 
+## Source selection (multi-source runs)
+
+The pipeline profiles ONE source schema per run, selected by env var:
+`DG_SOURCE_SCHEMA` (default `raw_sap`) — read by `scripts/_source_config.py`
+and used by every analyzer and stage. `DG_DOMAIN_CONTEXT` overrides the
+business framing in generation prompts; `DG_AGENT_MODEL` overrides the model
+(`scripts/_model_config.py`). The Olist second-source demo models live under
+`dbt/models/olist/` behind `DG_ENABLE_OLIST=true` — the default build never
+touches them. Onboarding recipe: README → "Pointing it at another source".
+Tests always run against the default source (`tests/conftest.py` clears the
+env vars).
+
 ## Conventions (read before changing things)
 
 - **Run dbt from `dbt/`.** `dbt/profiles.yml` uses a relative DuckDB path
