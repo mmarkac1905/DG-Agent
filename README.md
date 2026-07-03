@@ -175,7 +175,7 @@ python scripts/generate_sap_sample_data.py   # MM:  PO, GR, inventory, equipment
 python scripts/generate_zmm_approval_log.py  # ZMM: custom approval-log Z-table
 python scripts/generate_sd_billing.py        # SD:  customers, sales orders, billing
 python scripts/generate_fi_shadows.py        # FI:  accounting-document shadows
-cd dbt && dbt seed && dbt run && dbt test     # build all layers (run FROM dbt/ — relative DuckDB path)
+cd dbt && dbt deps && dbt seed && dbt run && dbt test   # build all layers (run FROM dbt/ — relative DuckDB path)
 ```
 </details>
 

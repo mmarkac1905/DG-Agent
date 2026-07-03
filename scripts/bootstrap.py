@@ -3,9 +3,10 @@
 
 Builds the entire local database from scratch — exactly what a new clone needs:
   1. generate the synthetic SAP source data (deterministic, seed=42)
-  2. dbt seed   — load the knowledge-graph seeds
-  3. dbt run    — build every layer (staging -> vault -> marts -> obt -> knowledge)
-  4. dbt test   — validate
+  2. dbt deps   — install dbt package dependencies (dbt_utils)
+  3. dbt seed   — load the knowledge-graph seeds
+  4. dbt run    — build every layer (staging -> vault -> marts -> obt -> knowledge)
+  5. dbt test   — validate
 
 No database is committed to the repo (it's a build artifact). This script
 recreates `cpe_analytics.duckdb` reproducibly. Re-runnable: it overwrites the DB.
@@ -52,12 +53,15 @@ def main() -> int:
         run(f"generate {label}", [py, script], cwd=ROOT)
 
     # dbt runs from the dbt/ dir (profiles.yml uses a relative DuckDB path)
+    run("dbt deps", ["dbt", "deps"], cwd=DBT)
     run("dbt seed", ["dbt", "seed"], cwd=DBT)
     run("dbt run", ["dbt", "run"], cwd=DBT)
     if not args.no_test:
         run("dbt test", ["dbt", "test"], cwd=DBT)
 
-    print("\n\033[32m✔ Bootstrap complete.\033[0m  Launch the app with: "
+    # ASCII only: on Windows a non-UTF-8 stdout (cp1252) can't encode "✔"
+    # and the resulting UnicodeEncodeError would report a successful build as exit 1.
+    print("\n\033[32mBootstrap complete.\033[0m  Launch the app with: "
           "streamlit run app/Home.py")
     return 0
 
