@@ -1,4 +1,4 @@
-"""8.5.1 Part 5 unit tests for attestation trace/BAR consistency.
+"""Unit tests for attestation trace/BAR consistency.
 
 Verifies that BAR-level semantic_model_consumed /
 dbt_semantic_model_consumed are always a superset of each

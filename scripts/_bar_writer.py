@@ -1,14 +1,14 @@
-"""Piece 8 BAR row writer — Phase 15b §8c.
+"""BAR row writer for the term-analysis (BAR) runner.
 
 Handles writes and updates to main_seeds.business_term_analysis_results
 across both the CSV (dbt seed source of truth) and DuckDB (runtime
 query layer). Maintains CSV-DuckDB consistency: every operation writes
 to both surfaces so a crash between calls leaves a recoverable state.
 
-Contract with piece 8 §4a mainline flow:
-- write_bar_row          → step 1 placeholder write, step 14 recovery sibling
-- update_bar_row         → step 14 conditional UPDATE (with only_if_status guard)
-- sweep_orphaned_inprogress → step 0b preflight TTL sweep
+Contract with the term-analysis runner's mainline flow:
+- write_bar_row          → run-start placeholder write, end-of-run recovery sibling
+- update_bar_row         → end-of-run conditional UPDATE (with only_if_status guard)
+- sweep_orphaned_inprogress → preflight TTL sweep
 
 Invariants enforced at the write boundary:
 - LF line endings in CSV (RULE 34 / anti-pattern #48-50)
@@ -17,8 +17,8 @@ Invariants enforced at the write boundary:
 - Atomic CSV overwrite via temp file + os.replace (crash-safe)
 - Timestamp serialization via strftime ISO8601 (RULE 36 / anti-pattern #54)
 
-Scope limitation for sub-piece 8.1: rewrites the full CSV on every
-UPDATE/sweep. O(N) in BAR row count. Acceptable at piece 8's scale
+Scope limitation: rewrites the full CSV on every
+UPDATE/sweep. O(N) in BAR row count. Acceptable at the runner's scale
 (~1 row per analyst-invoked run). Revisit if BAR grows past ~5000 rows.
 """
 from __future__ import annotations
@@ -45,7 +45,7 @@ from _csv_safeguard import (  # noqa: E402
 
 # Column order locked to match dbt/seeds/business_term_analysis_results.csv
 # header and dbt/seeds/schema.yml column_types declaration.
-# Changes here must be mirrored in BOTH files (and in piece 8 §3a).
+# Changes here must be mirrored in BOTH files.
 BAR_COLUMNS: list[str] = [
     "id",
     "business_term_id",
@@ -84,16 +84,16 @@ BAR_COLUMNS: list[str] = [
     "prior_bar_consumed",
     "record_source",
     "load_date",
-    # v3.8 §24 (8.4.5) — BAR schema extension closing the 8.4.3/8.4.4
-    # attestation migration gap. ATTESTATION_FIELDS grew in 8.4.3
-    # (+semantic_model_consumed) and 8.4.4 (+dbt_semantic_model_consumed)
+    # BAR schema extension closing an attestation migration gap.
+    # ATTESTATION_FIELDS grew (+semantic_model_consumed, then
+    # +dbt_semantic_model_consumed)
     # but BAR persistence columns were NOT extended, causing silent
     # attestation data loss on every run. Appended at the end of the
     # column list (migration-safe: existing CSV rows only need ",[],[]"
     # appended, no mid-row reshuffle).
     "semantic_model_consumed",
     "dbt_semantic_model_consumed",
-    # Phase 2b (C5 sourcing recommendations) — populated only when C5
+    # C5 sourcing recommendations — populated only when C5
     # fires (consecutive scope_sanity=no → hard_stop_scope_mismatch).
     # NULL on every other run. sourcing_recommendations stores the full
     # validate_recommendations() output (validated list + summary +
@@ -103,22 +103,22 @@ BAR_COLUMNS: list[str] = [
     "c5_output_tokens",
     "c5_cost_usd",
     "c5_skipped_reason",
-    # Option B Phase 3 (OQ-3a) — bridge_coverage_consulted attestation.
+    # bridge_coverage_consulted attestation.
     # Captures the DAR-NNNNN ids the iteration LLM consulted from
     # bridge_coverage_by_filter rows. Always emitted by the LLM (empty
     # list when scope has no DARs); validated conditionally by the
     # iteration-attestation gate (hard_stop_bridge_attestation_missing
     # fires when DARs exist but list is empty/missing).
     "bridge_coverage_consulted",
-    # C3 (Theme 1 sub-items 1+2) — TAR-NNNNN citation discipline.
+    # C3 — TAR-NNNNN citation discipline.
     # Captures the TAR-NNNNN ids the iteration LLM consulted from the
     # TERM EDA section (both row_type='query' and row_type='sufficiency';
     # both current-term and cross-term prior TARs from
-    # _tar_corpus_loader). Always-emit (no conditional gate; per
-    # OQ-C3-2 bridge_coverage's empirical-refutation rationale doesn't
-    # transfer).
+    # _tar_corpus_loader). Always-emit (no conditional gate;
+    # bridge_coverage's empirical-refutation rationale doesn't
+    # transfer here).
     "tars_consulted",
-    # C4 (Theme 1 sub-item 5) — Stage A blocker citation discipline.
+    # C4 — Stage A blocker citation discipline.
     # Captures the Stage A blocker IDs (iter{N}.b{I} format) the
     # iteration LLM consulted from the "## Stage A blockers" bundle
     # section. Always-emit (no conditional gate; mirrors C3).
@@ -130,7 +130,7 @@ BAR_TABLE_FQN = "main_seeds.business_term_analysis_results"
 
 BARStatus = Literal[
     "in_progress", "converged", "hard_stop", "failed", "promoted", "superseded",
-    # Phase 2b: terminal status when C5 produces at least one usable
+    # Terminal status when C5 produces at least one usable
     # sourcing recommendation (grade in {verified, verified_low_priority,
     # divergence_warning}). Convergence_reason stays "hard_stop_scope_mismatch".
     "needs_data_extension",
@@ -237,7 +237,7 @@ def write_bar_row(
 ) -> str:
     """Append a new BAR row and return its id.
 
-    Used at §4a step 1 (placeholder write) and step 14 recovery branch
+    Used for the run-start placeholder write and the recovery branch
     (sibling row when sweep-race detected). Defaults status=in_progress
     for placeholder use; callers writing terminal-state rows (recovery
     sibling) pass status explicitly.
@@ -286,8 +286,8 @@ def update_bar_row(
 ) -> int:
     """Update an existing BAR row. Returns affected row count.
 
-    Piece 8 §4a step 14 conditional UPDATE: pass only_if_status='in_progress'
-    to guard against the sweep-race case (§5d). If affected_rows==0, the
+    End-of-run conditional UPDATE: pass only_if_status='in_progress'
+    to guard against the sweep-race case. If affected_rows==0, the
     caller writes a sibling recovery row via write_bar_row instead.
 
     Fields not in BAR_COLUMNS raise ValueError (caller programmer error).
@@ -339,11 +339,11 @@ def sweep_orphaned_inprogress(
     term_id: str,
     ttl_hours: int,
 ) -> list[str]:
-    """Sweep stale in_progress BAR rows for one term (§4a step 0b).
+    """Sweep stale in_progress BAR rows for one term (preflight step).
 
     Returns list of swept BAR ids. Each swept row transitions
     in_progress → failed with convergence_reason='hard_stop_orphaned_inprogress'.
-    Machine transition per §5d (operational lifecycle, not governance —
+    Machine transition (operational lifecycle, not governance —
     does not violate anti-pattern #18).
     """
     cutoff = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None) - dt.timedelta(hours=ttl_hours)
@@ -364,7 +364,7 @@ def sweep_orphaned_inprogress(
     if not candidate_ids:
         return []
 
-    # v3.5 Prereq C: conditional UPDATE with WHERE status='in_progress' guard.
+    # Conditional UPDATE with WHERE status='in_progress' guard.
     # Race window exists between the SELECT above and the UPDATE below —
     # a slow-legitimate runner could transition its own placeholder to
     # 'converged' between those two steps. Without the status guard, this

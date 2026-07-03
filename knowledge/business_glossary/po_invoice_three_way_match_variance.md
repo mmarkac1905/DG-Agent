@@ -1,6 +1,6 @@
 # Business Term: PO-Invoice Three-Way Match Variance
 
-_Last generated: 2026-06-30 00:25:45_
+_Last generated: 2026-07-03 21:52:59_
 
 ## Definition
 
@@ -15,7 +15,7 @@ For each vendor x month, percentage of PO lines where PO quantity, goods-receipt
 - **Domain:** procurement_finance
 - **Related terms:** [BG008, BG010, BG013](BG008, BG010, BG013.md)
 
-**Notes:** Demo model expansion 8.4.7. First glossary term whose scope exercises Layer A (zmm_approval_log is raw-only) alongside Layer B (ekko/ekpo/ekbe/rbkp/rseg/lfa1 all have dbt staging coverage). Three-way match tolerance is 5% per finance policy. Output columns: vendor_id, month, total_po_lines, matched_pct, exception_count, approved_exception_count, open_exception_count.
+**Notes:** Demo-model expansion term. First glossary term whose scope exercises Layer A (zmm_approval_log is raw-only) alongside Layer B (ekko/ekpo/ekbe/rbkp/rseg/lfa1 all have dbt staging coverage). Three-way match tolerance is 5% per finance policy. Output columns: vendor_id, month, total_po_lines, matched_pct, exception_count, approved_exception_count, open_exception_count.
 
 ## Source-to-Target Mapping
 
@@ -75,4 +75,4 @@ APPROVED — Business owner approved definition (2026-04-21)
 
 ## Open Issues (1)
 
-- **#94** [open/low] Scope-aware ordering for Piece 8 DAR loader (Option beta) - deferred follow-up to #93 — During #93 fix design, scope-aware ORDER BY was investigated as Option beta: replace LIMIT 50 ORDER BY executed_at_utc DESC with a scope-overlap-first prioritization (rows whose source_tables overlap the term scope rank above non-overlapping rows; recency within priority). Premis…
+- **#94** [open/low] Scope-aware ordering for the term-analysis DAR loader (Option beta) - deferred follow-up to #93 — During #93 fix design, scope-aware ORDER BY was investigated as Option beta: replace LIMIT 50 ORDER BY executed_at_utc DESC with a scope-overlap-first prioritization (rows whose source_tables overlap the term scope rank above non-overlapping rows; recency within priority). Premis…

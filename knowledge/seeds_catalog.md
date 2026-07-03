@@ -29,7 +29,7 @@ Static lookup tables. Edited by hand (or by a one-shot scrape), committed to git
 **Decommissioned (2026-05-12)** — pre-public-release cleanup of decorative-only seeds:
 - `strategy_configs` — trading-algo-schema artifact (columns: `hold_days`, `stop_pct`, `target_method`, `broker`, `backtest_wr`...). Only consumer was `scripts/build_knowledge_wiki.py` rendering it to a wiki page; no dbt model, app page, or LLM context loader read it.
 - `signal_relationships` — hypothesis log (signal X → outcome Y, validated/invalidated). Only consumer was the wiki renderer; no analysis script consulted it to filter or score. CLAUDE.md "After EVERY Session" rule for it was removed in the same commit.
-- `data_profile_config` + `scripts/profile_data.py` — earlier-generation EDA tool that wrote `knowledge/_profile_stats.json`. The JSON had no readers; `profile_data.py` was not in the `end_of_task.py` pipeline; the seed was loaded into a `profile_config` variable in `Business_Glossary.py` but the variable was never referenced downstream. The Phase 15b DAR/TAR/BAR pipeline (`run_*_analysis.py` × 10 + `_tar_writer.py` + `_bar_writer.py`) is the actual EDA framework and does not consult this seed.
+- `data_profile_config` + `scripts/profile_data.py` — earlier-generation EDA tool that wrote `knowledge/_profile_stats.json`. The JSON had no readers; `profile_data.py` was not in the `end_of_task.py` pipeline; the seed was loaded into a `profile_config` variable in `Business_Glossary.py` but the variable was never referenced downstream. The DAR/TAR/BAR pipeline (`run_*_analysis.py` × 10 + `_tar_writer.py` + `_bar_writer.py`) is the actual EDA framework and does not consult this seed.
 
 ---
 
@@ -56,14 +56,14 @@ Pipeline order (in `end_of_task.py`): `scan_dbt_models` → `extract_dbt_relatio
 
 ---
 
-## D. Auto-generated — semantic-model layer (Phase 15b Piece 8 §22.5/§23.5)
+## D. Auto-generated — semantic-model layer
 
 Two separate tables that confused you — here's the difference:
 
 | Table | Writer | Layer | Source of truth | Contents |
 |---|---|---|---|---|
-| **`semantic_model`** | `scripts/compile_semantic_model.py` (LLM-driven, Phase 15b §22.5) | **Layer A** | Raw SAP source tables WITHOUT dbt ontology coverage | LLM-synthesized canonical conventions per raw table: canonical alias, primary key, typical filters, typical joins, common traps, reference SQL. Used by the context assembler when no `dbt_semantic_model` row exists. |
-| **`dbt_semantic_model`** | `scripts/compile_dbt_semantic_model.py` (deterministic, Phase 15b §23.5) | **Layer B** | `dbt/target/manifest.json` | Per-dbt-model canonical info extracted from the manifest (no LLM): columns, types, tests, depends_on, materialization, description. |
+| **`semantic_model`** | `scripts/compile_semantic_model.py` (LLM-driven) | **Layer A** | Raw SAP source tables WITHOUT dbt ontology coverage | LLM-synthesized canonical conventions per raw table: canonical alias, primary key, typical filters, typical joins, common traps, reference SQL. Used by the context assembler when no `dbt_semantic_model` row exists. |
+| **`dbt_semantic_model`** | `scripts/compile_dbt_semantic_model.py` (deterministic) | **Layer B** | `dbt/target/manifest.json` | Per-dbt-model canonical info extracted from the manifest (no LLM): columns, types, tests, depends_on, materialization, description. |
 
 **When to consult which**: the context assembler prefers `dbt_semantic_model` (Layer B is ground truth from dbt) and falls back to `semantic_model` (Layer A) for raw sources that aren't yet wrapped by a dbt model. Both have a `populated_by` column (`human_override` / `auto_generated`); human-override rows are preserved across recompiles.
 

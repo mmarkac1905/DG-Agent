@@ -1,31 +1,28 @@
-"""Phase 15b piece 8 — Pre-S2T Reasoning Layer runner.
+"""Pre-S2T Reasoning Layer runner — the term-analysis (BAR) runner.
 
-Sub-piece 8.2: full mainline flow per §4a steps 0a–15, MINUS the
-§7b drift probe (step 6a0) — that lands in 8.3 alongside the other
+Implements the full mainline flow, steps 0a–15: the multi-turn Term
+EDA loop that produces business_term_analysis_results rows, plus the
 context-integrity safeguards.
 
-8.2 delivers:
+Delivered here:
 - Four prompt templates: scripts/prompts/term_{injection_iteration,
   injection_reflection, injection_finalization, condition_extraction}_prompt.md
 - Attestation checker (safeguard 3) — machine-checkable five-field list
   presence check, invoked after every LLM response.
-- Iteration loop with all §4a detectors: oscillation, mechanical
+- Iteration loop with all detectors: oscillation, mechanical
   regression, two-consecutive-mechanical, alignment regression,
-  complexity explosion, scope-sanity (§2d), budget cap (§2e).
-- Finalization with v3.1 P4 synthesis-fallback when budget exhausts
-  before step 12.
-- §4a step 14 conditional UPDATE via _bar_writer.update_bar_row per
-  §19.2 (v3.3 correction) + sibling-recovery row on affected_rows==0.
+  complexity explosion, scope-sanity, budget cap.
+- Finalization with synthesis-fallback when budget exhausts
+  before the finalization LLM call.
+- Step 14 conditional UPDATE via _bar_writer.update_bar_row
+  + sibling-recovery row on affected_rows==0.
+- Drift probe with glossary-row hash sub-check (safeguard 2)
+- Pre-injection context audit (safeguard 1)
+- Citation audit at step 6d (safeguard 4) — structured token scanner.
+- Budget pressure instrumentation (safeguard 5) — bundle_trimmed_layers
+  recorded in iteration_trace.
 
-8.2 DEFERRED to 8.3:
-- §7b drift probe with glossary-row hash sub-check (§18.3, §19.4)
-- §7a pre-injection context audit (safeguard 1)
-- §7d grep-audit at step 6d (safeguard 4) — currently inline string
-  lookup; 8.3 promotes to a structured token scanner.
-- §7e budget pressure instrumentation (safeguard 5) — bundle_trimmed_layers
-  recorded in iteration_trace but no analyst-facing aggregation yet.
-
-Exit codes (§8d):
+Exit codes:
   0 — soft convergence (any confidence)
   1 — hard-stop (any convergence_reason) or preflight operational failure
       (term not found, archived, concurrency rejection)
@@ -70,14 +67,14 @@ from claude_api import API_KEY  # noqa: E402
 
 # ─── Configuration ────────────────────────────────────────────────────
 
-# Anthropic API endpoint — shared across all piece 8 LLM calls.
+# Anthropic API endpoint — shared across all the runner's LLM calls.
 API_URL = "https://api.anthropic.com/v1/messages"
 
-# v3.4 §20: model pricing per 1M tokens. Sonnet for reasoning, Haiku for
+# Model pricing per 1M tokens. Sonnet for reasoning, Haiku for
 # preflight extraction. Prices are input/output base; cache_read gets 0.1x,
 # cache_write gets 1.25x (5m TTL) or 2x (1h TTL) of input.
 MODEL_SONNET = "claude-sonnet-4-5"        # iteration / reflection / finalization
-MODEL_HAIKU = "claude-haiku-4-5"          # §20e preflight extraction only
+MODEL_HAIKU = "claude-haiku-4-5"          # preflight extraction only
 
 _PRICING = {
     MODEL_SONNET:            {"input_per_mtok": 3.00,  "output_per_mtok": 15.00},
@@ -87,18 +84,18 @@ _PRICING = {
     "claude-haiku-4-5-20251001": {"input_per_mtok": 0.80, "output_per_mtok": 4.00},
 }
 
-# v3.4 §20h FM-resilience: CACHE_ENABLED=false disables cache_control blocks
-# at the request level. Exercised by regression Scenario 12 (§10b).
+# Cache-outage resilience: CACHE_ENABLED=false disables cache_control blocks
+# at the request level. Exercised by regression Scenario 12.
 CACHE_ENABLED = os.environ.get("CACHE_ENABLED", "true").lower() != "false"
 
-# v3.4 §20j preamble: SDK version check. We don't import the anthropic SDK —
+# SDK note: we don't import the anthropic SDK —
 # this project uses requests.post directly (existing pattern in app/claude_api.py).
 # The JSON body supports cache_control blocks identically; SDK would be a wrapper
-# not a requirement. Documented as deviation from §20d pseudocode.
+# not a requirement.
 
-# Attestation fields every piece-8 LLM response must echo (§6d).
-# v3.6 §22.7 adds `semantic_model_consumed` (Layer A).
-# v3.7 §23.7 adds `dbt_semantic_model_consumed` (Layer B) — list of
+# Attestation fields every one of the runner's LLM responses must echo.
+# `semantic_model_consumed` covers Layer A.
+# `dbt_semantic_model_consumed` covers Layer B — list of
 # dbt model_name rows the LLM consulted. Empty list is acceptable when
 # Layer B has no rows for this scope (scope is raw-only or out-of-graph).
 #
@@ -167,7 +164,7 @@ def _fill_template(tmpl: str, subs: dict) -> str:
     """Substitute {key} tokens with subs[key] via plain string replace.
 
     Avoids str.format_map's choking on unescaped braces in JSON examples
-    inside prompt templates (surfaced during 8.3.1 live verification —
+    inside prompt templates (surfaced during live verification —
     extraction prompt's output-format JSON block contains literal `{`
     that format_map interprets as a substitution field).
 
@@ -267,13 +264,13 @@ def _load_mock_response(mode: str, system_prompt: str, task_prompt: str, model: 
 
 
 def _compute_call_cost(usage: dict, model: str, bp1_ttl: str = "1h") -> float:
-    """v3.4 §20j — split cost by cache state.
+    """Split cost by cache state.
     cache_read × 0.1x input rate; cache_write × 1.25x (5m) or 2x (1h);
     uncached_input × 1x; output × output_rate.
-    bp1_ttl is the TTL of the longest-cached block (BP1 in §20b). Other
-    blocks are always 5m. v3.4 conservatively charges the 2x premium against
+    bp1_ttl is the TTL of the longest-cached block (BP1). Other
+    blocks are always 5m. We conservatively charge the 2x premium against
     the 1h-TTL block for cache_creation; in practice Anthropic's usage.cache_creation
-    field doesn't split by TTL so this is a slight over-estimate when BP1
+    field doesn't split by TTL, so this is a slight over-estimate when BP1
     dominates the write.
     """
     rates = _PRICING.get(model, _PRICING[MODEL_SONNET])
@@ -303,7 +300,7 @@ def _call_piece8_prompt(
     max_tokens: int = 4000,
     preflight_only: bool = False,
 ) -> dict:
-    """v3.4 §20d — 4-breakpoint caching wrapper via requests.post.
+    """4-breakpoint caching wrapper via requests.post.
 
     BP1 (system, 1h): system_prompt
     BP2 (user, 5m):   static + examples layers (skipped if preflight_only)
@@ -311,13 +308,13 @@ def _call_piece8_prompt(
     BP4 (user, 5m):   dynamic layer (skipped if preflight_only)
     Task tail (user, uncached): task_prompt
 
-    When CACHE_ENABLED=false (§10b Scenario 12 env variant), cache_control
+    When CACHE_ENABLED=false (Scenario 12 env variant), cache_control
     blocks are omitted. Semantic behavior is identical; cost rises ~2×.
 
     Returns dict with keys: response, cost_usd, input_tokens, output_tokens,
     cache_read_input_tokens, cache_creation_input_tokens, error.
     """
-    # v3.6 Part 1 item 3: mock mode for regression harness.
+    # Mock mode for the regression harness.
     # PIECE8_MOCK_MODE=<scenario> loads fixture responses from
     # tests/piece8_mocks/<scenario>/<call_key>.json. call_key derived
     # from model + task_prompt hash or explicit counter in fixture dir.
@@ -435,7 +432,7 @@ def _call_piece8_prompt(
 
 
 def attestation_complete(response: dict, fields: tuple = ATTESTATION_FIELDS_ITERATION) -> bool:
-    """Safeguard 3 machine check (§6d).
+    """Safeguard 3 machine check (attestation).
 
     Returns True only if every field in `fields` is present in the
     response and is a list (possibly empty). None, missing, or non-list
@@ -467,7 +464,7 @@ def _sql_hash(sql: str) -> str:
 
 
 def _sql_stability(current: str, prior: Optional[str]) -> float:
-    """Normalized edit distance between two SQL strings (§5a).
+    """Normalized edit distance between two SQL strings.
     Returns 0.0 if prior is None (first iteration, trivially stable).
     """
     if prior is None:
@@ -489,14 +486,14 @@ _CREATE_COLLISION_PATTERN = re.compile(
 
 
 def _ontology_collision_check(sql: str, existing_models: list[str]) -> list[str]:
-    """v3.5 §21 (Prereq B path c) — post-hoc collision check.
+    """Post-hoc ontology-collision check.
 
     Greps SQL for CREATE TABLE/VIEW <name> patterns. If any <name>
     matches an existing_models entry (case-insensitive, strip quotes
     + schema prefix), return it in the collision list. Caller hard-stops
     with `hard_stop_ontology_collision`.
 
-    This replaces 8.2's Jinja {{ ref() }} directive which would fail
+    This replaces an earlier Jinja {{ ref() }} directive which would fail
     the DuckDB mechanical gate. Iteration prompts now direct the LLM
     to use literal table names; this function enforces no-collision.
     """
@@ -511,10 +508,10 @@ def _ontology_collision_check(sql: str, existing_models: list[str]) -> list[str]
     return sorted(set(collisions))
 
 
-# v3.6 §7d AST-based citation audit — promoted from 8.3.1's regex version.
+# AST-based citation audit — promoted from an earlier regex version.
 # sqlparse-based tokenization + DuckDB validation for table/column classes.
-# Design target per v3.5 §21: threshold=0 for identifier classes.
-# 8.3.1 known_issue #32 closed here.
+# Design target: threshold=0 for identifier classes.
+# known_issue #32 closed here.
 
 try:
     import sqlparse  # noqa: F401
@@ -525,7 +522,7 @@ except ImportError:
     _SQLPARSE_OK = False
 
 # DuckDB + SAP + SQL-idiom allowlist for function calls.
-# Not exhaustive — DuckDB has ~300 built-ins; this covers what piece 8 SQL
+# Not exhaustive — DuckDB has ~300 built-ins; this covers what the runner's SQL
 # realistically emits. Unknown functions fall through to identifier class
 # and can be surfaced explicitly.
 _FN_ALLOWLIST = frozenset({
@@ -580,7 +577,7 @@ _SQL_KEYWORDS = frozenset({
     # Schema prefixes used in project
     "main", "main_seeds", "main_staging", "main_vault", "main_marts",
     "main_obt", "main_knowledge", "raw_sap", "information_schema",
-    # DML + DDL keywords (CREATE TABLE/VIEW used in §21 collision scenarios)
+    # DML + DDL keywords (CREATE TABLE/VIEW used in collision scenarios)
     "default", "values", "insert", "update", "delete",
     "create", "table", "view", "drop", "alter", "if", "exists",
     "temp", "temporary", "replace",
@@ -594,7 +591,7 @@ _FROM_JOIN_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# 8.5.1 Part 3 — SQL functions that use FROM as a positional delimiter.
+# SQL functions that use FROM as a positional delimiter.
 # Must be stripped before _FROM_JOIN_PATTERN matches, otherwise their
 # inner column argument is falsely classified as a table reference
 # (e.g. EXTRACT(QUARTER FROM m.goods_receipt_date) would yield
@@ -605,7 +602,7 @@ _FUNCTION_FROM_PATTERN = re.compile(
     r"\b(?:EXTRACT|TRIM|SUBSTRING)\s*\([^()]*?\bFROM\b[^()]*?\)",
     re.IGNORECASE,
 )
-# 8.4.8 Part 1 (extended): require alpha-start for the prefix in
+# Require alpha-start for the prefix in
 # `<prefix>.<col>`. Real SQL aliases / table names / CTEs never start
 # with a digit; numeric prefixes only occur in decimal literals like
 # 0.05 (tolerance percentages) or 100.50 (amounts). The legacy regex
@@ -617,14 +614,14 @@ _FUNCTION_PATTERN = re.compile(r"\b(\w+)\s*\(")
 _CTE_PATTERN = re.compile(r"\bWITH\s+(?:RECURSIVE\s+)?(.+?)\bSELECT\b", re.IGNORECASE | re.DOTALL)
 _CTE_NAME_PATTERN = re.compile(r"\b(\w+)\s+AS\s*\(", re.IGNORECASE)
 _BARE_IDENT_PATTERN = re.compile(r"(?<![\w.])([A-Za-z_][A-Za-z0-9_]*)\b")
-# 8.4.2 Bug 1 — SELECT output alias extraction.
+# SELECT output alias extraction.
 # Matches `AS <name>` appearing anywhere in SQL; safe because:
 # - CTE `WITH <name> AS (` is already handled separately via _CTE_NAME_PATTERN
 # - Table aliases `FROM x AS alias` are already tracked in `aliases` dict
 # - SELECT output aliases `AVG(col) AS metric` are the case this catches
 # - Implicit aliases (no AS) are not caught — documented deferral
 #
-# 8.4.8 Part 1 — regex tightened to require alpha-start for alias names.
+# Regex tightened to require alpha-start for alias names.
 # SQL output aliases MUST begin with [a-zA-Z_]; the legacy `\w+` match
 # also captured numeric tokens from CAST type arguments (e.g.
 # `CAST(x AS DECIMAL(13,2))` flagged `0` + `2`; `CAST(y AS INTEGER)` is
@@ -638,7 +635,7 @@ _OUTPUT_ALIAS_PATTERN = re.compile(r"\bAS\s+([a-zA-Z_]\w*)", re.IGNORECASE)
 def _extract_cte_names(sql: str) -> set[str]:
     """Parse CTE names from WITH clauses. Returns lowercased set.
 
-    8.4.2 Bug 1 fix: the original implementation used non-greedy
+    Bug fix: the original implementation used non-greedy
     WITH...SELECT match which stopped at the FIRST `SELECT` inside the
     first CTE's body, missing all subsequent CTEs (like `po_gr_pairs`
     in BG001's multi-CTE SQL). Rewritten to search the whole SQL for
@@ -656,7 +653,7 @@ def _extract_cte_names(sql: str) -> set[str]:
 
 
 def _strip_function_from_clauses(sql: str) -> str:
-    """8.5.1 Part 3 — blank out EXTRACT/TRIM/SUBSTRING arg spans so
+    """Blank out EXTRACT/TRIM/SUBSTRING arg spans so
     _FROM_JOIN_PATTERN doesn't misclassify their inner columns as
     table names. Length-preserving (whitespace replacement) so any
     downstream position math stays valid."""
@@ -698,7 +695,7 @@ def _ast_audit(
     conn: Optional["duckdb.DuckDBPyConnection"] = None,
     scope_tables: Optional[list[str]] = None,
 ) -> list[str]:
-    """v3.6 §7d AST-based citation audit — known_issue #32 fix.
+    """AST-based citation audit — known_issue #32 fix.
 
     Four identifier classes with distinct validation:
     1. Table refs (FROM/JOIN): must resolve in information_schema.tables OR
@@ -719,7 +716,7 @@ def _ast_audit(
     sql_stripped = _strip_string_literals(sql)
     cte_names = _extract_cte_names(sql_stripped)
     flagged_tables: set[str] = set()  # tables already flagged — skip in bare pass
-    # 8.4.2 Bug 1: extract SELECT output aliases (and all AS-bound names).
+    # Extract SELECT output aliases (and all AS-bound names).
     # Captures CTE aliases (redundant but harmless — cte_names covers them)
     # and SELECT-list output aliases like `SUM(x) AS metric`. These are
     # newly-defined names, not references to existing columns, so must be
@@ -811,7 +808,7 @@ def _ast_audit(
     qualified_col_spans: list[tuple[int, int]] = []
     for match in _QUALIFIED_COL_PATTERN.finditer(sql_stripped):
         qualified_col_spans.append((match.start(), match.end()))
-    # 8.4.2 Bug 1: also mark output aliases as "qualified" so the prefix
+    # Also mark output aliases as "qualified" so the prefix
     # (e.g. `alias.field`) isn't re-flagged. Qualified refs where the
     # prefix is an output alias pass through the alias-known branch.
     for match in _QUALIFIED_COL_PATTERN.finditer(sql_stripped):
@@ -832,7 +829,7 @@ def _ast_audit(
         if not is_known_prefix:
             unknowns.append(f"alias:{prefix}")
             continue
-        # 8.4.2 Bug 1 fix: if prefix resolves (via aliases) to a CTE,
+        # If prefix resolves (via aliases) to a CTE,
         # skip column validation. CTE output columns are defined inside
         # the CTE's SELECT list and cannot be validated against
         # information_schema.columns or sap_data_dictionary. The
@@ -872,7 +869,7 @@ def _ast_audit(
         # Skip CTE names and aliases
         if tok_lower in cte_names or tok_lower in aliases:
             continue
-        # 8.4.2 Bug 1 — skip SELECT-list output aliases (AS-bound names)
+        # Skip SELECT-list output aliases (AS-bound names)
         if tok_lower in output_aliases:
             continue
         # Skip known tables (they were validated as class 1)
@@ -895,7 +892,7 @@ def _ast_audit(
 
 
 # Backward-compat shim: _grep_audit name kept for existing callers but
-# delegates to _ast_audit. 8.4 removed the env-var threshold.
+# delegates to _ast_audit. The env-var threshold was removed.
 def _grep_audit(sql: str, bundle_text: str,
                 response_attestation: Optional[dict] = None,
                 conn: Optional["duckdb.DuckDBPyConnection"] = None,
@@ -909,7 +906,7 @@ def _pre_injection_audit(
     scope_tables: list[str],
     term_id: str,
 ) -> Optional[str]:
-    """v3.4 §7a Safeguard 1 — expected-vs-actual bundle diff.
+    """Safeguard 1 — expected-vs-actual bundle diff.
 
     Catches known_issue #26-class silent-empty-loader bugs: a layer loader
     that swallowed a query error and returned 0 rows would have produced
@@ -962,11 +959,11 @@ def _pre_injection_audit(
     return None
 
 
-# ─── LLM call wrappers — four prompts (§6a/b/c + §5b extraction) ──────
+# ─── LLM call wrappers — four prompts (iteration/reflection/finalization + extraction) ──────
 
 
 def _call_extraction(term_name: str, term_definition: str, term_notes: str) -> dict:
-    """v3.4 §20e — Haiku on preflight. No bundle (task-tail-only)."""
+    """Haiku on preflight. No bundle (task-tail-only)."""
     tmpl = _load_prompt("term_condition_extraction_prompt.md")
     user = _fill_template(tmpl, {
         "term_name": term_name,
@@ -991,7 +988,7 @@ def _call_iteration(
     scope_tables: list[str],
     prior_iterations_summary: str,
 ) -> dict:
-    """v3.4 §20d — 4-breakpoint call. Bundle layers via cache blocks;
+    """4-breakpoint call. Bundle layers via cache blocks;
     term + conditions + scope + prior-iterations summary go in task tail."""
     tmpl = _load_prompt("term_injection_iteration_prompt.md")
     # Task tail: only the non-bundle parts. Bundle layers travel via BP2/3/4.
@@ -1020,7 +1017,7 @@ def _call_reflection(
     term_conditions: list[dict],
     prior_iterations_summary: str,
 ) -> dict:
-    """v3.4 §20d — 4-breakpoint call; bundle reused from iteration (BP1-4 cache hit)."""
+    """4-breakpoint call; bundle reused from iteration (BP1-4 cache hit)."""
     tmpl = _load_prompt("term_injection_reflection_prompt.md")
     task_tail = _fill_template(tmpl, {
         "current_sql": current_sql,
@@ -1043,7 +1040,7 @@ def _union_attestation_from_trace_and_finalize(
     finalize: dict,
     field: str,
 ) -> list:
-    """8.5.1 Part 5 — unify attestation for BAR persistence.
+    """Unify attestation for BAR persistence.
 
     Pulls citations from three sources, in order, with order-preserving dedup:
       1. The LLM's finalization response (`finalize.<field>`).
@@ -1083,7 +1080,7 @@ def _union_attestation_from_trace_and_finalize(
 
 def _call_finalization(bundle: ContextBundle, iteration_trace: list[dict],
                        convergence_reason: str) -> dict:
-    """v3.4 §20d — 4-breakpoint call; bundle + session-trace cache hit."""
+    """4-breakpoint call; bundle + session-trace cache hit."""
     tmpl = _load_prompt("term_injection_finalization_prompt.md")
     task_tail = _fill_template(tmpl, {
         "iteration_trace": json.dumps(iteration_trace, default=str, indent=2),
@@ -1105,7 +1102,7 @@ def _synthesize_finalization_from_trace(
     iteration_trace: list[dict],
     convergence_reason: str,
 ) -> dict:
-    """Deterministic finalization when remaining budget < projection (§4a 11a).
+    """Deterministic finalization when remaining budget < projection.
 
     Reads the last iteration's gates_result + reflection output and
     produces the BAR row's audit fields without a finalization LLM call.
@@ -1117,7 +1114,7 @@ def _synthesize_finalization_from_trace(
     missed = [c["condition"] for c in condition_assessment if c.get("status") == "MISSED"]
     covered = [c["condition"] for c in condition_assessment if c.get("status") == "COVERED"]
 
-    # v3.8 §24 — union attestation across iterations so the synthesized
+    # Union attestation across iterations so the synthesized
     # fallback produces the same 7-field shape as the LLM finalization
     # path. Preserves attestation for BAR persistence even when the
     # finalization LLM call is skipped due to budget exhaustion.
@@ -1130,7 +1127,7 @@ def _synthesize_finalization_from_trace(
                 if v not in seen:
                     seen.add(v)
                     out.append(v)
-            # 8.5.1 Part 5 — also read from gates_result for Layer A/B
+            # Also read from gates_result for Layer A/B
             # attestation. Trace entries don't carry the raw "response"
             # dict; iter_sm_consumed / iter_dsm_consumed are threaded
             # into gates_result by _trace_entry instead.
@@ -1169,7 +1166,7 @@ def _synthesize_finalization_from_trace(
     }
 
 
-# ─── Step 13 confidence mapping (§5c) ──────────────────────────────────
+# ─── Step 13 confidence mapping ────────────────────────────────────────
 
 
 def _compute_confidence(
@@ -1190,7 +1187,7 @@ def _compute_confidence(
         "hard_stop_bundle_fingerprint_drift",
         "hard_stop_orphaned_inprogress",
         "hard_stop_glossary_drift",
-        "hard_stop_ontology_collision",   # v3.5 §21
+        "hard_stop_ontology_collision",
         "hard_stop_bridge_unreachable",   # Option B Phase 2
         "hard_stop_bridge_attestation_missing",   # Option B Phase 3 OQ-3a
     }
@@ -1227,7 +1224,7 @@ def _compute_confidence(
     return ("failed", True, f"Unknown convergence reason: {convergence_reason}")
 
 
-# ─── §4a step 11b: C5 sourcing-recommendations trigger (Phase 2b) ───
+# ─── Step 11b: C5 sourcing-recommendations trigger ──────────────────
 
 
 _C5_OPTION_B_CONVERGENCE_REASONS: frozenset[str] = frozenset({
@@ -1255,7 +1252,7 @@ def _should_fire_c5(
 
     Pure function — no side effects, no I/O. Reads the top-level
     `scope_sanity_answer` field on each iteration trace entry (set by
-    `_trace_entry` at §4a step 9a from `reflect.scope_sanity_answer`).
+    `_trace_entry` at step 9a from `reflect.scope_sanity_answer`).
 
     convergence_reason defaults to None so existing callers that don't
     pass it (e.g., the original consecutive-no test fixtures) preserve
@@ -1265,8 +1262,6 @@ def _should_fire_c5(
     Decoupled from convergence-reason logic so future trigger
     refinements (e.g. budget, term-type gating) live here, not in
     the convergence-reason switch.
-
-    Per tasks/c5_design.md Component 3 + C5 closure 1/4 brief.
     """
     # Path (b) — Option B single-fire.
     if convergence_reason in _C5_OPTION_B_CONVERGENCE_REASONS:
@@ -1284,7 +1279,7 @@ def _format_reachability_violations_block(
     iteration_trace: list[dict],
     convergence_reason: Optional[str],
 ) -> str:
-    """C5 closure 1/4 — render the [REACHABILITY VIOLATIONS] prompt block.
+    """Render the [REACHABILITY VIOLATIONS] prompt block for C5.
 
     Returns the formatted block string when the runner is firing C5 due
     to an Option B data-side hard-stop (`hard_stop_bridge_unreachable` or
@@ -1325,7 +1320,7 @@ def _format_reachability_violations_block(
 
 
 def _load_c5_catalog() -> list[dict]:
-    """Load full sap_table_catalog.csv (Phase 1, commit f87908e). Returns
+    """Load full sap_table_catalog.csv. Returns
     list of row dicts with the canonical 9-column schema."""
     catalog_path = _PROJECT_ROOT / "dbt" / "seeds" / "sap_table_catalog.csv"
     with open(catalog_path, encoding="utf-8") as f:
@@ -1333,14 +1328,13 @@ def _load_c5_catalog() -> list[dict]:
 
 
 def _format_c5_catalog_block(catalog: list[dict]) -> str:
-    """Format catalog rows per the Q1 canonical line format
-    (tasks/c5_q1_sample_prompt_variant_C.txt):
+    """Format catalog rows in the canonical line format:
 
         - {TABLE} | {description} | release: {STAMP} | key_fields: {F1, F2, ...}
 
-    Q1's cost projection (~$0.01 first-call, $0.003 cached for the
-    Variant C 45-table catalog) was measured against this exact format.
-    Don't reformat without re-measuring (Phase 2b decision)."""
+    The cost projection (~$0.01 first-call, $0.003 cached for the
+    45-table catalog) was measured against this exact format.
+    Don't reformat without re-measuring."""
     lines = []
     for row in catalog:
         lines.append(
@@ -1364,17 +1358,17 @@ def _call_c5_sourcing(
     catalog_block: str,
     reachability_violations: str = "",
 ) -> dict:
-    """Phase 2b §4a step 11b — C5 sourcing-recommendations LLM call.
+    """Step 11b — C5 sourcing-recommendations LLM call.
 
     Loads scripts/prompts/c5_sourcing_recommendation_prompt.md, substitutes
     placeholders, calls _call_piece8_prompt with bundle=None (no bundle
-    layers, no BP2/3/4 cache — decision F: "NO prompt caching for C5 in
-    Phase 2b"). Returns the standard piece8 result dict.
+    layers, no BP2/3/4 cache — by design C5 uses no prompt caching).
+    Returns the standard result dict.
 
     `reachability_violations` is the pre-formatted [REACHABILITY VIOLATIONS]
     block from `_format_reachability_violations_block()` when the runner
     fires C5 due to an Option B convergence reason; empty string when
-    firing via the existing scope_sanity-no path. C5 closure 1/4.
+    firing via the existing scope_sanity-no path.
     """
     tmpl = _load_prompt("c5_sourcing_recommendation_prompt.md")
     if term_conditions:
@@ -1413,7 +1407,7 @@ def _call_c5_sourcing(
 
 def _format_prior_iterations(iteration_trace: list[dict]) -> str:
     """Compact summary for injection into iteration/reflection prompts.
-    Per v3.1 Q4 bloat analysis: ~3K tokens per prior iteration at this
+    Bloat analysis: ~3K tokens per prior iteration at this
     format; iteration 5 prompt projected ~64K tokens total.
     """
     if not iteration_trace:
@@ -1440,15 +1434,14 @@ def _format_prior_iterations(iteration_trace: list[dict]) -> str:
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Phase 15b piece 8 — Pre-S2T Reasoning Layer runner. "
-            "Sub-piece 8.2: full iteration loop (§4a steps 0a-15, minus §7b "
-            "probe deferred to 8.3)."
+            "Pre-S2T Reasoning Layer runner — the term-analysis (BAR) "
+            "runner: the full multi-turn iteration loop (steps 0a-15)."
         ),
     )
     parser.add_argument("--term-id", required=True, help="Term id from business_glossary.id (e.g. BG001).")
     parser.add_argument("--max-iters", type=int, default=5, help="Max iteration-loop passes. Default 5.")
     parser.add_argument("--budget-cap", type=float, default=1.00,
-                        help="Total session LLM spend cap in USD (v3.4 §20f; cached-baseline default).")
+                        help="Total session LLM spend cap in USD (cached-baseline default).")
     parser.add_argument("--inprogress-ttl-hours", type=int, default=4, help="TTL for orphan sweep.")
     parser.add_argument("--finalization-cost-projection", type=float, default=0.10,
                         help="Reserved budget for finalization. Below this remaining → synthesize.")
@@ -1483,12 +1476,12 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(f"Preflight: term {term_id} {term_name!r} status={term_status}")
 
-        # ─── §4a step 0b: orphan sweep ───────────────────────────────
+        # ─── Step 0b: orphan sweep ───────────────────────────────
         swept = sweep_orphaned_inprogress(conn, term_id=term_id, ttl_hours=args.inprogress_ttl_hours)
         if swept:
             print(f"Step 0b: swept {len(swept)} orphan(s): {swept}")
 
-        # ─── §4a step 0a: concurrency check post-sweep ───────────────
+        # ─── Step 0a: concurrency check post-sweep ───────────────
         remaining = conn.execute(
             f"SELECT id, inprogress_since_utc FROM {BAR_TABLE_FQN} "
             "WHERE business_term_id = ? AND status = 'in_progress'",
@@ -1504,14 +1497,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"DRY RUN: preflight OK for {term_id}. No placeholder, no iterations.")
             return 0
 
-        # ─── §4a step 1: placeholder BAR ─────────────────────────────
+        # ─── Step 1: placeholder BAR ─────────────────────────────
         bar_id = write_bar_row(conn, business_term_id=term_id, status="in_progress")
         print(f"Step 1: wrote placeholder BAR {bar_id}")
 
-        # ─── §4a step 2: scope resolution ────────────────────────────
-        # 8.2 reuses assemble_context's internal resolve_scope via its
+        # ─── Step 2: scope resolution ────────────────────────────
+        # Reuses assemble_context's internal resolve_scope via its
         # scope_resolution field — no external scope_tables passed.
-        # 8.3 may extract resolve_scope for direct call if needed.
         try:
             bundle = assemble_context(
                 purpose="pre_s2t_reasoning",
@@ -1519,7 +1511,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_tokens=args.max_tokens,
                 strict=True,
                 include_debug_metadata=True,
-                conn=conn,  # 8.3.1 Bug 1: thread conn to avoid config mismatch
+                conn=conn,  # thread conn to avoid config mismatch
             )
         except ContextDegradedError as e:
             _finalize_failed(
@@ -1529,7 +1521,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
         except Exception as e:
-            # Scope resolution failure surfaces here (§4a step 2 empty scope).
+            # Scope resolution failure surfaces here (Step 2 empty scope).
             msg = str(e)
             if "scope" in msg.lower() and "empty" in msg.lower():
                 _finalize_failed(
@@ -1544,7 +1536,7 @@ def main(argv: list[str] | None = None) -> int:
         bundle_fingerprint = bundle.debug.get("schema_fingerprint") if bundle.debug else "unknown"
         print(f"Step 3: bundle {bundle.token_count} tokens, scope={scope_tables}")
 
-        # ─── §7a Safeguard 1: pre-injection context audit (8.3 add) ──
+        # ─── Safeguard 1: pre-injection context audit ────────────────
         # Expected-vs-actual diff between the helper's reported layer
         # summary and independent counts queried from DuckDB. Catches
         # known_issue #26-class silent-empty-loader bugs before they
@@ -1558,13 +1550,13 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
 
-        # ─── §4a step 4: bundle_fingerprint + drift probe baseline ────
-        # v3.4 §19.3 / §18.3 — capture baseline probe for per-iteration
+        # ─── Step 4: bundle_fingerprint + drift probe baseline ────
+        # Capture baseline probe for per-iteration
         # drift detection at step 6a0 (inside the loop below).
         drift_probe_baseline = compute_drift_probe(conn, scope_tables, term_id)
         baseline_glossary_hash = hash_glossary_row(conn, term_id)
 
-        # ─── §4a step 5: preflight condition extraction ──────────────
+        # ─── Step 5: preflight condition extraction ──────────────
         extract_result = _call_extraction(term_name, term_def, term_notes)
         if extract_result["error"]:
             _finalize_failed(conn, bar_id, term_id,
@@ -1574,8 +1566,8 @@ def main(argv: list[str] | None = None) -> int:
         term_conditions = extract_result["response"].get("conditions", [])
         print(f"Step 5: extracted {len(term_conditions)} term conditions")
 
-        # ─── §4a step 5a: budget init (count preflight against cap) ──
-        # v3.4 §20g — track all four token-accounting fields per call.
+        # ─── Step 5a: budget init (count preflight against cap) ──
+        # Track all four token-accounting fields per call.
         budget_used_usd = extract_result["cost_usd"]
         total_input_tokens = extract_result["input_tokens"]
         total_output_tokens = extract_result["output_tokens"]
@@ -1587,7 +1579,7 @@ def main(argv: list[str] | None = None) -> int:
                              rationale="Preflight extraction alone exhausted budget_cap")
             return 1
 
-        # ─── §4a iteration loop ──────────────────────────────────────
+        # ─── Iteration loop ──────────────────────────────────────────
         iteration_trace: list[dict] = []
         prior_sql_hashes: list[str] = []
         prior_alignment: Optional[int] = None
@@ -1597,7 +1589,7 @@ def main(argv: list[str] | None = None) -> int:
         for iter_num in range(1, args.max_iters + 1):
             prior_summary = _format_prior_iterations(iteration_trace)
 
-            # §4a step 6a0: drift probe continuity check (v3.4 §19.2 / §18.3)
+            # Step 6a0: drift probe continuity check
             # Two-class branching: glossary-row drift → hard_stop_glossary_drift
             # (checklist obsolete); bundle fingerprint drift (non-glossary) →
             # hard_stop_bundle_fingerprint_drift.
@@ -1612,7 +1604,7 @@ def main(argv: list[str] | None = None) -> int:
                         max_tokens=args.max_tokens,
                         strict=False,   # tolerate drift, don't fail here
                         include_debug_metadata=True,
-                        conn=conn,  # 8.3.1 Bug 1
+                        conn=conn,  # thread conn (config-mismatch fix)
                     )
                     fresh_fp = fresh_bundle.debug.get("schema_fingerprint") if fresh_bundle.debug else "unknown"
                 except Exception:
@@ -1629,8 +1621,8 @@ def main(argv: list[str] | None = None) -> int:
                     # Probe false positive (seed mtime churn, content unchanged)
                     drift_probe_baseline = current_probe
 
-            # §4a step 6a: iteration prompt
-            # 8.4.2 Bug 2: track accumulated tokens for hard-stop trace entries
+            # Step 6a: iteration prompt
+            # Track accumulated tokens for hard-stop trace entries
             # BEFORE the LLM call, so paths that fail BEFORE accumulation still
             # produce trace. Initialize to 0 so pre-LLM paths don't KeyError.
             iter_cache_read = 0
@@ -1638,7 +1630,7 @@ def main(argv: list[str] | None = None) -> int:
             iter_input_tokens = 0
             iter_output_tokens = 0
             iter_cost_usd = 0.0
-            # 8.4.8 Part 4: pre-LLM defaults for per-iteration attestation
+            # Pre-LLM defaults for per-iteration attestation
             # so hard-stop paths firing BEFORE propose is parsed still have
             # safe values to thread into gates_result.
             iter_sm_consumed: list = []
@@ -1660,7 +1652,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             if it_result["error"]:
                 convergence_reason = "hard_stop_attestation_failure"
-                # 8.4.2 Bug 2: append trace before break so iterations_count>0
+                # Append trace before break so iterations_count>0
                 iteration_trace.append(_trace_entry(
                     iter_num, "", [], 0,
                     {"compile": "not_evaluated", "run": "not_evaluated",
@@ -1687,9 +1679,9 @@ def main(argv: list[str] | None = None) -> int:
             iter_output_tokens = it_result.get("output_tokens", 0)
             iter_cost_usd = it_result.get("cost_usd", 0.0)
 
-            # 8.4.8 Part 4 — extract per-iteration attestation for trace
+            # Extract per-iteration attestation for trace
             # persistence. iter_sm_consumed / iter_dsm_consumed go into
-            # gates_result (back-compat with 8.4.5 BAR schema).
+            # gates_result (back-compat with the earlier BAR schema).
             # iter_response_attestation captures every iteration-contract
             # attestation field under "response" so the synthesis path's
             # _union_field finds them.
@@ -1713,7 +1705,7 @@ def main(argv: list[str] | None = None) -> int:
 
             if not attestation_complete(propose, ATTESTATION_FIELDS_ITERATION):
                 convergence_reason = "hard_stop_attestation_failure"
-                # 8.4.2 Bug 2: append trace before break
+                # Append trace before break
                 iteration_trace.append(_trace_entry(
                     iter_num, propose.get("query_sql", "") if isinstance(propose, dict) else "",
                     [], 0,
@@ -1760,10 +1752,10 @@ def main(argv: list[str] | None = None) -> int:
             sql = propose.get("query_sql", "")
             sql_hash_cur = _sql_hash(sql)
 
-            # §4a step 6c: oscillation detector
+            # Step 6c: oscillation detector
             if iter_num >= 3 and sql_hash_cur == prior_sql_hashes[iter_num - 3]:
                 convergence_reason = "hard_stop_oscillation"
-                # 8.4.2 Bug 2: append trace before break
+                # Append trace before break
                 iteration_trace.append(_trace_entry(
                     iter_num, sql, [], 0,
                     {"compile": "not_evaluated", "run": "not_evaluated",
@@ -1778,14 +1770,14 @@ def main(argv: list[str] | None = None) -> int:
                 ))
                 break
 
-            # §4a step 6d: AST-based citation audit (v3.6 §7d Safeguard 4).
+            # Step 6d: AST-based citation audit (Safeguard 4).
             unknown_refs = _ast_audit(sql, bundle.formatted_prompt, propose,
                                       conn=conn, scope_tables=scope_tables)
             if unknown_refs:
                 print(f"  iter {iter_num} ast_audit unknowns ({len(unknown_refs)}): "
                       f"{unknown_refs[:10]}{'...' if len(unknown_refs) > 10 else ''}")
                 convergence_reason = "hard_stop_citation_audit_failure"
-                # 8.4.2 Bug 2: append trace before break
+                # Append trace before break
                 iteration_trace.append(_trace_entry(
                     iter_num, sql, [], 0,
                     {"compile": "not_evaluated", "run": "not_evaluated",
@@ -1800,12 +1792,12 @@ def main(argv: list[str] | None = None) -> int:
                 ))
                 break
 
-            # §4a step 6d.1 (v3.5 §21 Prereq B path c): ontology collision check.
+            # Step 6d.1: ontology collision check.
             ontology_consumed_list = propose.get("ontology_consumed", [])
             collisions = _ontology_collision_check(sql, ontology_consumed_list)
             if collisions:
                 convergence_reason = "hard_stop_ontology_collision"
-                # 8.4.2 Bug 2: append trace before break
+                # Append trace before break
                 iteration_trace.append(_trace_entry(
                     iter_num, sql, [], 0,
                     {"compile": "not_evaluated", "run": "not_evaluated",
@@ -1845,7 +1837,7 @@ def main(argv: list[str] | None = None) -> int:
                 ))
                 break
 
-            # §4a step 7: mechanical gate (DuckDB execute; compile+run collapsed)
+            # Step 7: mechanical gate (DuckDB execute; compile+run collapsed)
             run_result = None
             compile_ok = False
             run_ok = False
@@ -1869,7 +1861,7 @@ def main(argv: list[str] | None = None) -> int:
                 "bridge_coverage": bc_status,  # Option B Phase 2 — audit trail
             }
 
-            # §4a step 7a/7b: mechanical regression / two-consecutive
+            # Step 7a/7b: mechanical regression / two-consecutive
             if iter_num >= 2:
                 prior_compile = iteration_trace[-1]["gates_result"]["compile"]
                 if gates["compile"] == "fail" and prior_compile == "pass":
@@ -1893,7 +1885,7 @@ def main(argv: list[str] | None = None) -> int:
                                                         iter_cost_usd=iter_cost_usd, semantic_model_consumed=iter_sm_consumed, dbt_semantic_model_consumed=iter_dsm_consumed, response_attestation=iter_response_attestation))
                     break
 
-            # §4a step 8: reflection
+            # Step 8: reflection
             result_summary = {
                 "row_count": row_count,
                 "sample_rows": sample_rows,
@@ -1902,7 +1894,7 @@ def main(argv: list[str] | None = None) -> int:
                                            _format_prior_iterations(iteration_trace))
             if refl_result["error"]:
                 convergence_reason = "hard_stop_attestation_failure"
-                # 8.4.2 Bug 2: append trace before break
+                # Append trace before break
                 iteration_trace.append(_trace_entry(
                     iter_num, sql, sample_rows, row_count,
                     {**gates, "reflection_llm": "fail", "error": refl_result.get("error")},
@@ -1922,7 +1914,7 @@ def main(argv: list[str] | None = None) -> int:
             total_output_tokens += refl_result["output_tokens"]
             total_cache_read_tokens += refl_result.get("cache_read_input_tokens", 0)
             total_cache_creation_tokens += refl_result.get("cache_creation_input_tokens", 0)
-            # v3.4 §20g — per-iteration cache telemetry (sum iter + reflect for this iteration)
+            # Per-iteration cache telemetry (sum iter + reflect for this iteration)
             iter_cache_read += refl_result.get("cache_read_input_tokens", 0)
             iter_cache_creation += refl_result.get("cache_creation_input_tokens", 0)
             iter_input_tokens += refl_result.get("input_tokens", 0)
@@ -1931,7 +1923,7 @@ def main(argv: list[str] | None = None) -> int:
 
             if not attestation_complete(reflect, ATTESTATION_FIELDS_FINALIZATION):
                 convergence_reason = "hard_stop_attestation_failure"
-                # 8.4.2 Bug 2: append trace before break
+                # Append trace before break
                 iteration_trace.append(_trace_entry(
                     iter_num, sql, sample_rows, row_count,
                     {**gates, "reflection_attestation": "fail"},
@@ -1956,7 +1948,7 @@ def main(argv: list[str] | None = None) -> int:
             # Step 9 v3.1 P9: populate row_count_ok from reflection
             gates["row_count_ok"] = (row_count > 0) or justified_zero
 
-            # §4a step 9a: scope-sanity detector
+            # Step 9a: scope-sanity detector
             if scope_sanity == "no":
                 consecutive_scope_no_count += 1
                 if consecutive_scope_no_count >= 2:
@@ -1973,7 +1965,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 consecutive_scope_no_count = 0
 
-            # §4a step 9b: alignment regression detector
+            # Step 9b: alignment regression detector
             if prior_alignment is not None and alignment < prior_alignment - 10:
                 convergence_reason = "hard_stop_alignment_regression"
                 iteration_trace.append(_trace_entry(iter_num, sql, sample_rows, row_count, gates,
@@ -1986,7 +1978,7 @@ def main(argv: list[str] | None = None) -> int:
                                                 iter_cost_usd=iter_cost_usd, semantic_model_consumed=iter_sm_consumed, dbt_semantic_model_consumed=iter_dsm_consumed, response_attestation=iter_response_attestation))
                 break
 
-            # §4a step 9c: complexity explosion detector
+            # Step 9c: complexity explosion detector
             if iter_num >= 2:
                 prior_sql = iteration_trace[-1]["query_sql"]
                 if len(sql) > 2 * len(prior_sql):
@@ -2001,7 +1993,7 @@ def main(argv: list[str] | None = None) -> int:
                                                 iter_cost_usd=iter_cost_usd, semantic_model_consumed=iter_sm_consumed, dbt_semantic_model_consumed=iter_dsm_consumed, response_attestation=iter_response_attestation))
                     break
 
-            # §4a step 10: trace append
+            # Step 10: trace append
             iteration_trace.append(_trace_entry(iter_num, sql, sample_rows, row_count, gates,
                                                 alignment, rubric_recomputed, rubric_drift,
                                                 scope_sanity, bundle, reflect,
@@ -2013,12 +2005,12 @@ def main(argv: list[str] | None = None) -> int:
             prior_sql_hashes.append(sql_hash_cur)
             prior_alignment = alignment
 
-            # §4a step 10a: budget cap
+            # Step 10a: budget cap
             if budget_used_usd >= args.budget_cap:
                 convergence_reason = "hard_stop_budget"
                 break
 
-            # §4a step 11: soft-stop check (all must hold)
+            # Step 11: soft-stop check (all must hold)
             prior_entry_sql = iteration_trace[-2]["query_sql"] if iter_num >= 2 else None
             stability = _sql_stability(sql, prior_entry_sql)
             if (gates["compile"] == "pass"
@@ -2032,14 +2024,14 @@ def main(argv: list[str] | None = None) -> int:
         else:
             convergence_reason = "hard_stop_max_iters"
 
-        # ─── §4a step 11a: finalization projection ──────────────────
+        # ─── Step 11a: finalization projection ──────────────────
         remaining_budget = args.budget_cap - budget_used_usd
         skip_step_12 = remaining_budget < args.finalization_cost_projection
         if skip_step_12:
             finalize = _synthesize_finalization_from_trace(iteration_trace, convergence_reason)
             print(f"Step 12: synthesized (budget tight; remaining=${remaining_budget:.3f})")
         else:
-            # §4a step 12: finalization LLM call
+            # Step 12: finalization LLM call
             fin_result = _call_finalization(bundle, iteration_trace, convergence_reason)
             if fin_result["error"] or not attestation_complete(fin_result["response"], ATTESTATION_FIELDS_FINALIZATION):
                 convergence_reason = "hard_stop_finalization_attestation_failure"
@@ -2053,7 +2045,7 @@ def main(argv: list[str] | None = None) -> int:
                 total_cache_creation_tokens += fin_result.get("cache_creation_input_tokens", 0)
             print(f"Step 12: finalization done (budget_used=${budget_used_usd:.3f})")
 
-        # ─── §4a step 13: confidence mapping ────────────────────────
+        # ─── Step 13: confidence mapping ────────────────────────
         conditions_missed = finalize.get("term_conditions_missed", [])
         confidence, analyst_review, analyst_reason = _compute_confidence(
             convergence_reason,
@@ -2066,7 +2058,7 @@ def main(argv: list[str] | None = None) -> int:
             analyst_review = True
             analyst_reason = finalize.get("analyst_review_reason", analyst_reason)
 
-        # ─── §7e Safeguard 5 (8.3): budget-pressure surfacing ────────
+        # ─── Safeguard 5: budget-pressure surfacing ──────────────────
         # If the bundle was trimmed on ANY iteration AND confidence ≤ medium,
         # surface that fact in analyst_review_reason so the analyst knows
         # low confidence may be a bundle-size artifact, not a term-quality one.
@@ -2077,19 +2069,19 @@ def main(argv: list[str] | None = None) -> int:
         ]
         if iterations_with_trim and confidence in ("medium", "low", "failed"):
             trim_note = (
-                f" [§7e budget pressure: bundle trimmed on "
+                f" [budget pressure: bundle trimmed on "
                 f"iteration(s) {iterations_with_trim} — review may be bundle-size related]"
             )
             analyst_reason = (analyst_reason or "") + trim_note
             analyst_review = True
 
-        # ─── §4a step 11b: C5 sourcing recommendations (Phase 2b) ────
+        # ─── Step 11b: C5 sourcing recommendations ────────────────
         # Fires when the iteration loop terminated via consecutive
         # scope_sanity=no (convergence_reason=hard_stop_scope_mismatch).
         # Surfaces actionable table-extension recommendations to the
         # analyst rather than leaving the term flagged "unanswerable".
-        # Per tasks/c5_design.md Components 2-4. Phase 2b decision F:
-        # no prompt caching (catalog block uncached; per-call cost ~$0.01).
+        # By design C5 uses no prompt caching (catalog block uncached;
+        # per-call cost ~$0.01).
         c5_input_tokens: Optional[int] = None
         c5_output_tokens: Optional[int] = None
         c5_cost_usd: Optional[float] = None
@@ -2172,7 +2164,7 @@ def main(argv: list[str] | None = None) -> int:
                 for v in c5_validated_result["validated_recommendations"]
             )
 
-        # ─── §4a step 14: conditional UPDATE via _bar_writer (§19.2) ─
+        # ─── Step 14: conditional UPDATE via _bar_writer ─────────
         if c5_has_usable:
             # Override default mapping; convergence_reason stays
             # hard_stop_scope_mismatch (the underlying verdict didn't
@@ -2190,7 +2182,7 @@ def main(argv: list[str] | None = None) -> int:
             "status": terminal_status,
             "inprogress_since_utc": None,
             "finished_at_utc": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None),
-            # 8.4.2 Bug 2: persist scope_tables resolved at §4a step 2
+            # Persist scope_tables resolved at Step 2
             "scope_tables": json.dumps(scope_tables or []),
             "iterations_count": len(iteration_trace),
             "convergence_reason": convergence_reason,
@@ -2215,8 +2207,8 @@ def main(argv: list[str] | None = None) -> int:
             "analysis_findings_consumed": json.dumps(finalize.get("analysis_findings_consumed", [])),
             "dar_consumed": json.dumps(finalize.get("dar_consumed", [])),
             "prior_bar_consumed": json.dumps(finalize.get("prior_bar_consumed", [])),
-            # v3.8 §24 (8.4.5) — Layer A + Layer B attestation persistence.
-            # 8.5.1 Part 5 — union finalize + trace gates_result so the BAR
+            # Layer A + Layer B attestation persistence.
+            # Union finalize + trace gates_result so the BAR
             # column captures per-iteration citations even if the LLM's
             # finalize response drops them. Trace[N].gates_result holds
             # each iteration's echoed attestation (threaded via
@@ -2255,7 +2247,7 @@ def main(argv: list[str] | None = None) -> int:
                 _union_attestation_from_trace_and_finalize(
                     iteration_trace, finalize, "stage_a_blockers_consumed")),
             "last_source_ingestion_at": None,  # known_issue #25 — stays NULL
-            # Phase 2b — C5 sourcing recommendations. All NULL when C5
+            # C5 sourcing recommendations. All NULL when C5
             # didn't fire; populated when it did (with c5_skipped_reason
             # set when the call was attempted but produced no usable
             # output).
@@ -2277,7 +2269,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
         if affected == 0:
-            # Sweep-race: sibling recovery row (§19.2)
+            # Sweep-race: sibling recovery row
             updates["analyst_review_needed"] = True
             updates["analyst_review_reason"] = (
                 f"Legitimate run completed after orphan sweep took original "
@@ -2298,7 +2290,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"         budget_used=${budget_used_usd:.3f}/${args.budget_cap:.2f} "
               f"iterations={len(iteration_trace)}")
 
-        # known_issue #53 — one parquet sync per Piece 8 session at the
+        # known_issue #53 — one parquet sync per runner session at the
         # terminal update (not per-iteration). Dashboard sees fresh BAR
         # state on next reload.
         # KI-103 fix: pass seed_name to route through the in-process
@@ -2383,14 +2375,14 @@ def _trace_entry(
     scope_sanity: Optional[str],
     bundle: Any,
     reflect: Optional[dict] = None,
-    # v3.4 §20g — per-iteration cache telemetry (sum across iter + reflect calls)
+    # Per-iteration cache telemetry (sum across iter + reflect calls)
     iter_input_tokens: int = 0,
     iter_output_tokens: int = 0,
     iter_cache_read_tokens: int = 0,
     iter_cache_creation_tokens: int = 0,
     iter_cost_usd: float = 0.0,
-    # 8.4.8 Part 4 — per-iteration attestation persistence (companion to
-    # 8.4.5 BAR schema fix). Both fields are injected into gates_result
+    # Per-iteration attestation persistence (companion to
+    # the BAR schema fix). Both fields are injected into gates_result
     # so post-hoc analysis can determine which Layer A/B rows the LLM
     # cited in iteration N specifically, not just the BAR-level union.
     # Hard-stop paths may pass empty lists; happy path pulls from the
@@ -2416,13 +2408,13 @@ def _trace_entry(
             **gates,
             "semantic_alignment": alignment,
             "shadow_rubric_score": rubric,
-            # v3.4 §20g telemetry — 4 token fields + cost
+            # Telemetry — 4 token fields + cost
             "input_tokens": iter_input_tokens,
             "output_tokens": iter_output_tokens,
             "cache_read_input_tokens": iter_cache_read_tokens,
             "cache_creation_input_tokens": iter_cache_creation_tokens,
             "budget_used_usd": iter_cost_usd,
-            # 8.4.8 Part 4 — per-iteration attestation echo in gates_result.
+            # Per-iteration attestation echo in gates_result.
             "semantic_model_consumed": list(semantic_model_consumed or []),
             "dbt_semantic_model_consumed": list(dbt_semantic_model_consumed or []),
         },

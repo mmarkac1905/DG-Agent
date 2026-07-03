@@ -1149,7 +1149,7 @@ def main():
     print(f"Database: {DB_PATH}")
     print()
 
-    # Phase 11: stamp the ingestion event so the Streamlit freshness
+    # Stamp the ingestion event so the Streamlit freshness
     # banner has a baseline. Tables actually populated (non-empty) +
     # the 5 empty-schema tables are all included in tables_touched.
     from datetime import timezone as _tz

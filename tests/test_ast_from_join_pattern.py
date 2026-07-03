@@ -1,4 +1,4 @@
-"""8.5.1 Part 3 unit tests for _FROM_JOIN_PATTERN + _strip_function_from_clauses.
+"""Unit tests for _FROM_JOIN_PATTERN + _strip_function_from_clauses.
 
 Verifies EXTRACT/TRIM/SUBSTRING function-arg FROM clauses don't produce
 false table references in the AST audit. Run standalone:

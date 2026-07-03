@@ -708,7 +708,7 @@ def scan_all_models():
     col_id = 0
 
     for sql_file in sorted(MODELS_DIR.rglob("*.sql")):
-        # Skip Phase 12 archive folder — archived models must not appear in
+        # Skip the archive folder — archived models must not appear in
         # scan output (otherwise dbt_column_lineage / dbt_model_catalog
         # would list them under "other", breaking the clean-baseline
         # invariant after `run_archive`).

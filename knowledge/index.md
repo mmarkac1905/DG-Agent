@@ -1,6 +1,6 @@
 # CPE Procurement Analytics — Knowledge Wiki
 
-_Last generated: 2026-06-30 00:25:45_
+_Last generated: 2026-07-03 21:52:59_
 
 Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand.
 

@@ -1,4 +1,4 @@
-"""8.4.7 — Generate ZMM_APPROVAL_LOG Z-table + 500 correlated sample rows.
+"""Generate ZMM_APPROVAL_LOG Z-table + 500 correlated sample rows.
 
 Creates `raw_sap.zmm_approval_log` (12 cols, SGTXT not COMMENT per SQL
 keyword avoidance). 500 rows correlated with existing raw_sap.rbkp:

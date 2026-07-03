@@ -1,4 +1,4 @@
-"""Piece 9 Stage A — scope derivation backend.
+"""Stage A — scope derivation backend.
 
 LLM-driven table-scope proposal for draft business terms. Analyst
 reviews via the Term Scope tab in Streamlit, possibly re-prompts
@@ -6,9 +6,6 @@ with revisions, then confirms. On confirm, s2t_mapping is rewritten
 to match the proposed scope and business_glossary.status
 transitions draft -> scope_confirmed with the full iteration trail
 persisted to scope_derivation_history_json.
-
-Design doc: context/phase_15b_piece_8_pre_s2t_reasoning_layer.md
-§28 (v3.11 amendment).
 
 Public surface:
   propose_scope(term_id, conn=None)
@@ -148,7 +145,7 @@ def _render_sap_catalog(conn, exclude_tables: Optional[list[str]] = None) -> str
     merged. ~80 chars per field line; drops description_hr and
     business_meaning (kept short enough to fit in the bundle).
 
-    Stage F: `exclude_tables` suppresses rows for tables that have a
+    `exclude_tables` suppresses rows for tables that have a
     populated `semantic_model` row — the Semantic Model block renders
     richer per-table evidence for those tables, so dictionary rows
     would be redundant. Caller passes the compiled-table list.
@@ -177,14 +174,14 @@ def _render_sap_catalog(conn, exclude_tables: Optional[list[str]] = None) -> str
     return "\n".join(lines)
 
 
-# ─── Stage F renderers: semantic_model + schema_discovery ─────────────
+# ─── Renderers: semantic_model + schema_discovery ─────────────────────
 
 def _render_join_keys(join_keys_json: str) -> str:
     """Render typical_join_keys_json as readable bullet lines.
 
     Handles two shapes:
       - Legacy flat: {target_table: [col_names]}  → authored tag
-      - Stage F nested: {target_table: {columns, source, integrity_pct}}
+      - Nested: {target_table: {columns, source, integrity_pct}}
         → source tag + integrity when present
 
     This helper is Layer-A-specific; Layer B (dbt_semantic_model) uses
@@ -235,7 +232,7 @@ def _compiled_semantic_model_tables(conn) -> list[str]:
 
 def _render_semantic_model_block(conn) -> str:
     """Render compiled Layer A semantic_model rows + flag not-yet-compiled
-    tables. Per Stage F EDIT S4: no domain-area filter — render all.
+    tables. No domain-area filter — render all.
     """
     try:
         rows = conn.execute("""
@@ -406,7 +403,7 @@ def _render_join_cardinality_block(
     conn,
     candidate_tables: Optional[list[str]] = None,
 ) -> str:
-    """Spec §6.1 — render empirical join cardinality evidence per pair.
+    """Render empirical join cardinality evidence per pair.
 
     Reads `join_cardinality` DARs (analysis_type filter, current rows
     only — superseded_by IS NULL). For each pair, prioritize rendering:
@@ -414,9 +411,8 @@ def _render_join_cardinality_block(
         2. header_detail DARs (all)
         3. ≤2 representative catastrophic_fanout DARs
         4. ≤1 representative no_signal DAR
-    Goal: keep context informative without swamping the LLM with 28
-    catastrophic_fanout rows from over-bridged pairs (Amendment 2 v3.1
-    leaves 5 pairs above the per-pair target).
+    Goal: keep context informative without swamping the LLM with dozens
+    of catastrophic_fanout rows from over-bridged pairs.
 
     `candidate_tables` filters: if provided, only pairs where both t1
     and t2 are in the set are rendered. Pass None at propose-time to
@@ -533,8 +529,8 @@ def _render_dar_coverage_block(
     conn,
     candidate_tables: Optional[list[str]] = None,
 ) -> str:
-    """Spec §6.2 — per-table analyzer coverage so the LLM has ground
-    truth for `missing_domain_eda` emission (incidentally fixes F11).
+    """Per-table analyzer coverage so the LLM has ground
+    truth for `missing_domain_eda` emission.
 
     Renders one row per raw_sap table (or the candidate subset) with
     a check/cross per analyzer type: completeness, dimensions, magnitude,
@@ -706,7 +702,7 @@ def _validate_response(payload: dict, live_tables: set[str],
                        ) -> list[str]:
     """Returns list of validation issue strings (empty = clean).
 
-    When `conn` is provided, also runs Direction D §6.5 cardinality
+    When `conn` is provided, also runs the cardinality
     hard-gate: for each pair in `payload['join_path']`, if cardinality
     DARs exist but none classify as viable (per_record_key /
     header_detail) and non-stale, append a `validation_issues` entry
@@ -763,7 +759,7 @@ def _validate_response(payload: dict, live_tables: set[str],
             continue
         if b.get("type") not in valid_btypes:
             issues.append(f"blocker[{i}] invalid type: {b.get('type')!r}")
-        # §28.11 cross-stage contract — 6 augmentation fields required on
+        # Cross-stage contract — 6 augmentation fields required on
         # new proposals. Older history JSON (pre-augmentation) is parsed
         # with missing fields and rendered via backward-compat path.
         missing = [f for f in augment_fields if not (b.get(f) or "").strip()]
@@ -789,10 +785,10 @@ def _validate_response(payload: dict, live_tables: set[str],
         if "reasoning_for_diff" not in payload:
             issues.append("revise mode requires reasoning_for_diff")
 
-    # Direction D §6.5 — cardinality hard-gate (only when conn provided).
+    # Cardinality hard-gate (only when conn provided).
     # Pre-chain placement satisfied by construction: validator runs in
     # _propose_or_revise BEFORE confirm_scope's side-effect chain.
-    # Per-iteration re-check (F19) satisfied by virtue of validator
+    # Per-iteration re-check satisfied by virtue of validator
     # firing on every revise call independent of blocker state.
     if conn is not None:
         cardinality_issues = _validate_cardinality_join_path(payload, conn)
@@ -805,20 +801,20 @@ def _validate_cardinality_join_path(
     payload: dict,
     conn: duckdb.DuckDBPyConnection,
 ) -> list[str]:
-    """Direction D §6.5 — for each pair in the LLM-declared `join_path`,
+    """For each pair in the LLM-declared `join_path`,
     require at least one viable, non-stale `join_cardinality` DAR.
 
     Pair selection: uses `payload['join_path']` (NOT C(n,2) over
-    `proposed_tables`). Per design Round 4 flag B, iterating all proposed
-    pairs over-blocks pairs the term's query never joins.
+    `proposed_tables`) — iterating all proposed
+    pairs would over-block pairs the term's query never joins.
 
     Staleness: `source_row_counts` for either side has shifted >10% from
     the DAR's recorded count → DAR treated as stale.
 
     Escape hatch: if the LLM has emitted ANY `missing_table` blocker in
-    the same iteration, downgrade hard-gate to silent warning (per spec
-    §6.5). Per-iteration re-check satisfies F19 — no blocker carry-forward
-    state needed.
+    the same iteration, downgrade hard-gate to silent warning.
+    Per-iteration re-check means no blocker carry-forward
+    state is needed.
     """
     issues: list[str] = []
     join_path = payload.get("join_path") or []
@@ -898,8 +894,8 @@ def _validate_cardinality_join_path(
         # No viable, non-stale candidate for this pair.
         if has_missing_table_blocker:
             # Escape hatch: LLM proposed resolution → soft warning,
-            # not validation_issues. v3.1 keeps this silent (no separate
-            # warnings channel ships in this commit).
+            # not validation_issues. Kept silent (no separate
+            # warnings channel exists yet).
             continue
         issues.append(
             f"No viable join key between {from_t} and {to_t}. "
@@ -987,8 +983,8 @@ def _propose_or_revise(term_id: str, mode: str,
         term = _load_term(conn, term_id)
         live_tables = _raw_sap_tables(conn)
 
-        # Stage F: semantic_model overrides dictionary rows for compiled
-        # tables (tiered rendering per EDIT S3). schema_discovery ships
+        # semantic_model overrides dictionary rows for compiled
+        # tables (tiered rendering). schema_discovery ships
         # a parallel block covering empirical relational structure.
         compiled = _compiled_semantic_model_tables(conn)
         catalog = _render_sap_catalog(conn, exclude_tables=compiled)
@@ -1006,7 +1002,7 @@ def _propose_or_revise(term_id: str, mode: str,
         if mode == "revise" and prior_iterations:
             prior_proposal = prior_iterations[-1].get("llm_response")
 
-        # Direction D §6.1 + §6.2: cardinality + DAR coverage blocks.
+        # Cardinality + DAR coverage blocks.
         # In revise mode, scope to the prior proposal's tables; in
         # propose mode, render all available evidence.
         cand_tables: Optional[list[str]] = None
@@ -1159,11 +1155,12 @@ def _has_deployed_s2t_rows(term_id: str) -> tuple[bool, int]:
     """known_issue #65 guard: returns (has_deployed, count).
 
     True iff any `s2t_mapping` row for term_id has `target_model`
-    populated. Stage A writes rows with target_model empty; Piece 8
-    Deploy populates target_model. Inlines the target_model-populated
-    check (same semantic as Stage D.2's `has_piece8_s2t_rows` helper).
-    Consolidation deferred to Direction C Part E if primitive design
-    shares state-check logic.
+    populated. Stage A writes rows with target_model empty; the
+    Stage D deploy step populates target_model. Inlines the
+    target_model-populated
+    check (same semantic as the UI's `has_piece8_s2t_rows` helper).
+    Consolidation deferred until a shared state-check primitive
+    is designed.
     """
     if not _S2T_CSV.exists():
         return (False, 0)
@@ -1229,7 +1226,7 @@ def confirm_scope(term_id: str, iter_num: int, confirmed_by: str,
             )
 
         # known_issue #65 guard: refuse to re-derive scope on a term
-        # that has Piece 8 Deploy output. Without this guard,
+        # that has deployed S2T output (Stage D). Without this guard,
         # _rewrite_s2t_for_term below would silently delete rows
         # carrying target_model + transformation_logic + join/filter
         # descriptions — i.e., destroy Deploy-produced state with no
@@ -1245,7 +1242,7 @@ def confirm_scope(term_id: str, iter_num: int, confirmed_by: str,
                     f"{n_deployed} deployed S2T row(s) with populated "
                     "target_model would be destroyed.\n\n"
                     "Re-deriving scope on an already-deployed term is "
-                    "blocked pending Direction C (Re-run S2T flow). To "
+                    "blocked pending a dedicated re-run S2T flow. To "
                     "change this term's scope today, create a new "
                     "business_glossary term with the desired scope and "
                     "follow the standard pipeline; the existing term's "

@@ -1,9 +1,10 @@
-"""Phase 15b Piece 8 §25.3 (v3.9, 8.4.6) — grain_relationship analyzer.
+"""grain_relationship analyzer.
 
 Emits `domain_analysis_results` rows with analysis_type='grain_relationship'
 for detected header/detail sum-match relationships between pairs of raw
 source tables. Feeds Layer A's grain_relationships_json via
-compile_semantic_model.py co-compilation. Symmetric entries per §25.9(c).
+compile_semantic_model.py co-compilation. Each detected relationship is
+written as symmetric entries (one per direction).
 
 Deterministic — no LLM calls. Pure SQL aggregation + heuristic matching:
   - Pre-filter pairs (T1 < T2 lexicographic; ≥1 shared numeric column)
@@ -12,8 +13,8 @@ Deterministic — no LLM calls. Pure SQL aggregation + heuristic matching:
   - sum_match_pct = fraction of joined keys where ABS diff / header < 0.01
   - Confidence: >0.99 high, 0.90-0.99 medium, <0.90 low (suppressed)
 
-Pair scope format: source_tables stored comma-separated "t1,t2" per
-§25.9(f) convention.
+Pair scope format: source_tables stored comma-separated "t1,t2",
+lexicographically sorted.
 
 CLI:
   python scripts/run_grain_relationship_analysis.py                     # all raw pairs
@@ -53,7 +54,7 @@ _DAR_FIELDS: list[str] = [
 
 _ANALYSIS_TYPE = "grain_relationship"
 _DOMAIN_NAME = "grain"
-_TOLERANCE = 0.01  # ±1% per §25.9(d)
+_TOLERANCE = 0.01  # ±1% sum-match tolerance
 _CONF_HIGH = 0.99
 _CONF_MEDIUM = 0.90
 
@@ -203,8 +204,8 @@ def _emit_symmetric_pair(
     confidence: str,
     schema_version: str,
 ) -> None:
-    """Emit TWO DARs: one scoping header-role, one detail-role. Per
-    §25.9(c), each Layer A row gets a self-contained entry with
+    """Emit TWO DARs: one scoping header-role, one detail-role, so
+    each Layer A row gets a self-contained entry with
     other_table + role. Layer A compile reads both and writes matching
     symmetric entries into each table's row.
     """
@@ -226,7 +227,7 @@ def _emit_symmetric_pair(
         "superseded_by": "",
         "executed_by": "run_grain_relationship_analysis.py",
         "schema_version": schema_version,
-        # Source_tables format per §25.9(f): comma-separated, lex-sorted
+        # Source_tables format: comma-separated, lex-sorted
         "source_tables": ",".join(sorted([t_header.lower(), t_detail.lower()])),
         "domain_name": _DOMAIN_NAME,
         "last_source_ingestion_at": "",
@@ -242,7 +243,7 @@ def _emit_symmetric_pair(
         "sum_match_pct": round(sum_match_pct, 4),
         "confidence": confidence,
         "subject_table": t_header.lower(),
-        # Stage B — non-LLM DAR type; schema uniformity per §4.3b.
+        # Stage B — non-LLM DAR type; kept schema-uniform with LLM analyzers.
         "blockers_addressed": [],
     }
     dar_header = dict(base)
@@ -262,7 +263,7 @@ def _emit_symmetric_pair(
         "sum_match_pct": round(sum_match_pct, 4),
         "confidence": confidence,
         "subject_table": t_detail.lower(),
-        # Stage B — non-LLM DAR type; schema uniformity per §4.3b.
+        # Stage B — non-LLM DAR type; kept schema-uniform with LLM analyzers.
         "blockers_addressed": [],
     }
     dar_detail = dict(base)
@@ -368,7 +369,7 @@ def analyze_pair(conn, t1: str, t2: str) -> int:
             elif pct >= _CONF_MEDIUM:
                 conf = "medium"
             else:
-                continue  # low — suppressed per §25.9(d)
+                continue  # low confidence — suppressed by design
             _emit_symmetric_pair(
                 conn,
                 t_header=t_hdr, header_col=hdr_col,

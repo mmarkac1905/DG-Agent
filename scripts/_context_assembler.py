@@ -1,20 +1,18 @@
-"""Phase 15a piece 5 Gate A - Context assembly helper.
+"""Context assembly helper — builds the layered LLM context bundle.
 
-See context/phase_15a_piece_4_context_assembly_helper.md for the design.
-
-Gate A scope (this file):
+Scope (this file):
 - Six-layer architecture (static/dynamic/ontology/examples/business/archived)
 - Purpose weight matrix (module-level dict)
-- Linear-normalization budget math per DESIGN §3d
+- Linear-normalization budget math
 - Scope resolution cascade Strategies 1, 2, 3, 5 (S4 stubbed as NotImplementedError)
-- Per-layer empty definitions per §3j table
+- Per-layer empty definitions
 - Strict mode raises ContextDegradedError on empty HEAVY
-- Content-hash fingerprint per §3f using _sidecar.compute_file_hash
-- Tokenizer stub (len // 4); Gate A-2 swap to Anthropic count_tokens + cache
+- Content-hash fingerprint using _sidecar.compute_file_hash
+- Tokenizer: Anthropic count_tokens + cache, with a len // 4 stub fallback
 
-Out of scope for Gate A:
+Out of scope:
 - LLM calls of any kind (Strategy 4 raises NotImplementedError)
-- Completeness / Dimensions analyses (Gate B)
+- Completeness / Dimensions analyses (separate analyzers)
 """
 from __future__ import annotations
 
@@ -39,7 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sidecar import compute_file_hash, now_iso_utc  # noqa: E402
 
 # =========================================================================
-# Constants (§3c weight matrix, §3d units)
+# Constants (weight matrix + weight units)
 # =========================================================================
 
 PURPOSES = (
@@ -70,7 +68,7 @@ PURPOSE_WEIGHTS: dict[str, dict[str, str]] = {
         "static": "heavy", "dynamic": "HEAVY", "ontology": "light",
         "examples": "light", "business": "heavy", "archived": "light",
     },
-    # Phase 15b piece 8 §2a (bootstrap added in 8.2; 8.3 adds safeguards).
+    # pre_s2t_reasoning — the term-analysis (BAR) runner's purpose.
     # Dynamic HEAVY — DAR reservoir projection onto term is the core input.
     # Business HEAVY — term definition and business context anchor reasoning.
     # Ontology heavy — existing models inform ref() collision avoidance (#29).
@@ -94,35 +92,35 @@ OVERHEAD_RATIO = 0.10
 
 MODEL = "claude-sonnet-4-6"
 
-# Layer source CSVs used for content-hash fingerprint (§3f)
+# Layer source CSVs used for content-hash fingerprint
 LAYER_SOURCE_CSVS: dict[str, list[str]] = {
     "static": [
         "sap_data_dictionary.csv", "source_column_roles.csv",
-        # movement_type_mapping.csv decommissioned 2026-05-05 (Phase α):
+        # movement_type_mapping.csv decommissioned 2026-05-05:
         # BWART decode now sourced via main_marts.dim_movement_type which
         # reads vault sat_movement_type + sat_movement_type_text (SAP-native
         # T156 + T156T). Static-layer fingerprint covers raw_sap drift.
         "z_tables_catalog.csv",
-        # v3.6 §22.6 — Layer A compiled semantic model. Included in the
-        # fingerprint so mid-session recompile invalidates the drift probe
-        # per §7b (catches the case where compile_semantic_model.py runs
-        # while a piece 8 session is in flight on the same term).
+        # Layer A compiled semantic model. Included in the
+        # fingerprint so a mid-session recompile invalidates the drift
+        # probe (catches the case where compile_semantic_model.py runs
+        # while a term-analysis session is in flight on the same term).
         "semantic_model.csv",
-        # v3.7 §23.6 — Layer B dbt-manifest-compiled model conventions.
+        # Layer B dbt-manifest-compiled model conventions.
         # Fingerprint inclusion ensures mid-session recompile (via
         # compile_dbt_semantic_model.py) invalidates the drift probe.
         "dbt_semantic_model.csv",
     ],
     "dynamic": [
         "analysis_findings.csv",
-        # Piece 2 OBTs: added to fingerprint source list post Gate C review.
+        # Analysis-result seeds: added to fingerprint source list after review.
         # Before this fix the fingerprint was DAR-content-blind — 4 calls
         # across different DAR states (empty, 1 row, 3 rows) all hashed to
         # the same value, masking the dynamic layer's content churn.
         "domain_analysis_results.csv",
         "business_term_analysis_results.csv",
-        # Stage C (Piece 9 §28.11.7): TAR churn must invalidate the
-        # fingerprint so Piece 8's drift probe catches Term EDA re-runs.
+        # Stage C: TAR churn must invalidate the fingerprint so the
+        # term-analysis runner's drift probe catches Term EDA re-runs.
         "term_analysis_results.csv",
     ],
     "ontology": ["dbt_column_lineage.csv", "s2t_mapping.csv"],
@@ -139,17 +137,17 @@ LAYER_SOURCE_CSVS: dict[str, list[str]] = {
     "archived": ["archive_log.csv"],
 }
 
-# Per-layer "non-empty" sources (§3j) — any one producing rows = layer non-empty
+# Per-layer "non-empty" sources — any one producing rows = layer non-empty
 EMPTY_SOURCES: dict[str, tuple[str, ...]] = {
-    # v3.6 §22.6 note — 'semantic_model' appears here so it contributes to
+    # Note — 'semantic_model' appears here so it contributes to
     # _layer_is_empty's any-source-non-zero logic. But Layer A being empty
     # for a scope is legitimately correct when all scope_tables have dbt
-    # ontology coverage (§22.9(b)). The actual "uncovered-table-missing-
+    # ontology coverage. The actual "uncovered-table-missing-
     # Layer-A" signal is surfaced separately via the
     # 'semantic_model_coverage_gap' detail key set by _load_static — callers
-    # (piece 8 runner, analyst via debug metadata) read that boolean rather
-    # than inferring from layer-empty. See Q2 resolution nuance in §22.10.
-    # v3.7 §23.6 note — 'dbt_semantic_model' added. Same conditional-empty
+    # (the term-analysis runner, analyst via debug metadata) read that boolean
+    # rather than inferring from layer-empty.
+    # Note — 'dbt_semantic_model' added. Same conditional-empty
     # pattern as Layer A's 'semantic_model': empty Layer B for a scope
     # where all scope_tables are raw-only (no dbt coverage) is legitimately
     # correct. The 'dbt_semantic_model_coverage_gap' detail key (set by
@@ -196,7 +194,7 @@ class ContextOverflowError(RuntimeError):
 
 
 # =========================================================================
-# Bundle data type (§3a)
+# Bundle data type
 # =========================================================================
 
 @dataclass
@@ -206,10 +204,10 @@ class ContextBundle:
     layer_summary: dict  # layer_name -> token_count
     scope_resolution: dict  # {strategy_used, resolved_tables}
     debug: Optional[dict] = None
-    # v3.4 §20d — per-layer text surfaces for Piece 8 caching breakpoints.
-    # Backward-compatible: formatted_prompt is unchanged; new attributes
-    # expose the same content granularly so piece 8's _call_piece8_prompt
-    # can group layers into BP1/BP2/BP3/BP4 cache blocks.
+    # Per-layer text surfaces for the term-analysis runner's prompt-caching
+    # breakpoints. Backward-compatible: formatted_prompt is unchanged; new
+    # attributes expose the same content granularly so the runner's
+    # _call_piece8_prompt can group layers into BP1/BP2/BP3/BP4 cache blocks.
     static_layer_text: str = ""
     dynamic_layer_text: str = ""
     ontology_layer_text: str = ""
@@ -219,11 +217,11 @@ class ContextBundle:
 
 
 # =========================================================================
-# Budget math (§3d linear normalization)
+# Budget math (linear normalization)
 # =========================================================================
 
 def compute_layer_budgets(purpose: str, max_tokens: int) -> dict[str, int]:
-    """Per §3d: overhead reserve + linear normalization by weight units.
+    """Overhead reserve + linear normalization by weight units.
 
     Worked example create_s2t@50K matches: ontology=12000, 4 heavies=7500,
     archived=3000, sum=45000.
@@ -249,7 +247,7 @@ def compute_layer_budgets(purpose: str, max_tokens: int) -> dict[str, int]:
 
 
 # =========================================================================
-# Fingerprint (§3f content-hash, not mtime)
+# Fingerprint (content-hash, not mtime)
 # =========================================================================
 
 def compute_fingerprint(scope_tables: list[str], purpose: str,
@@ -257,21 +255,21 @@ def compute_fingerprint(scope_tables: list[str], purpose: str,
     """sha256(scope + purpose + max_tokens + each layer source CSV sha256
     + dbt manifest.json hash if present)[:16].
 
-    v3.7 §23.6 — includes dbt/target/manifest.json hash alongside the
+    Includes the dbt/target/manifest.json hash alongside the
     CSV hashes so a `dbt parse` that regenerates manifest between a
     compile and a session invalidates the drift probe even before the
     analyst re-runs compile_dbt_semantic_model.py. Redundant with the
     dbt_semantic_model.csv hash after compile, but catches the brief
     window where manifest is fresh and compile is stale.
 
-    Uses _sidecar.compute_file_hash — rejects mtime per v3 review-round 2.
+    Uses _sidecar.compute_file_hash — content hash, deliberately not mtime.
     """
     parts: list[str] = [
         json.dumps(sorted(scope_tables)),
         purpose,
         str(max_tokens),
     ]
-    # v3.7 §23.6 — manifest.json hash as an independent drift signal.
+    # manifest.json hash as an independent drift signal.
     manifest_path = ROOT / "dbt" / "target" / "manifest.json"
     if manifest_path.exists():
         parts.append(f"manifest.json:{compute_file_hash(manifest_path)}")
@@ -284,11 +282,11 @@ def compute_fingerprint(scope_tables: list[str], purpose: str,
 
 
 # =========================================================================
-# Tokenizer — Gate A stub, Gate A-2 Anthropic (opt-in via env var)
+# Tokenizer — stub approximation or Anthropic count_tokens (env-selectable)
 # =========================================================================
 
 def count_tokens_stub(text: str) -> int:
-    """Gate A approximation: 1 token ~ 4 chars."""
+    """Cheap approximation: 1 token ~ 4 chars."""
     return len(text) // 4
 
 
@@ -311,7 +309,7 @@ def _save_tokenizer_cache(cache: dict[str, int]) -> None:
 
 
 def count_tokens_anthropic(text: str) -> int:
-    """Gate A-2: Anthropic count_tokens endpoint + per-content-hash cache.
+    """Anthropic count_tokens endpoint + per-content-hash cache.
 
     Activated when env var CONTEXT_ASSEMBLER_TOKENIZER=anthropic is set.
     Falls back to stub when ANTHROPIC_API_KEY is missing so tests + offline
@@ -345,7 +343,7 @@ def count_tokens_anthropic(text: str) -> int:
 
 
 def _count_tokens(text: str) -> int:
-    """Dispatch — anthropic by default (per Gate A-2), stub when env-forced
+    """Dispatch — anthropic by default, stub when env-forced
     OR when ANTHROPIC_API_KEY is missing (anthropic impl falls back to stub
     automatically, preserving offline / test hermeticity)."""
     if not text:
@@ -357,7 +355,7 @@ def _count_tokens(text: str) -> int:
 
 
 # =========================================================================
-# Scope resolution (§3e) — S1, S2, S3, S5; S4 = NotImplementedError
+# Scope resolution — S1, S2, S3, S5; S4 = NotImplementedError
 # =========================================================================
 
 def _raw_sap_tables(conn) -> set[str]:
@@ -400,7 +398,7 @@ def _strategy_2(conn, term_id: str) -> list[str]:
 
 
 def _strategy_3(conn, term_id: str) -> list[str]:
-    """business_term_analysis_results only (v3 narrowed; domain OBT removed)."""
+    """business_term_analysis_results only (narrowed; domain OBT removed)."""
     try:
         rows = conn.execute(
             "SELECT source_tables "
@@ -416,10 +414,10 @@ def _strategy_3(conn, term_id: str) -> list[str]:
 
 
 def _strategy_4(conn, term_id: str) -> list[str]:
-    """Gate A stub per instructions — LLM extraction not yet wired."""
+    """Stub — LLM scope extraction not yet wired."""
     raise NotImplementedError(
-        "Strategy 4 (LLM scope extraction) is not implemented in Gate A. "
-        "Design §3e specifies a _post_claude call; add in a later gate."
+        "Strategy 4 (LLM scope extraction) is not implemented. "
+        "The design reserves a _post_claude call for a later iteration."
     )
 
 
@@ -461,7 +459,7 @@ def resolve_scope(conn, term_id: Optional[str],
                   scope_tables: Optional[list[str]]) -> dict:
     """Returns {strategy_used, resolved_tables}.
 
-    Precedence: explicit scope_tables > S1 > S2 > S3 > (S4 NOT WIRED IN GATE A)
+    Precedence: explicit scope_tables > S1 > S2 > S3 > (S4 NOT WIRED)
     > S5 (empty fallback). ContextScopeError when neither input given.
     """
     live = _raw_sap_tables(conn)
@@ -485,7 +483,7 @@ def resolve_scope(conn, term_id: Optional[str],
             if kept:
                 return {"strategy_used": name, "resolved_tables": kept}
 
-    # S4 not wired in Gate A; proceed to S5 (unscoped fallback)
+    # S4 not wired; proceed to S5 (unscoped fallback)
     return {"strategy_used": "s5", "resolved_tables": []}
 
 
@@ -536,7 +534,7 @@ def _truncate(content: str, budget: int) -> str:
     )
 
 
-# v3.7 §23.10 — dbt_layer → schema mapping parsed from dbt_project.yml.
+# dbt_layer → schema mapping parsed from dbt_project.yml.
 # Used by Layer B's dual-rendering rewrite for iteration consumers.
 # Cached at module load (one-time cost) with a `main_<layer>` fallback
 # consistent with RULE 11 (main_ prefix convention).
@@ -553,7 +551,7 @@ _DBT_LAYER_FALLBACK: dict[str, str] = {
     "knowledge": "main_knowledge",
     "other": "main",
 }
-# yaml-subkey → dbt_layer mapping (§23.10 semantics).
+# yaml-subkey → dbt_layer mapping.
 _YAML_KEY_TO_LAYER: dict[str, tuple[str, ...]] = {
     "staging": ("staging",),
     "vault": ("vault_hub", "vault_link", "vault_satellite"),
@@ -631,7 +629,7 @@ def _in_list(n: int) -> str:
     return ",".join(["?"] * n)
 
 
-# 8.4.8 Part 5 — loud-fail on schema-mismatch errors that were silently
+# Loud-fail on schema-mismatch errors that were silently
 # swallowed pre-fix. Known_issue #26 root cause: try/except in _load_static
 # produced {seed_name: 0} without warning, hiding query-vs-schema drift
 # (e.g. a column rename in a seed that breaks the hardcoded SELECT).
@@ -650,7 +648,7 @@ _SCHEMA_ERROR_SIGNATURES = (
 
 
 def _loud_fail_or_swallow(exc: Exception, seed_name: str) -> None:
-    """Part 5 loud-fail helper. No return value — caller continues with
+    """Loud-fail helper. No return value — caller continues with
     swallowed 0-row behavior. If PIECE8_STATIC_LOADER_DIAGNOSTIC is set,
     schema-class errors raise instead of just warning.
     """
@@ -672,14 +670,14 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
     details = {"sap_data_dictionary": 0, "source_column_roles": 0,
                "dim_movement_type": 0, "z_tables_catalog": 0,
                "information_schema": 0, "semantic_model": 0,
-               # v3.6 §22.6 — conditional coverage-gap signal (Q2 nuance).
+               # Conditional coverage-gap signal.
                # True when: filtered-to-scope semantic_model rows = 0 AND at
                # least one scope_table lacks ontology coverage. Callers use
                # this to distinguish "Layer A legitimately empty for an
                # ontology-complete scope" (silent pass) from "Layer A
                # missing for an uncovered raw table" (real gap).
                "semantic_model_coverage_gap": False,
-               # v3.7 §23.6 — Layer B (dbt_semantic_model) details. Same
+               # Layer B (dbt_semantic_model) details. Same
                # conditional-empty semantics as semantic_model: an empty
                # Layer B for a raw-only scope is legitimate (Layer A
                # should populate); empty with dbt-covered scope is a gap.
@@ -720,7 +718,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
             _loud_fail_or_swallow(_e, "source_column_roles")
 
         if any(t in ("mseg", "mkpf", "ekbe") for t in scope):
-            # Phase α 2026-05-05: movement_type_mapping seed decommissioned.
+            # 2026-05-05: movement_type_mapping seed decommissioned.
             # BWART decode now comes from main_marts.dim_movement_type which
             # joins hub_movement_type + sat_movement_type + sat_movement_type_text
             # (SAP-native T156 + T156T). Same columns the LLM had before;
@@ -749,7 +747,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
                 _loud_fail_or_swallow(_e, "dim_movement_type")
 
         try:
-            # 8.5.1 Part 4 — seed has no business_purpose column (actual cols:
+            # The seed has no business_purpose column (actual cols:
             # table_name, description, important_fields, maintenance_transaction,
             # rows_estimate). Dropping the third column — description already
             # captures the table's purpose for Create S2T context.
@@ -766,11 +764,11 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
         except Exception as _e:
             _loud_fail_or_swallow(_e, "z_tables_catalog")
 
-        # v3.6 §22.6 — Layer A (semantic_model) scope-filtered rendering.
+        # Layer A (semantic_model) scope-filtered rendering.
         # Consumer priority: ontology first (dbt_column_lineage), Layer A
         # second. Only compiled rows for raw tables lacking ontology
         # coverage will be present; rows for covered tables aren't emitted
-        # by compile_semantic_model.py (§22.5 step 3).
+        # by compile_semantic_model.py.
         try:
             sem_rows = conn.execute(
                 f"SELECT table_name, canonical_alias, entity_class, "
@@ -800,8 +798,8 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
             # leave count at 0. coverage-gap detection below handles.
             pass
 
-        # v3.7 §23.6 — Layer B (dbt_semantic_model) scope-filtered rendering
-        # with dual-rendering per §23.10: for purpose='pre_s2t_reasoning'
+        # Layer B (dbt_semantic_model) scope-filtered rendering
+        # with dual rendering: for purpose='pre_s2t_reasoning'
         # rewrite {{ ref('<m>') }} → <schema>.<m>; for purpose='create_s2t'
         # preserve Jinja.
         try:
@@ -833,7 +831,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
             details["dbt_semantic_model"] = len(dbt_sem_rows)
 
             if dbt_sem_rows:
-                # Dual-render per §23.10. For iteration consumer (purpose
+                # Dual-render. For iteration consumer (purpose
                 # ='pre_s2t_reasoning'), rewrite reference_sql. For
                 # Create S2T (purpose='create_s2t'), preserve Jinja.
                 rewrite = (purpose == "pre_s2t_reasoning")
@@ -866,7 +864,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
             # count at 0; the gap probe below handles the signal.
             pass
 
-        # Conditional dbt_semantic_model_coverage_gap per §23.9(b).
+        # Conditional dbt_semantic_model_coverage_gap.
         # Gap when: Layer B empty AND some scope table HAS dbt ontology
         # coverage (i.e. a staging/vault/mart model traces back to it,
         # per dbt_column_lineage origin_table match). Inverse of Layer A's
@@ -890,7 +888,7 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
             except Exception as _e:
                 _loud_fail_or_swallow(_e, "dbt_column_lineage")
 
-        # Conditional coverage-gap signal per Q2 resolution §22.10.
+        # Conditional coverage-gap signal.
         # dbt_column_lineage.origin_table stores raw tables as
         # 'raw_sap.<table>' (dominant) or bare '<table>' (less common);
         # match both forms + '%.t' suffix for defense-in-depth.
@@ -951,12 +949,12 @@ def _load_static(conn, scope: list[str], term_id: Optional[str],
 
 
 def _load_create_s2t_cardinality(scope: list[str], conn) -> str:
-    """Direction F.1.1 — render the cardinality block for the Create S2T
+    """Render the cardinality block for the Create S2T
     (and pre_s2t_reasoning) bundle.
 
     Reuses `_render_join_cardinality_block` from `_scope_derivation.py`,
     which applies the per_record_key > header_detail > catastrophic > no_signal
-    prioritization spec'd in Direction D §6.1. Loads non-superseded
+    prioritization. Loads non-superseded
     `join_cardinality` DARs scoped to `scope_tables` via the F10-aware
     `list_contains(string_split(...))` lookup baked into the helper's
     own query.
@@ -983,7 +981,7 @@ def _load_create_s2t_cardinality(scope: list[str], conn) -> str:
     return header + "\n\n" + body
 
 
-_SHAPE_BRIDGE_CAP = 5  # per-DAR cap on shapes and bridges (locked Step 4d)
+_SHAPE_BRIDGE_CAP = 5  # per-DAR cap on shapes and bridges
 
 
 def _compact_schema_discovery_result(raw_json: str, dar_id: str = "") -> str:
@@ -997,7 +995,7 @@ def _compact_schema_discovery_result(raw_json: str, dar_id: str = "") -> str:
       BRIDGE: <min(between)>↔<max(between)> via <via> [<path>]
 
     Caps shapes and bridges at _SHAPE_BRIDGE_CAP per DAR (alphabetical
-    sort, deterministic — Step 4d Q1 confirmed both are uniform-confidence
+    sort, deterministic — both are uniform-confidence
     so no signal-based ordering is possible). When a cap fires, an
     explicit footer line surfaces the truncation count to the LLM
     (anti-pattern of #96 silent truncation).
@@ -1008,7 +1006,7 @@ def _compact_schema_discovery_result(raw_json: str, dar_id: str = "") -> str:
         bridge_tables had no branch and was silently dropped.
       - This fix: SHAPE uses correct live-data keys (shape, cardinality,
         pair, via_columns, sum_match_pct optional). bridge_tables now
-        renders. Both capped per Step 4d's locked rendering policy.
+        renders. Both capped per the locked rendering policy.
 
     Falls back to raw JSON blob when result_json is malformed or has no
     recognized structural fields. dar_id is passed through to footers for
@@ -1099,15 +1097,15 @@ def _compact_schema_discovery_result(raw_json: str, dar_id: str = "") -> str:
 
 
 def _compact_bridge_coverage_result(raw_json: str, dar_id: str = "") -> str:
-    """Option B Phase 3 — compact renderer for bridge_coverage_by_filter
+    """Compact renderer for bridge_coverage_by_filter
     DARs. Mirrors _compact_schema_discovery_result's voice + cap pattern.
 
-    Output line format (per design doc Component 4):
+    Output line format:
       BRIDGE-COVERAGE [DAR-XXXXX]: <from>-><via>-><to> | filter: <t>.<col>
         reachable: ['v1', 'v2', ...]
         unreachable: ['v1', 'v2', ...] (+N more)
 
-    For Phase 1's FK-pair structure (via_table=null), via collapses to
+    For the plain FK-pair structure (via_table=null), via collapses to
     just <from>-><to>. unreachable_values is capped at 5 with overflow
     indicator. status='skipped' DARs (high-cardinality cases) render
     as a one-line note since their reach/unreach lists are empty.
@@ -1167,7 +1165,7 @@ def _load_dynamic(conn, scope: list[str], term_id: Optional[str],
                "join_cardinality_rendered": False}
     parts: list[str] = []
 
-    # Direction F.1.2 — render cardinality block FIRST so it lands before
+    # Render cardinality block FIRST so it lands before
     # the generic DAR dump and gets prominent placement in the LLM's
     # context. Only for purposes that consume cardinality evidence.
     if purpose in ("create_s2t", "pre_s2t_reasoning") and scope:
@@ -1203,7 +1201,7 @@ def _load_dynamic(conn, scope: list[str], term_id: Optional[str],
         # performance_baseline multi-column rows intact (one row per
         # numeric column). Scope filter pulled into SQL via list_intersect
         # — eliminates the Python post-filter `matching = [...]` pass.
-        # LIMIT raised 50→100 per Step 4c R1/R2: BG027's 58 partitions
+        # LIMIT raised 50→100: BG027's 58 partitions
         # is the current max across 27 measured terms (median 14, p75 29);
         # 100 provides headroom for future Stage A scope-derivation growth
         # without measurable token cost today (no term currently
@@ -1264,7 +1262,7 @@ def _load_dynamic(conn, scope: list[str], term_id: Optional[str],
                     "## domain_analysis_results (scoped — ID column is first; "
                     "format DAR-NNNNN)"
                 )
-                # C1 — sub-item 4: success rows render as plain CSV
+                # C1 — success rows render as plain CSV
                 # (unchanged byte-shape vs pre-C1); non-success rows get a
                 # prepended STATUS=SKIPPED / STATUS=ERROR header so the LLM
                 # can distinguish "analyzer ruled inapplicable" from "no
@@ -1311,8 +1309,8 @@ def _load_dynamic(conn, scope: list[str], term_id: Optional[str],
                             r[4], dar_id=str(r[0] or "")
                         )
                     elif str(r[1] or "").lower() == "bridge_coverage_by_filter":
-                        # Option B Phase 3 — compact renderer for the
-                        # Phase-1 analyzer's DARs (Component 4).
+                        # Compact renderer for the bridge-coverage
+                        # analyzer's DARs.
                         rendered_rj = _compact_bridge_coverage_result(
                             r[4], dar_id=str(r[0] or "")
                         )
@@ -1356,7 +1354,7 @@ def _load_dynamic(conn, scope: list[str], term_id: Optional[str],
         except Exception:
             pass
 
-    # analysis_findings: scope overlap OR term_id match (§3b predicate)
+    # analysis_findings: scope overlap OR term_id match
     if scope or term_id:
         try:
             try:
@@ -1392,7 +1390,7 @@ def _load_dynamic(conn, scope: list[str], term_id: Optional[str],
         except Exception:
             pass
 
-    # C4 (Theme 1 sub-item 5): Stage A blockers section. Rendered
+    # C4: Stage A blockers section. Rendered
     # term-scoped when term_id is given. Inserted BEFORE the TAR section
     # because Stage A is causally upstream of Stage C — the iteration
     # LLM reads the question (blockers) immediately before Stage C's
@@ -1414,9 +1412,9 @@ def _load_dynamic(conn, scope: list[str], term_id: Optional[str],
             # whole bundle if the loader trips on anything unexpected.
             pass
 
-    # Stage C (Piece 9 §28.11.7): Term EDA analytical characterization.
+    # Stage C: Term EDA analytical characterization.
     # Rendered term-scoped when term_id is given. Sub-budget = budget//5
-    # (per F1 from preflight) — protects TAR from competing unbounded
+    # — protects TAR from competing unbounded
     # while not regressing existing sub-loads.
     if term_id:
         try:
@@ -1441,7 +1439,7 @@ def _load_dynamic(conn, scope: list[str], term_id: Optional[str],
     return content, _count_tokens(content), details
 
 
-# ─── Stage C TAR loader helpers (v5 §28.11.7) ──────────────────────────
+# ─── Stage C TAR loader helpers ────────────────────────────────────────
 
 def _load_term_analysis_results(
     conn, term_id: str,
@@ -1494,7 +1492,7 @@ def _dereference_cited_tars(
     conn, tar_rows: list[dict],
 ) -> list[dict]:
     """Follow grounded_in_tar_ids across tar_rows; fetch cited TAR rows.
-    Includes superseded rows per v5 Edit 7 (Piece 8 renders staleness
+    Includes superseded rows (the bundle renders a staleness
     annotation). Dedupes by id."""
     cited_ids: set[str] = set()
     for row in tar_rows:
@@ -1511,7 +1509,7 @@ def _dereference_cited_tars(
         return []
     placeholders = ",".join("?" * len(cited_ids))
     try:
-        # Stage D.1 — strict archive cascade (§28.11.8). JOIN business_glossary
+        # Strict archive cascade. JOIN business_glossary
         # and filter archived source terms so citation chains don't resurrect
         # archived-term evidence into new bundles.
         rows = conn.execute(
@@ -1807,7 +1805,7 @@ def _load_business(conn, scope: list[str], term_id: Optional[str],
     # hub_vendor + sat_vendor_general + sat_vendor_business so the LLM
     # sees SAP master (vendor_id, name, country) joined to genuinely-HT
     # fields (equipment_types, quality_rating, contract_status) on
-    # hk_vendor. Phase β (2026-05-05): lead_time_days dropped from this
+    # hk_vendor. 2026-05-05: lead_time_days dropped from this
     # sat — that data lives in MARC.PLIFZ (per material/plant) and is
     # exposed via sat_material_plant.
     try:
@@ -1850,7 +1848,7 @@ def _load_business(conn, scope: list[str], term_id: Optional[str],
     # hub_material + sat_material_description + sat_material_business +
     # sat_vendor_general so the LLM sees SAP material master joined to
     # genuinely-HT fields (lifecycle_months, primary_vendor resolved via
-    # hk_vendor). Phase β (2026-05-05): avg_unit_cost_eur dropped — unit
+    # hk_vendor). 2026-05-05: avg_unit_cost_eur dropped — unit
     # prices live in sat_po_item.unit_price (EKPO.NETPR) and standard
     # costs in MBEW.STPRS.
     try:
@@ -1965,7 +1963,7 @@ def _layer_is_empty(details: dict, layer: str) -> bool:
 
 
 # =========================================================================
-# Telemetry (§3l)
+# Telemetry
 # =========================================================================
 
 def _write_telemetry(record: dict) -> None:
@@ -1976,7 +1974,7 @@ def _write_telemetry(record: dict) -> None:
 
 
 # =========================================================================
-# Main entry (§3a)
+# Main entry
 # =========================================================================
 
 def assemble_context(
@@ -1989,14 +1987,14 @@ def assemble_context(
     include_debug_metadata: bool = False,
     conn: Optional["duckdb.DuckDBPyConnection"] = None,
 ) -> ContextBundle:
-    """See context/phase_15a_piece_4_context_assembly_helper.md §3a.
+    """Assemble the layered context bundle for an LLM call.
 
-    v3.5 bugfix (8.3.1 Bug 1): accepts optional conn parameter.
+    Accepts an optional conn parameter.
     When provided, uses it (caller owns lifecycle — we do NOT close).
     When None, opens a local read-only connection and closes in finally.
     Fixes the DuckDB connection-config mismatch when a caller has already
-    opened a read-write connection in the same process (e.g. piece 8's
-    runner, which needs read-write for BAR writes).
+    opened a read-write connection in the same process (e.g. the
+    term-analysis runner, which needs read-write for BAR writes).
     """
     t0 = time.perf_counter()
     if purpose not in PURPOSE_WEIGHTS:
@@ -2027,7 +2025,7 @@ def assemble_context(
             if weights[layer] == "off":
                 continue
             loader = LAYER_LOADERS[layer]
-            # v3.7 §23.10 — static loader receives purpose so Layer B
+            # The static loader receives purpose so Layer B
             # dual-rendering can pick literal-ref (pre_s2t_reasoning) vs
             # Jinja (create_s2t) form. Other loaders don't need it and
             # accept the kwarg via default (None).
@@ -2036,7 +2034,7 @@ def assemble_context(
                     conn, scope, term_id, budgets[layer], purpose=purpose
                 )
             elif layer == "dynamic":
-                # Direction F.1.2 — dynamic loader receives purpose so the
+                # The dynamic loader receives purpose so the
                 # cardinality sub-block can render for create_s2t /
                 # pre_s2t_reasoning only. Other purposes get the legacy
                 # generic DAR dump unchanged.
@@ -2051,7 +2049,7 @@ def assemble_context(
             layer_tokens[layer] = toks
             layer_details[layer] = details
 
-        # Strict-mode: raise on empty HEAVY (§3j)
+        # Strict-mode: raise on empty HEAVY
         for layer in LAYERS:
             if weights[layer] == "HEAVY" and _layer_is_empty(layer_details[layer], layer):
                 err = ContextDegradedError(
@@ -2100,7 +2098,7 @@ def assemble_context(
             layer_summary=layer_tokens,
             scope_resolution=scope_info,
             debug=debug,
-            # v3.4 §20d: per-layer text exposure for Piece 8 caching.
+            # Per-layer text exposure for the term-analysis runner's caching.
             static_layer_text=layer_contents.get("static", ""),
             dynamic_layer_text=layer_contents.get("dynamic", ""),
             ontology_layer_text=layer_contents.get("ontology", ""),

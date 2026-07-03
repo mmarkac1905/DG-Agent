@@ -1,10 +1,10 @@
-"""Phase 15b Piece 8 §25.3 (v3.9, 8.4.6) — segmentation_threshold analyzer.
+"""segmentation_threshold analyzer.
 
 Emits `domain_analysis_results` rows with analysis_type='segmentation_threshold'
 for each numeric measure column in each raw source table. Feeds Layer A's
 natural_thresholds_json field via compile_semantic_model.py co-compilation.
 
-MVP uses quantile-based thresholds [P25, P50, P75] per §25.9(e). Rationale
+MVP uses quantile-based thresholds [P25, P50, P75]. Rationale
 string documents the distribution assumption. KDE-based local-minima
 detection for multimodal distributions is deferred as a post-launch
 enhancement (requires scipy dependency).
@@ -166,8 +166,8 @@ def _analyze_column(conn, table: str, col: str) -> Optional[dict]:
         "col_name": col,
         "thresholds": thresholds,
         "rationale": (
-            "quartile-based on distribution assumed unimodal (MVP heuristic per "
-            "§25.9(e); KDE-based local-minima detection deferred as post-launch "
+            "quartile-based on distribution assumed unimodal (MVP heuristic; "
+            "KDE-based local-minima detection deferred as post-launch "
             "enhancement for multimodal distributions)."
         ),
     }
@@ -227,7 +227,7 @@ def analyze_table(conn, table: str) -> int:
         finding = _analyze_column(conn, table, col)
         if finding is None:
             continue
-        # Stage B — non-LLM DAR type; schema uniformity per §4.3b.
+        # Stage B — non-LLM DAR type; kept schema-uniform with LLM analyzers.
         finding["blockers_addressed"] = []
         dar_id = _next_dar_id()
         row = {
@@ -259,7 +259,7 @@ def analyze_table(conn, table: str) -> int:
     # individually skipped (constant or all-null), no DAR was emitted —
     # downstream readers (e.g., term_eda_prereq) would see "analyzer
     # missing" instead of "analyzer ran, no meaningful output". Emit a
-    # skipped DAR per Stage D.1 §4.3b so the analyzer-ran signal surfaces.
+    # canonical skipped DAR so the analyzer-ran signal surfaces.
     if emitted == 0:
         from _skipped_dar import build_skipped_dar_row  # noqa: E402
         skipped = build_skipped_dar_row(

@@ -757,9 +757,9 @@ def _render_view_b(table: str) -> None:
                 if _reason:
                     st.info(
                         f"Skipped: `{table}` — {_reason}. "
-                        f"Layer A doesn't cover this table; Piece 8 uses "
-                        f"the ontology layer (dbt_column_lineage) as the "
-                        f"primary context for it."
+                        f"Layer A doesn't cover this table; the term-analysis "
+                        f"runner uses the ontology layer (dbt_column_lineage) "
+                        f"as the primary context for it."
                     )
                 else:
                     st.info(

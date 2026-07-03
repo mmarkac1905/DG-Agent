@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def _append_run_log(start_time: float, status: dict, warns: int,
                     blocking: int, verdict: str) -> None:
-    """Append one pipe-separated line to logs/end_of_task.log per design §7."""
+    """Append one pipe-separated line to logs/end_of_task.log for each run."""
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from _sidecar import current_git_head_sha, now_iso_utc
     duration = time.time() - start_time
@@ -100,7 +100,7 @@ def main() -> None:
     # will later swap "ok" → "stale" when sidecar comparison flags drift.
     step_status = {"wiki": "ok", "context": "ok", "parquet": "ok", "seeds": "ok"}
 
-    # Optional Phase 11 step: re-evaluate every active domain_fact.
+    # Optional step: re-evaluate every active domain_fact.
     # Runs BEFORE the normal pipeline so any drift-generated CSV changes
     # flow through the subsequent scanner + export steps.
     if "--refresh-domain-facts" in sys.argv:
@@ -360,7 +360,7 @@ def main() -> None:
     # Per-artifact staleness checks (fixes #20). Replaces the former blanket
     # "Seeds changed" / "Remember to regenerate context" warnings which fired
     # on git-dirty state regardless of whether downstream was actually stale.
-    # See context/phase_15_governance_fix_sidecar_design.md §3.
+    # Staleness is decided by comparing sidecar content hashes, not mtimes.
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from _sidecar import check_artifact_staleness
 

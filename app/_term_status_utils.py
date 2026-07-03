@@ -25,7 +25,7 @@ def filter_active_terms(glossary_df):
 
     A missing or empty `status` field is treated as active (the row
     passes through). This preserves the existing hand-rolled pattern's
-    behavior on rows that predate the Phase 12 archive-status enum.
+    behavior on rows that predate the archive-status enum.
     An empty DataFrame returns unchanged (shortcut avoids constructing
     a throwaway Series when nothing is loaded yet).
 

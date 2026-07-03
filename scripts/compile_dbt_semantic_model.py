@@ -1,4 +1,4 @@
-"""Phase 15b piece 8 §23.5 (v3.7) — Layer B dbt semantic model compiler.
+"""Layer B dbt semantic model compiler.
 
 Deterministic extraction from dbt/target/manifest.json. No LLM calls —
 the manifest is structured ground truth for every model (columns, types,
@@ -18,13 +18,13 @@ Invariants:
 - LF line endings (anti-pattern #48 / #50)
 - csv-safeguard boundary (anti-pattern #56)
 - DictWriter fieldnames pre-validated (anti-pattern #57)
-- conn param pattern (anti-pattern #31 / 8.3.1 fix pattern)
+- conn param pattern (anti-pattern #31)
 - RULE 36 timestamp formatting
-- Human-override rows preserved across recompile (§23.5 step 4)
+- Human-override rows preserved across recompile
 
 reference_sql is stored in dbt canonical Jinja form (FROM {{ ref() }}).
 The assembler rewrites to literal schema-qualified form for iteration
-consumers (§23.10).
+consumers.
 
 Exit codes:
   0 — success (compiled or skipped due to unchanged manifest hash)

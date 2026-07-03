@@ -1,4 +1,4 @@
-"""Phase 15b piece 8 §22.5 (v3.6) — Layer A semantic model compiler.
+"""Layer A semantic model compiler.
 
 Compiles `dbt/seeds/semantic_model.csv` rows from the EDA framework's DAR
 reservoir. One LLM synthesis call per raw source table; output is the
@@ -18,20 +18,21 @@ review_state='human_reviewed') are preserved verbatim via the final
 merge; (b) DAR-incomplete tables are skipped (insufficient grounding
 for synthesis). Auto-generated rows are refreshed on recompile.
 
-The prior §22.2 "skip if ontology-covered" gate was removed as part
+The prior "skip if ontology-covered" gate was removed as part
 of known_issue #79 — Layer A (LLM-synthesized table-level narrative:
 canonical_alias, typical_filters, common_traps, reference_sql,
 typical_use_cases, typical_values_range_json, natural_thresholds_json)
 and the dbt ontology layer (dbt_column_lineage: auto-generated
 column-level structural lineage) are non-overlapping context
-dimensions in Piece 8's bundle. Both consumers need both layers.
+dimensions in the term-analysis (BAR) runner's bundle. Both consumers
+need both layers.
 
 Invariants:
 - LF line endings (anti-pattern #48 / #50)
 - csv-safeguard boundary (anti-pattern #56)
-- conn param pattern (anti-pattern #31 / 8.3.1 fix pattern)
+- conn param pattern (anti-pattern #31)
 - RULE 36 timestamp formatting
-- human_override / human_reviewed rows preserved across recompile (§22.5 step 4)
+- human_override / human_reviewed rows preserved across recompile
 
 Exit codes:
   0 — success
@@ -98,7 +99,7 @@ SEMANTIC_COLUMNS: list[str] = [
     "populated_at_utc",
     "review_state",
     "source_dar_ids",
-    # v3.9 §25.5 — Phase 2 EDA enrichment JSON fields. Populated by
+    # Phase-2 EDA enrichment JSON fields. Populated by
     # LLM synthesis from the 4 new DAR types (temporal_coverage,
     # performance_baseline, grain_relationship, segmentation_threshold).
     # Defaults '{}' (or '[]' for grain_relationships_json) when the
@@ -112,7 +113,7 @@ SEMANTIC_COLUMNS: list[str] = [
 # Four original EDA analyses must all be present for a table to be EDA-complete.
 _REQUIRED_DARS = ("completeness", "dimensions", "magnitude", "code_tables")
 
-# v3.9 §25.3 Phase 2 — four additional DAR types co-compiled into Layer A.
+# Phase-2 enrichment — four additional DAR types co-compiled into Layer A.
 # Presence of these is NOT required (analyzers may legitimately produce
 # zero DARs for a given table, e.g. no date columns → no temporal_coverage).
 # compile_semantic_model.py queries them opportunistically and passes
@@ -143,18 +144,18 @@ def _iso(value) -> str:
 
 # ─── DAR checks ────────────────────────────────────────────────────────
 # The has_ontology_coverage function was removed as part of known_issue
-# #79 (2026-04-24). §22.2 consumer-priority discipline treated ontology
+# #79 (2026-04-24). The old gate treated ontology
 # coverage as sufficient reason to skip Layer A compilation, but the two
 # layers are non-overlapping: Layer A is LLM-synthesized table-level
 # narrative; ontology is auto-generated column-level structural lineage.
-# Piece 8 consumes both independently (see _context_assembler.LAYER_LOADERS
+# The BAR runner consumes both independently (see _context_assembler.LAYER_LOADERS
 # — static + ontology are distinct layers). Skip gate removed; remaining
 # skip conditions (preserved, DAR-incomplete) are unrelated domain guards.
 
 
 def check_dar_completeness(conn, raw_table: str) -> dict:
     """Return dict mapping analysis_type → present_bool + the DAR ID
-    for the most-recent DAR of that type, if present. §22.5 step 3
+    for the most-recent DAR of that type, if present. Compilation
     requires all four present; caller skips with warning otherwise.
     """
     result: dict = {}
@@ -177,7 +178,7 @@ def gather_dars(conn, raw_table: str) -> dict:
     Returns dict keyed by analysis_type with the raw result_json string
     and the DAR id. Caller wraps into the compile prompt.
 
-    v3.9 §25.3 extension: fetches latest DAR for each required type
+    Fetches latest DAR for each required type
     (completeness/dimensions/magnitude/code_tables) AND opportunistically
     for each Phase 2 type (temporal_coverage/performance_baseline/
     grain_relationship/segmentation_threshold). Unlike required types,
@@ -272,7 +273,7 @@ def load_existing_rows(csv_path: Path) -> dict[str, dict]:
 
 
 def is_human_protected(row: dict) -> bool:
-    """§22.5 step 4: preserve human-authored / human-reviewed rows."""
+    """Preserve human-authored / human-reviewed rows across recompiles."""
     return (
         row.get("populated_by") == "human_override"
         or row.get("review_state") == "human_reviewed"
@@ -328,7 +329,7 @@ def synthesize_row(
     """Call Claude to produce a Layer A row for one table.
     Returns None if dry_run or if the call fails.
 
-    v3.9 §25.4 + §25.11 mock support: when env var
+    Mock support: when env var
     PIECE8_COMPILE_MOCK_RESPONSE is set to a path of a JSON file, the
     file's contents are used as the LLM response (skipping the API call).
     Used by regression scenarios 17-20 to exercise the JSON round-trip
@@ -338,7 +339,7 @@ def synthesize_row(
         print(f"  [dry-run] would synthesize {raw_table}")
         return None
 
-    # v3.9 §25.11 — mock mode for regression scenarios.
+    # Mock mode for regression scenarios.
     mock_path = os.environ.get("PIECE8_COMPILE_MOCK_RESPONSE")
     if mock_path:
         try:
@@ -367,7 +368,7 @@ def synthesize_row(
         return json.dumps(wrapped, default=str)
 
     def _legacy_bundle(key: str) -> str:
-        # 8.4.8 Part 3 complement: legacy DAR injection previously passed
+        # Legacy DAR injection previously passed
         # only result_json, hiding the DAR id from the LLM. Citation
         # discipline in the prompt requires citing every DAR id seen;
         # expose the id alongside the finding so the LLM CAN cite it.
@@ -387,7 +388,7 @@ def synthesize_row(
         .replace("{dar_dimensions_json}", _legacy_bundle("dimensions"))
         .replace("{dar_magnitude_json}", _legacy_bundle("magnitude"))
         .replace("{dar_code_tables_json}", _legacy_bundle("code_tables"))
-        # v3.9 §25.4 — Phase 2 DAR injection as JSON arrays
+        # Phase-2 DAR injection as JSON arrays
         .replace("{dar_temporal_coverage_json}", _phase2_bundle("temporal_coverage"))
         .replace("{dar_performance_baseline_json}", _phase2_bundle("performance_baseline"))
         .replace("{dar_grain_relationship_json}", _phase2_bundle("grain_relationship"))
@@ -530,7 +531,7 @@ def _row_from_emitted(
 ) -> dict:
     """Shape an LLM (or mock) emitted dict into a canonical Layer A row.
     Applies runtime-populated fields (populated_by/at/review_state).
-    v3.9 §25.5: also handles 4 new Phase 2 JSON fields with sensible
+    Also handles the 4 phase-2 enrichment JSON fields with sensible
     defaults ({} / []) when the LLM omits them.
     """
     now = _now_utc_naive()
@@ -552,7 +553,7 @@ def _row_from_emitted(
         "populated_at_utc": now,
         "review_state": "auto_generated",
         "source_dar_ids": str(emitted.get("source_dar_ids", "")),
-        # v3.9 §25.5 Phase 2 fields. Defaults '{}' for dict-shaped,
+        # Phase-2 enrichment fields. Defaults '{}' for dict-shaped,
         # '[]' for grain_relationships_json list shape.
         "temporal_coverage_json": _ensure_json_str(
             emitted.get("temporal_coverage_json"), default="{}"),
@@ -567,7 +568,7 @@ def _row_from_emitted(
 
 def _ensure_json_str(value, default: str = "{}") -> str:
     """Accepts dict/list from LLM parse or string; returns canonical JSON string.
-    v3.9 §25.5: `default` parameter lets callers specify '[]' for list-shaped
+    The `default` parameter lets callers specify '[]' for list-shaped
     fields (grain_relationships_json) vs '{}' for dict-shaped fields."""
     if value is None or value == "":
         return default
@@ -656,8 +657,8 @@ def compile_all(
             continue
 
         # #79 fix: ontology coverage is NOT a skip condition. Layer A and
-        # the ontology layer provide independent context in Piece 8's
-        # bundle (LLM narrative vs structural lineage).
+        # the ontology layer provide independent context in the BAR
+        # runner's bundle (LLM narrative vs structural lineage).
 
         completeness = check_dar_completeness(conn, table)
         missing = [a for a, v in completeness.items() if not v["present"]]
@@ -700,7 +701,7 @@ def compile_all(
         print(f"ERROR: write refused by safeguard: {e}")
         return {"status": "safeguard_block", **stats}
 
-    # v3.9 fix (parallel to compile_dbt_semantic_model.py 8.4.4 bugfix) —
+    # Fix (parallel to the same bugfix in compile_dbt_semantic_model.py) —
     # signal caller to re-seed AFTER closing the DuckDB conn. Running the
     # subprocess while the parent conn is open collides with DuckDB's
     # single-writer lock (anti-pattern #31). main() handles the actual

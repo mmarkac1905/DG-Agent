@@ -233,7 +233,7 @@ def test_no_retry_on_first_attempt_pass(mocked_db):
     assert result.get("_f3_validation_passed") is True
     assert result.get("_f3_attempts") == 1
     assert len(calls) == 1, f"expected 1 LLM call, got {len(calls)}"
-    assert "Previous attempt rejected by F.3 validator" not in calls[0]["user_prompt"]
+    assert "PREVIOUS ATTEMPT REJECTED" not in calls[0]["user_prompt"]
 
 
 def test_retries_on_f3_rejection_then_passes(mocked_db):
@@ -259,16 +259,16 @@ def test_retries_on_f3_rejection_then_passes(mocked_db):
 
     # Second prompt must include the rejection hint.
     second_prompt = calls[1]["user_prompt"]
-    assert "Previous attempt rejected by F.3 validator" in second_prompt
+    assert "PREVIOUS ATTEMPT REJECTED" in second_prompt
     assert "catastrophic_fanout" in second_prompt
     assert "DAR-CAT" in second_prompt  # the catastrophic DAR cited
     assert "Regenerate the SQL with corrected join keys" in second_prompt
 
 
 def test_returns_error_after_max_retries(mocked_db):
-    """Both attempts return catastrophic SQL → final result has
-    'error' with 'catastrophic_join_rejected_after_retry' and
-    _f3_attempts=2.
+    """Every attempt returns catastrophic SQL → after MAX_F3_RETRIES (3)
+    attempts the final result has 'error' with
+    'catastrophic_join_rejected_after_retry' and _f3_attempts=3.
     """
     calls: list[dict] = []
 
@@ -281,8 +281,8 @@ def test_returns_error_after_max_retries(mocked_db):
 
     assert "error" in result
     assert "catastrophic_join_rejected_after_retry" in result["error"]
-    assert result.get("_f3_attempts") == 2
-    assert len(calls) == 2
+    assert result.get("_f3_attempts") == 3
+    assert len(calls) == 3
     # Validation detail attached.
     assert "_f3_validation" in result
     assert result["_f3_validation"].get("status") == "rejected_catastrophic_join"

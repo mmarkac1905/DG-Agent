@@ -1,24 +1,20 @@
-"""Piece 9 Stage B + C4 — Stage A blocker loaders.
+"""Stage A blocker loaders.
 
 Reads Stage A's scope_derivation_history_json from business_glossary.csv
 (CSV-first, matching _scope_derivation.py::load_scope_history).
 
 Two consumption surfaces:
 
-  load_blockers_for_table (Piece 9 Stage B)
+  load_blockers_for_table (Stage B)
     - Per-table: filters by resolves_in='domain_eda' AND blocker.tables
       contains target. Used by the 4 Domain EDA analyzers
       (run_completeness, run_dimensions, run_magnitude, run_code_tables).
 
-  load_blockers_for_term (C4 — Theme 1 sub-item 5)
+  load_blockers_for_term (C4 — iteration-bundle consumer)
     - Per-term: returns ALL confirmed-iteration blockers regardless of
       resolves_in. Used by the iteration prompt context assembler so the
       iteration LLM can see Stage A's known-concerns directly (rather
       than only via the lossy DAR/TAR resolution round-trip).
-
-Design docs:
-  - context/phase_15b_piece_8_pre_s2t_reasoning_layer.md §28.11.2 (Stage B)
-  - tasks/c4_step0_report.md (C4)
 
 Contract highlights:
   - Source of truth: dbt/seeds/business_glossary.csv (not DuckDB); in-flight
@@ -388,7 +384,7 @@ def load_blockers_for_term(
     """C4 — return ALL confirmed-iteration blockers for `term_id`.
 
     Sibling to load_blockers_for_table; per-term scope, no resolves_in
-    filter (per OQ-C4-2: surface every routing value so the iteration
+    filter (surface every routing value so the iteration
     LLM can route reasoning per-blocker rather than relying on upstream
     filtering).
 
@@ -412,7 +408,7 @@ def load_blockers_for_term(
       - malformed scope_derivation_history_json
       - no confirmed iteration resolvable
 
-    Pre-augmentation blockers (per Step 0 §SS-4) — those missing the
+    Pre-augmentation blockers — those missing the
     `resolves_in` field — are KEPT (unlike load_blockers_for_table which
     filters them out). The render function annotates them; the iteration
     LLM may rely on these for older terms.
@@ -478,7 +474,7 @@ def render_stage_a_blockers_section(
     """C4 — render the iteration-bundle "## Stage A blockers" section.
 
     Empty entries -> empty string (no heading, no noise).
-    Non-empty -> Markdown section per OQ-C4-3:
+    Non-empty -> Markdown section:
 
         ## Stage A blockers
 
@@ -496,7 +492,7 @@ def render_stage_a_blockers_section(
 
     Pre-augmentation blockers (missing resolves_in) render with
     "(unset)" / "(pre-augmentation)" annotation rather than being
-    skipped (per Step 0 §SS-4).
+    skipped.
 
     Per-field truncation caps: 280 chars for what_it_means
     (most context-dense), 200 chars for the other free-form fields.

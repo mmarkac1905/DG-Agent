@@ -422,7 +422,7 @@ def test_classify_dbt_error_empty_yields_generic_retry() -> None:
 
 
 def test_classify_dbt_error_binder_column_not_found() -> None:
-    """Phase 13's original case. Preserves column extraction +
+    """The deploy auto-retry's original case. Preserves column extraction +
     candidates for back-compat with existing log lines + schema-dump
     targeting."""
     sample = (
@@ -506,7 +506,7 @@ def test_classify_dbt_error_io_spill_is_todays_bg027_case() -> None:
 
 def test_classify_dbt_error_unknown_falls_back_to_generic_retry() -> None:
     """Any error text we don't specifically recognize still retries
-    with a generic hint (vs Phase 13's hard break on unknown)."""
+    with a generic hint (vs the original hard break on unknown)."""
     sample = "Something went wrong. Vague dbt output that matches no class."
     result = mod.classify_dbt_error(sample)
     assert result["should_retry"] is True

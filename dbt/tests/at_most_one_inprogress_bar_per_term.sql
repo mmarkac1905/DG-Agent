@@ -1,6 +1,6 @@
--- Piece 8 §9 singular test.
+-- Term-analysis (BAR) runner singular test.
 -- Invariant: at most one status='in_progress' BAR row per business_term_id.
--- Enforces §3e concurrency at the data layer. Runner's step 0a rejection
+-- Enforces the runner's concurrency invariant at the data layer. Runner's step 0a rejection
 -- is the primary enforcement; this test is the post-hoc data-integrity
 -- backstop in case a race slips through.
 

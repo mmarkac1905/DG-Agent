@@ -1,7 +1,7 @@
 """CSV write safeguard — blocks catastrophic truncation of critical seeds.
 
-Phase 12 hotfix 5. Forensics after an `s2t_mapping.csv`-wiped-to-header
-incident couldn't identify the exact code path that truncated the file.
+Forensics after an `s2t_mapping.csv`-wiped-to-header incident couldn't
+identify the exact code path that truncated the file.
 The verify harness that was the most plausible culprit has been
 deleted, but we don't know if another `pd.read_csv → mutate → pd.to_csv`
 pattern anywhere else can repeat the same truncation. Rather than hunt
@@ -44,7 +44,7 @@ SAFEGUARDED_SEEDS = {
         "min_rows_absolute": 30,
         "max_delete_per_op": 10,
     },
-    # Phase 15a piece 3. Floor=310 (99% of 314 columns observed at cold-start
+    # Floor=310 (99% of 314 columns observed at cold-start
     # completion 2026-04-19). Bumped from bootstrap value 10 once steady-state
     # row count was known — see resolved known_issue #23. max_delete=50
     # accommodates removing a mid-size raw_sap table (~40 cols) without
@@ -53,17 +53,17 @@ SAFEGUARDED_SEEDS = {
         "min_rows_absolute": 310,
         "max_delete_per_op": 50,
     },
-    # Phase 15b piece 8 §18.7 bootstrap bounds. BAR starts empty; runner is
-    # analyst-invoked, so steady-state row count is unknown until post-launch
-    # data lands. Floor stays at 0 until observed-p01 data is available
-    # (parallel to source_column_roles' bootstrap→steady-state pattern).
-    # max_delete=5 allows the §4a step 0b orphan sweep to batch-mark up to
-    # 5 stale rows in a single write (typical sweep is 0-1 rows).
+    # Bootstrap bounds for the term-analysis (BAR) runner. BAR starts empty;
+    # the runner is analyst-invoked, so steady-state row count is unknown
+    # until post-launch data lands. Floor stays at 0 until observed-p01 data
+    # is available (parallel to source_column_roles' bootstrap→steady-state
+    # pattern). max_delete=5 allows the runner's orphan sweep to batch-mark
+    # up to 5 stale rows in a single write (typical sweep is 0-1 rows).
     "business_term_analysis_results": {
         "min_rows_absolute": 0,
         "max_delete_per_op": 5,
     },
-    # Phase 15b piece 8 §22.4 (v3.6 Layer A). Seed starts empty; analyst
+    # Layer A semantic-model seed. Seed starts empty; analyst
     # invokes compile_semantic_model.py on demand. Floor stays at 0 until
     # first full compile establishes steady-state row count (parallel to
     # source_column_roles' bootstrap pattern). max_delete=5 accommodates
@@ -73,7 +73,7 @@ SAFEGUARDED_SEEDS = {
         "min_rows_absolute": 0,
         "max_delete_per_op": 5,
     },
-    # Phase 15b piece 8 §23.4 (v3.7 Layer B). Seed starts empty; populated
+    # Layer B dbt-semantic-model seed. Seed starts empty; populated
     # by deterministic manifest.json extraction via compile_dbt_semantic_model.py.
     # Floor stays at 0 until first full compile establishes steady-state
     # row count (~90 for current project). max_delete=10 is generous vs
@@ -85,7 +85,7 @@ SAFEGUARDED_SEEDS = {
         "min_rows_absolute": 0,
         "max_delete_per_op": 10,
     },
-    # 8.4.7 demo_model_expansion — ZMM_APPROVAL_LOG decoder seeds. Small
+    # ZMM_APPROVAL_LOG decoder seeds (demo model expansion). Small
     # finite enums (SAP-style code tables). max_delete tight because the
     # enum size is known and stable.
     "zmm_approval_status": {
@@ -96,7 +96,7 @@ SAFEGUARDED_SEEDS = {
         "min_rows_absolute": 6,
         "max_delete_per_op": 1,
     },
-    # 8.5.2 catalog backfill. Floor=300 (92% of 326 rows at post-backfill
+    # Catalog backfill bounds. Floor=300 (92% of 326 rows at post-backfill
     # steady state). Bumped from pre-backfill bootstrap value 50 (57 rows)
     # now that steady-state row count is known — parallel to
     # source_column_roles' bootstrap→steady-state pattern.
@@ -162,7 +162,7 @@ def assert_fieldnames_cover_rows(
     DictWriter opens the file in "w" mode (truncating to 0 bytes),
     writes the header, THEN raises ValueError on the first row with
     extra keys — leaving a corrupted header-only file. Same truncation
-    signature as the s2t_mapping wipes seen in Phase 12 hotfix 5.
+    signature as the s2t_mapping wipe incident this module guards against.
 
     Runs in O(n_rows * n_keys_per_row). Cheap enough to call on every
     save_csv invocation.

@@ -5,7 +5,7 @@ All 7 Source Diagnostic analyzers append rows to
 `run_schema_discovery_analysis.py` implemented supersede — and only in
 --mode bridges_only. Re-runs of the other 6 analyzers appended rows with
 `superseded_by=''`, leaving multiple "current" DARs for the same
-(analysis_type, source_tables) pair. Piece 8's context_assembler reads
+(analysis_type, source_tables) pair. The context assembler reads
 via ORDER BY executed_at_utc DESC with no superseded_by filter, so stale
 or skipped DARs could win the latest-by-timestamp race.
 

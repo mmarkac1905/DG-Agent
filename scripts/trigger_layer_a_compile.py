@@ -1,9 +1,9 @@
-"""Phase 15b piece 8 §22.5 (v3.6) — Layer A DAR-completeness trigger.
+"""Layer A DAR-completeness trigger.
 
-Standalone CLI. Currently wired as **Case B** per §22.5 Q3 resolution:
-no pipeline driver chains the four EDA analyzers, so this trigger is
-invoked manually by the analyst after the four `run_*_analysis.py`
-scripts have been run for the term's scope.
+Standalone CLI. Currently manual by design: no pipeline driver chains
+the four EDA analyzers, so this trigger is invoked by the analyst
+after the four `run_*_analysis.py` scripts have been run for the
+term's scope.
 
 Responsibilities:
 1. Resolve union of raw tables in scope of selected terms (or all
@@ -26,10 +26,10 @@ CLI:
 
 Migration path — when a pipeline driver emerges (or one of the four EDA
 analyzers becomes deterministically terminal per a build-graph contract),
-move the invocation to that terminal hook point. Design doc §22.8
-documents Option B (dbt post-hook automation) as the longer-term
-hardening target; current Case B (manual CLI) is the correct default
-while Layer A synthesis quality is being validated on real scopes.
+move the invocation to that terminal hook point. dbt post-hook
+automation is the longer-term hardening target; the current manual
+CLI is the correct default while Layer A synthesis quality is being
+validated on real scopes.
 
 Exit codes:
   0 — all EDA-complete tables compiled successfully

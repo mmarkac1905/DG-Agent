@@ -167,8 +167,8 @@ def _refresh_views(conn: duckdb.DuckDBPyConnection) -> None:
     result-cache invalidation are two halves of one problem.
 
     RULE 27 extension (2026-04-18): Streamlit's file-watcher re-
-    imports db.py on any source byte change (git renormalize, a
-    Phase 12 edit, etc.), which resets `_registered_views` and
+    imports db.py on any source byte change (git renormalize, an
+    editor save, etc.), which resets `_registered_views` and
     `_last_view_scan_mtime` to their module-level defaults —
     empty dict + 0.0. If `@st.cache_resource` preserved the
     underlying connection across that reload, we can find ourselves

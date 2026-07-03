@@ -1,9 +1,9 @@
-"""Phase 15b Piece 8 §25.3 (v3.9, 8.4.6) — temporal_coverage analyzer.
+"""temporal_coverage analyzer.
 
 Emits `domain_analysis_results` rows with analysis_type='temporal_coverage'
 for each date/timestamp column in each raw source table. One DAR row per
 (table, column) combination. Feeds Layer A's `temporal_coverage_json`
-field via compile_semantic_model.py co-compilation (§25.4 / §25.10).
+field via compile_semantic_model.py co-compilation.
 
 CLI:
   python scripts/run_date_analysis.py                        # all raw tables
@@ -73,7 +73,7 @@ _SAP_DATE_NAME_SUFFIXES = (
     "RSDAT", "LADAT", "KDATB", "KDATE", "SESSION_DATE",
 )
 
-# SAP *DT-suffix convention (8.5.1 Part 1): 2-4 uppercase letters + DT.
+# SAP *DT-suffix convention: 2-4 uppercase letters + DT.
 # Catches EINDT, BEGDT, INBDT, FRGDT. Known non-date exclusions below.
 _SAP_DT_SUFFIX_PATTERN = re.compile(r"^[A-Z]{2,4}DT$")
 # SAP control fields that match *DT but aren't dates.
@@ -294,7 +294,8 @@ def analyze_table(conn, table: str) -> int:
         finding = _analyze_column(conn, table, col, detect_mode)
         if finding is None:
             continue
-        # Stage B — non-LLM DAR type; schema uniformity per §4.3b.
+        # Stage B — non-LLM DAR type; keep the result schema uniform
+        # with the LLM analyzers.
         # No LLM contract applies, so blockers_contract_violation is omitted.
         finding["blockers_addressed"] = []
         dar_id = _next_dar_id()

@@ -1,7 +1,5 @@
 """Classify raw_sap columns by analytical role.
 
-Phase 15a piece 3 implementation. See tasks/all.md for the design.
-
 known_issue #53 note: deliberately NOT wired to sync_parquet_and_invalidate.
 This is a rare-run utility (analyst invokes maybe once per schema change);
 if run while Streamlit is open, manually restart the dashboard OR run
@@ -16,7 +14,7 @@ Five stages:
 
 Roles: measure / dimension / date / key / text.
 
-Invocation modes (per §1 of design):
+Invocation modes:
   python scripts/classify_source_columns.py               # cold start or delta
   python scripts/classify_source_columns.py --catchup     # ignore 50-row cap
   python scripts/classify_source_columns.py --force-all   # bypass cache + override guard
@@ -116,7 +114,7 @@ def compute_schema_version(cols: list[dict]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
 
 
-# --- Stage 2: mechanical rules (piece 1 §2a) --------------------------------
+# --- Stage 2: mechanical rules -----------------------------------------------
 
 def mechanical_rule(data_type: str) -> tuple[str, str] | None:
     dt = (data_type or "").upper()
@@ -294,7 +292,7 @@ def classify_batch(batch: list[dict], api_key: str, verbose: bool) -> dict:
             }
         pending = still
 
-    # §7a fallback after 3 attempts
+    # Fallback after 3 attempts
     for col in pending:
         done[(col["table_name"], col["column_name"])] = {
             "role": "key",
@@ -482,7 +480,7 @@ def classify_run(*, force_all: bool = False, catchup: bool = False,
             col["_cache_key"] = ck
             llm_queue.append(col)
 
-    # §1b cap unless --catchup/--force-all
+    # Per-run cap unless --catchup/--force-all
     deferred = 0
     if not catchup and not force_all and len(llm_queue) > CAP_PER_RUN:
         deferred = len(llm_queue) - CAP_PER_RUN
@@ -536,7 +534,7 @@ def classify_run(*, force_all: bool = False, catchup: bool = False,
         if key not in classified_keys:
             kept[key] = er
 
-    # Hard-delete rows whose columns no longer exist in raw_sap (piece 1 §4a rule 1)
+    # Hard-delete rows whose columns no longer exist in raw_sap
     if table_filter is None:
         live = {(t, c["column_name"]) for t, cols in by_table.items() for c in cols}
         dropped = [k for k in kept if k not in live]
@@ -552,7 +550,7 @@ def classify_run(*, force_all: bool = False, catchup: bool = False,
               f"{len(events)} change events. Skipping stage 5.")
         return 0
 
-    # Stage 5: audit log FIRST (piece 3 §5b), then primary, then cache, then sidecar
+    # Stage 5: audit log FIRST, then primary, then cache, then sidecar
     append_changes(events)
     save_primary(final)
     save_cache(cache)
@@ -585,7 +583,7 @@ def classify_run(*, force_all: bool = False, catchup: bool = False,
     return 1 if partial else 0
 
 
-# --- User-override helper (called from Streamlit UI; piece 3 §5a) ---------
+# --- User-override helper (called from Streamlit UI) ----------------------
 
 def apply_user_override(table_name: str, column_name: str, new_role: str,
                         user_override_reason: str, changed_by: str) -> None:

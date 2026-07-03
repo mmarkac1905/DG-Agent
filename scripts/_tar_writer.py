@@ -1,17 +1,17 @@
-"""Piece 9 Stage C — Term Analysis Results (TAR) writer.
+"""Stage C — Term Analysis Results (TAR) writer.
 
 Writes Stage C run output to dbt/seeds/term_analysis_results.csv as one
 atomic transaction per run. One run = N query rows (N >= 0) + exactly one
 sufficiency row. Supersedes any prior-success rows for the term_id before
-writing new ones, per design doc §28.11.3 + v5 Edit 12.
+writing new ones.
 
-Supersede semantics (v4 D9):
+Supersede semantics:
   UPDATE ... SET status='superseded', superseded_by=<new sufficiency id>
   WHERE term_id=X AND status='success'
 
   New rows get fresh TAR-NNNNN ids and status='success'. Cross-term
-  citations to superseded rows remain readable (Piece 8 loader follows
-  them with a freshness annotation per v5 Edit 7).
+  citations to superseded rows remain readable (the term-analysis
+  loader follows them with a freshness annotation).
 
 After write: sync parquet + invalidate Streamlit view catalog via the
 shared helper (known_issue #53 pattern — mirrors Stage A / Stage B

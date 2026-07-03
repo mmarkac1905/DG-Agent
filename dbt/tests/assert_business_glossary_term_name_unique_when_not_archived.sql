@@ -1,4 +1,4 @@
--- Phase 12: composite uniqueness on (term_name) filtered to non-archived rows.
+-- Composite uniqueness on (term_name) filtered to non-archived rows.
 -- A new active (draft OR approved) term may reuse a term_name whose prior
 -- instances are archived — but only one non-archived row per name at any time.
 

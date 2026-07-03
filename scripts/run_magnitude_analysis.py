@@ -1,11 +1,11 @@
-"""Phase 15a piece 6 Gate D1 — Magnitude analysis end-to-end.
+"""Magnitude analysis end-to-end.
 
 CLI: python scripts/run_magnitude_analysis.py --table ekpo [--term-id BG012]
 
 Mirrors run_completeness/dimensions: assemble_context → Claude with
 magnitude prompt → execute SQL → post-process → write DAR row.
 
-Output result_json per piece 2 §4b magnitude shape:
+Output result_json in the standard magnitude result shape:
   {grouping_dimension, measure, aggregation, top_n, total_rows, measure_total}
 
 Exit codes same as siblings (0 ok, 1 LLM exhausted, 2 SQL failed, 3 scope).
@@ -396,7 +396,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
             )
             return 2 if exec_error else 1
 
-        # Post-process — build piece 2 §4b magnitude shape
+        # Post-process — build the standard magnitude result shape
         # Accepts Shape A (dim_value, measure_total, row_count) OR
         # Shape B (dim_value, description, measure_total, row_count).
         top_n = []
@@ -483,7 +483,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
         print(f"  wall: {wall:.1f}s  tokens: in={total_input} out={total_output}")
         print(f"  retry events: {retry_events}")
 
-        # v3.9 §25.3 / 8.4.6 — performance_baseline co-emission. After
+        # performance_baseline co-emission. After
         # the magnitude DAR writes, compute per-numeric-column baseline
         # statistics (avg/min/max/stddev/p25/p75) and emit a second
         # DAR row per numeric measure column. Deterministic SQL; no
@@ -531,7 +531,7 @@ def _emit_performance_baseline_dars(
     schema_version: str,
     last_source_ingestion_at: str = "",
 ) -> int:
-    """v3.9 §25.3 — performance_baseline analyzer. Per numeric measure
+    """performance_baseline analyzer. Per numeric measure
     column of `table`, compute avg/min/max/stddev/p25/p75 and emit one
     DAR row per column. Returns count emitted.
 
@@ -602,7 +602,8 @@ def _emit_performance_baseline_dars(
             "stddev": _num(sd),
             "p25": _num(p25),
             "p75": _num(p75),
-            # Stage B — non-LLM DAR type; schema uniformity per §4.3b.
+            # Stage B — non-LLM DAR type; keep the result schema uniform
+            # with the LLM analyzers.
             # No LLM consulted; blockers_contract_violation key intentionally
             # omitted to encode "no LLM contract applies here."
             "blockers_addressed": [],

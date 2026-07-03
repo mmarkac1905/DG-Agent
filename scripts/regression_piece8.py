@@ -1,11 +1,10 @@
-"""Phase 15b piece 8 sub-piece 8.4 — regression harness.
+"""Regression suite for the term-analysis (BAR) runner.
 
-14 scenarios per v3.5 §10b + §20i (Scenario 12 cache-disabled) +
-§21 (Scenario 13 ontology collision). Scenarios 10, 11, 14 are 8.3
-additions covering v3.3 (glossary drift), v3.3 (sweep race), v3.6
-(pre-injection audit).
+14 core scenarios, including Scenario 12 (cache-disabled) and
+Scenario 13 (ontology collision). Scenarios 10, 11, 14 cover
+glossary drift, sweep race, and the pre-injection audit.
 
-Scenario taxonomy (R/F per §10b):
+Scenario taxonomy (R/F):
   R = Regression invariant — deterministic; any failure = bug.
       Pass criterion: 3 of 3 trials.
   F = Fragility test — stochastic real-LLM behavior; pass criterion ≥2 of 3.
@@ -75,11 +74,11 @@ BAR_HEADER = (
     "record_source,load_date\n"
 )
 
-# v3.5 §10c per-scenario thresholds
+# Per-scenario thresholds
 R_THRESHOLD_TRIALS = 3  # R scenarios must pass 3/3
 F_THRESHOLD_FRAC = 2 / 3  # F scenarios must pass ≥ 2/3
 
-# 8.3 learning #5 — cost cap
+# Cost cap
 REGRESSION_COST_CAP_DEFAULT = 5.00  # USD per full-harness run
 
 
@@ -121,7 +120,7 @@ def _reset_bar_state() -> None:
 
 
 def _clear_scratch_dir() -> None:
-    """8.4 Part 1 item 2 — unconditional scratch wipe (v2 §10a pattern)."""
+    """Unconditional scratch wipe before each run."""
     if SCRATCH_DIR.exists():
         shutil.rmtree(SCRATCH_DIR)
     SCRATCH_DIR.mkdir(parents=True, exist_ok=True)
@@ -207,8 +206,8 @@ def _write_mock_fixture(scenario_name: str, call_type: str, seq: int, payload: d
 
 def _make_attestation(has_all_fields: bool = True,
                       drop_field: Optional[str] = None) -> dict:
-    # v3.6 §22.7: semantic_model_consumed added to ATTESTATION_FIELDS.
-    # v3.7 §23.7: dbt_semantic_model_consumed added.
+    # ATTESTATION_FIELDS includes semantic_model_consumed (Layer A)
+    # and dbt_semantic_model_consumed (Layer B).
     # All mock responses must emit all fields (empty list valid) or the
     # attestation_complete() check in the runner will flag every mock
     # scenario as attestation_failure for an unrelated reason.
@@ -449,7 +448,7 @@ def scenario_5_budget_pressure(run: HarnessRun) -> ScenarioResult:
 def scenario_6_ontology_collision_llm(run: HarnessRun) -> ScenarioResult:
     """R (env variant) — LLM-emitted collision via real API.
 
-    Per v3.5 §21, ontology-collision now has a dedicated scenario 13
+    Ontology-collision now has a dedicated scenario 13
     using mocks. This slot retained for backwards-compat reference; mock
     variant in scenario 13 is the primary regression.
     """
@@ -638,7 +637,7 @@ def scenario_13_ontology_collision(run: HarnessRun) -> ScenarioResult:
         "analysis_findings_consumed": [],
         "dar_consumed": [],
         "prior_bar_consumed": [],
-        # v3.6 §22.7 + v3.7 §23.7: attestation contract includes
+        # The attestation contract includes
         # semantic_model_consumed AND dbt_semantic_model_consumed.
         # Without BOTH, attestation_complete() fails first and the run
         # hard-stops on attestation_failure instead of ontology_collision —
@@ -673,9 +672,9 @@ def scenario_13_ontology_collision(run: HarnessRun) -> ScenarioResult:
     return result
 
 
-# ─── v3.9 §25.10 — Phase 2 EDA enrichment round-trip scenarios ───
+# ─── Phase-2 EDA enrichment round-trip scenarios ───
 # Scenarios 17-20: verify DAR → Layer A compile → JSON field round-trip
-# for each of the 4 new Phase 2 DAR types. Non-LLM via
+# for each of the 4 phase-2 enrichment DAR types. Non-LLM via
 # PIECE8_COMPILE_MOCK_RESPONSE short-circuit.
 
 
@@ -878,7 +877,7 @@ def _phase2_scenario_core(
 
 
 def scenario_21_create_s2t_from_bar(run: HarnessRun) -> ScenarioResult:
-    """v3.10 §27.11 step 6 — Create S2T from promoted BAR (LLM-dep).
+    """Create S2T from promoted BAR (LLM-dep).
 
     Prerequisite: at least one approved glossary term has a promoted
     BAR. Scenario scans for the first term with status='promoted' in
@@ -1016,7 +1015,7 @@ def scenario_21_create_s2t_from_bar(run: HarnessRun) -> ScenarioResult:
 
 
 def scenario_17_temporal_coverage_roundtrip(run: HarnessRun) -> ScenarioResult:
-    """v3.9 §25.10 step 6 — temporal_coverage DAR → Layer A round-trip."""
+    """temporal_coverage DAR → Layer A round-trip."""
     return _phase2_scenario_core(
         scenario_id=17,
         name="temporal_coverage_roundtrip",
@@ -1035,7 +1034,7 @@ def scenario_17_temporal_coverage_roundtrip(run: HarnessRun) -> ScenarioResult:
 
 
 def scenario_18_performance_baseline_roundtrip(run: HarnessRun) -> ScenarioResult:
-    """v3.9 §25.10 step 6 — performance_baseline DAR → Layer A round-trip."""
+    """performance_baseline DAR → Layer A round-trip."""
     return _phase2_scenario_core(
         scenario_id=18,
         name="performance_baseline_roundtrip",
@@ -1055,7 +1054,7 @@ def scenario_18_performance_baseline_roundtrip(run: HarnessRun) -> ScenarioResul
 
 
 def scenario_19_grain_relationship_roundtrip(run: HarnessRun) -> ScenarioResult:
-    """v3.9 §25.10 step 6 — grain_relationship DAR → Layer A round-trip."""
+    """grain_relationship DAR → Layer A round-trip."""
     return _phase2_scenario_core(
         scenario_id=19,
         name="grain_relationship_roundtrip",
@@ -1075,7 +1074,7 @@ def scenario_19_grain_relationship_roundtrip(run: HarnessRun) -> ScenarioResult:
 
 
 def scenario_20_segmentation_threshold_roundtrip(run: HarnessRun) -> ScenarioResult:
-    """v3.9 §25.10 step 6 — segmentation_threshold DAR → Layer A round-trip."""
+    """segmentation_threshold DAR → Layer A round-trip."""
     return _phase2_scenario_core(
         scenario_id=20,
         name="segmentation_threshold_roundtrip",
@@ -1091,7 +1090,7 @@ def scenario_20_segmentation_threshold_roundtrip(run: HarnessRun) -> ScenarioRes
 
 
 def scenario_16_layer_b_consumption(run: HarnessRun) -> ScenarioResult:
-    """R (LLM-dependent) — v3.7 §23.11: Layer B consumption by Piece 8.
+    """R (LLM-dependent) — Layer B consumption by the BAR runner.
 
     Complements scenario 15 (Layer A raw-only path). Scenario 16 covers
     the Layer B ontology-covered path: live BG001 run against a scope
@@ -1100,7 +1099,7 @@ def scenario_16_layer_b_consumption(run: HarnessRun) -> ScenarioResult:
     1. BAR row's iteration_trace[0] surfaces dbt_semantic_model_consumed
        attestation (non-null list; empty or populated, both acceptable).
     2. Generated SQL uses main_<layer>.<model> literal references (no
-       {{ ref() }} tokens — iteration gate runs raw DuckDB per §23.10).
+       {{ ref() }} tokens — the iteration gate runs raw DuckDB).
     3. Generated SQL does not reference raw_sap.<t> for tables with dbt
        coverage (LLM honors the ontology-first priority).
     4. AST audit passed (no hard_stop_citation_audit_failure) — Layer B
@@ -1136,8 +1135,8 @@ def scenario_16_layer_b_consumption(run: HarnessRun) -> ScenarioResult:
             result.error = f"no BAR row written; exit={code}, stderr tail={stderr[-400:]}"
             return result
 
-        # 8.5.1 Part 5 — read from gates_result (trace entries don't
-        # carry a raw "response" dict; earlier L1142-style read was a
+        # Read from gates_result (trace entries don't
+        # carry a raw "response" dict; an earlier direct read was a
         # no-op).
         trace = json.loads(bar.get("iteration_trace") or "[]")
         if not trace:
@@ -1148,8 +1147,8 @@ def scenario_16_layer_b_consumption(run: HarnessRun) -> ScenarioResult:
             result.error = "trace[0].gates_result missing dbt_semantic_model_consumed (attestation persistence gap)"
             return result
 
-        # v3.8 §24 — also verify BAR column persisted the attestation
-        # (not just the trace). Closes the 8.4.4 schema migration gap.
+        # Also verify BAR column persisted the attestation
+        # (not just the trace). Closes a schema migration gap.
         bar_dsm = bar.get("dbt_semantic_model_consumed")
         if bar_dsm is None:
             result.error = "BAR.dbt_semantic_model_consumed column missing (schema migration gap)"
@@ -1163,14 +1162,14 @@ def scenario_16_layer_b_consumption(run: HarnessRun) -> ScenarioResult:
             result.error = f"BAR.dbt_semantic_model_consumed malformed JSON: {e}"
             return result
 
-        # 8.5.1 Part 5 — BAR.dbt_semantic_model_consumed must be a
+        # BAR.dbt_semantic_model_consumed must be a
         # superset of trace[0].gates_result.dbt_semantic_model_consumed.
         trace0_dsm = set(gates.get("dbt_semantic_model_consumed") or [])
         if not set(bar_dsm_parsed) >= trace0_dsm:
             result.error = (
                 f"BAR.dbt_semantic_model_consumed ({bar_dsm_parsed}) "
                 f"is not a superset of trace[0].gates_result.dbt_semantic_model_consumed "
-                f"({sorted(trace0_dsm)}) — 8.5.1 Part 5 invariant violated"
+                f"({sorted(trace0_dsm)}) — attestation-union invariant violated"
             )
             return result
 
@@ -1181,7 +1180,7 @@ def scenario_16_layer_b_consumption(run: HarnessRun) -> ScenarioResult:
 
         # Assertion 2 — no {{ ref() }} tokens
         if "{{" in sql and "ref(" in sql:
-            result.error = "SQL contains {{ ref() }} — violates §21.1 literal-reference rule"
+            result.error = "SQL contains {{ ref() }} — violates the literal-reference rule"
             return result
 
         # Assertion 3 — no raw_sap.<t> for covered tables (BG001 scope is
@@ -1218,11 +1217,11 @@ def scenario_16_layer_b_consumption(run: HarnessRun) -> ScenarioResult:
 
 
 def scenario_15_layer_a_consumption(run: HarnessRun) -> ScenarioResult:
-    """R (LLM-dependent) — v3.6 §22.10: Layer A consumption by Piece 8.
+    """R (LLM-dependent) — Layer A consumption by the BAR runner.
 
     Validates the ontology-first-Layer-A-second consumer priority
     empirically. Pre-populates semantic_model rows for BG001's raw-table
-    scope (ekbe/ekko/mseg ∩ no-ontology-coverage), runs a live piece 8
+    scope (ekbe/ekko/mseg ∩ no-ontology-coverage), runs a live BAR-runner
     session, then asserts:
 
     1. BAR row's iteration_trace[0] surfaces semantic_model_consumed in
@@ -1287,9 +1286,9 @@ def scenario_15_layer_a_consumption(run: HarnessRun) -> ScenarioResult:
             return result
 
         # Assertion 1 — semantic_model_consumed field present in trace.
-        # 8.5.1 Part 5 — read from gates_result (threaded per-iteration
+        # Read from gates_result (threaded per-iteration
         # attestation echo). Trace entries don't carry a raw "response"
-        # dict; the earlier L1285-style read was a no-op.
+        # dict; an earlier direct read was a no-op.
         trace = json.loads(bar.get("iteration_trace") or "[]")
         if not trace:
             result.error = "iteration_trace empty"
@@ -1299,8 +1298,8 @@ def scenario_15_layer_a_consumption(run: HarnessRun) -> ScenarioResult:
             result.error = "trace[0].gates_result missing semantic_model_consumed (attestation persistence gap)"
             return result
 
-        # v3.8 §24 — also verify BAR column persisted the attestation
-        # (not just the trace). Closes the 8.4.3 schema migration gap.
+        # Also verify BAR column persisted the attestation
+        # (not just the trace). Closes a schema migration gap.
         bar_sm = bar.get("semantic_model_consumed")
         if bar_sm is None:
             result.error = "BAR.semantic_model_consumed column missing (schema migration gap)"
@@ -1314,7 +1313,7 @@ def scenario_15_layer_a_consumption(run: HarnessRun) -> ScenarioResult:
             result.error = f"BAR.semantic_model_consumed malformed JSON: {e}"
             return result
 
-        # 8.5.1 Part 5 — BAR.semantic_model_consumed must be a superset
+        # BAR.semantic_model_consumed must be a superset
         # of trace[0].gates_result.semantic_model_consumed. Guarantees
         # iter-0 citations can't silently drop via a short finalize.
         trace0_sm = set(gates.get("semantic_model_consumed") or [])
@@ -1322,7 +1321,7 @@ def scenario_15_layer_a_consumption(run: HarnessRun) -> ScenarioResult:
             result.error = (
                 f"BAR.semantic_model_consumed ({bar_sm_parsed}) "
                 f"is not a superset of trace[0].gates_result.semantic_model_consumed "
-                f"({sorted(trace0_sm)}) — 8.5.1 Part 5 invariant violated"
+                f"({sorted(trace0_sm)}) — attestation-union invariant violated"
             )
             return result
 
@@ -1409,7 +1408,7 @@ SCENARIOS: list[tuple[int, Callable[[HarnessRun], ScenarioResult]]] = [
 
 
 def scenario_22_stage_a_scope_derivation(run: HarnessRun) -> ScenarioResult:
-    """R (LLM-dependent) — §28 Piece 9 Stage A scope derivation end-to-end.
+    """R (LLM-dependent) — Stage A scope derivation end-to-end.
 
     Reset BG002 from status=approved to draft + clear s2t_mapping rows +
     clear scope_derivation_history_json. Invoke propose_scope. Assert
@@ -1573,7 +1572,7 @@ def scenario_22_stage_a_scope_derivation(run: HarnessRun) -> ScenarioResult:
         finally:
             conn.close()
 
-        # §28.11 blocker augmentation — every blocker (if any) must have
+        # Blocker augmentation — every blocker (if any) must have
         # all 6 augmentation fields with non-empty values, and
         # resolves_in must be in the allowed taxonomy. BG002 often
         # returns zero blockers so the live check may be vacuously true;
@@ -1737,7 +1736,7 @@ SCENARIOS.append((22, scenario_22_stage_a_scope_derivation))
 
 # ─── Scenario 23 — Stage B blocker injection (deterministic, LLM-dep) ──
 #
-# Pre-step verification (per Stage B build prompt v3 §5.2.1):
+# Pre-step verification (done before fabricating the test term):
 #   - business_glossary.id has only `not_null` + `unique` tests in
 #     dbt/seeds/schema.yml (lines 163-164). No accepted_values, no
 #     format regex.
@@ -1746,8 +1745,8 @@ SCENARIOS.append((22, scenario_22_stage_a_scope_derivation))
 #   - Therefore `BG-T23-MSEG` is safe — no collision with the BG\d{3}
 #     convention, no schema-test violation.
 #
-# Fabricated ID is `BG-T23-MSEG`. Hard-coded — never BG027 (live smoke
-# test term per §Part 9) and never any real BG### slot.
+# Fabricated ID is `BG-T23-MSEG`. Hard-coded — never BG027 (the live
+# smoke-test term) and never any real BG### slot.
 
 def scenario_23_stage_b_blocker_injection(run: HarnessRun) -> ScenarioResult:
     """R (LLM-dependent) — Stage B blocker injection end-to-end.
@@ -2101,7 +2100,7 @@ def scenario_23_stage_b_blocker_injection(run: HarnessRun) -> ScenarioResult:
         if not result.error:
             result.error = f"{type(e).__name__}: {e}"
     finally:
-        # Teardown — see §5.2.4 for rationale: CSV is source of truth,
+        # Teardown — rationale: CSV is source of truth,
         # DuckDB + parquet are derived. Rewrite CSV, restore others,
         # re-seed all three.
         try:
@@ -2898,7 +2897,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     print(f"Passed: {passed}/{total}  Failed: {failed}")
     print(f"Log: {log_path}")
 
-    # Exit code per §10c
+    # Exit code policy
     any_fail = any(
         (not r.passed and r.error is None)
         or (not r.passed and r.error and not r.error.startswith("SKIP:"))

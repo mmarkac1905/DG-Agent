@@ -1,8 +1,8 @@
-"""Piece 9 Stage C — Term EDA runner.
+"""Stage C — Term EDA runner.
 
 CLI entry: `python scripts/run_term_eda.py --term-id BG027 [--executed-by analyst]`
 
-Three-stage trajectory per v4 A.4:
+Three-stage trajectory:
   1. Framework floor — LLM considers all 8 Baraa lenses; picks with
      queries or skips with rationale.
   2. Reflection (mandatory once) — LLM reflects on Stage 1 results and
@@ -10,7 +10,7 @@ Three-stage trajectory per v4 A.4:
   3. Sufficiency loop (0-5 iterations) — LLM judges sufficiency;
      terminates with declared_sufficient=true OR emits 1-3 more queries.
 
-Budget per v5 Edit 6:
+Budget:
   - Stage 1: up to 8 queries (one per applicable lens).
   - Stage 2: 0-3 queries.
   - Stage 3: up to 5 iterations, up to 10 queries total.
@@ -25,7 +25,7 @@ STAGE_C_DEBUG_PROMPT_FILE env var captures the Turn-1 system+user
 prompt for scenario 25's sentinel assertion.
 
 Output: TAR rows written via `_tar_writer.write_tar_run`. Term status
-transitioned per v4 D7 + v5 Edit 10.
+transitioned on completion.
 """
 from __future__ import annotations
 

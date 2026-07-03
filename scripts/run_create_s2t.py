@@ -1,6 +1,6 @@
-"""Piece 8.5 §27 — CLI entry for Create S2T (normally invoked from Streamlit).
+"""CLI entry for Create S2T (normally invoked from Streamlit).
 
-Thin wrapper so the 8.5 live verification can run from the terminal.
+Thin wrapper so live verification can run from the terminal.
 Loads glossary metadata for the term, dispatches through the standard
 create_s2t_with_implementation (which checks for a promoted BAR and
 picks BAR-consumer path when present), prints the JSON result.

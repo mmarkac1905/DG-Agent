@@ -619,7 +619,7 @@ def _audit_s2t_citations(result: dict, bundle_text: str = "") -> dict:
 
 
 # =========================================================================
-# Piece 8.5 §27 — Create S2T BAR-consumer path (translation task).
+# Create S2T BAR-consumer path (translation task).
 # Invoked by the dispatcher at the top of create_s2t_with_implementation
 # when a promoted BAR exists for the term. BAR is authoritative SQL;
 # this function translates it to dbt-model form (Jinja refs + config +
@@ -628,7 +628,7 @@ def _audit_s2t_citations(result: dict, bundle_text: str = "") -> dict:
 
 import re as _re_s2t_bar
 
-# Regex per §27.7: matches {{ ref('<model>') }} in generated SQL for the
+# Regex matching {{ ref('<model>') }} in generated SQL for the
 # post-translation audit. Simple; Jinja-inside-string-literal not guarded
 # (LLM output almost never emits that; matches Layer A's pattern in
 # _context_assembler._rewrite_ref_to_literal).
@@ -683,7 +683,7 @@ def _render_layer_context(bundle, which: str) -> str:
 
 def _audit_refs_against_bar(sql: str, bar_dsm_consumed: list[str],
                              bundle) -> list[str]:
-    """§27.7 — extract every ref('<m>') from generated SQL; each must
+    """Extract every ref('<m>') from generated SQL; each must
     be in bar_dsm_consumed OR in Layer B (bundle.static_layer_text).
     Returns list of unauthorized refs (empty = pass).
     """
@@ -711,9 +711,9 @@ def create_s2t_from_promoted_bar(
     bundle,
     promoted,
 ):
-    """§27.2 — translate a promoted BAR's SQL into a production dbt
+    """Translate a promoted BAR's SQL into a production dbt
     artifact. Returns the same output shape as create_s2t_with_implementation
-    so Streamlit Business_Glossary.py stays compatible (§27.11).
+    so Streamlit Business_Glossary.py stays compatible.
     """
     system_prompt, user_template = _load_bar_prompt_template()
 
@@ -743,7 +743,7 @@ def create_s2t_from_promoted_bar(
     if isinstance(result, dict) and "error" in result:
         return {"error": f"BAR-consumer path LLM call failed: {result['error']}"}
 
-    # §27.7 audit — every ref() must be authorized.
+    # Ref audit — every ref() must be authorized.
     audit_issues: list[str] = []
     dbt_models = result.get("dbt_models") if isinstance(result, dict) else None
     if dbt_models:
@@ -759,7 +759,7 @@ def create_s2t_from_promoted_bar(
                 )
 
     # Assemble return dict preserving backward-compat with Streamlit's
-    # consumption contract (§27.11). New top-level `source` and `bar_id`
+    # consumption contract. New top-level `source` and `bar_id`
     # keys are additive; existing consumers won't see them unless they
     # look.
     if not isinstance(result, dict):
@@ -769,7 +769,7 @@ def create_s2t_from_promoted_bar(
     # BAR-consumer path is predominantly bar_consumed; dbt_semantic_model
     # and semantic_model carry through from BAR; other dynamic-source
     # attestation fields remain empty (we didn't re-cite them here — the
-    # BAR already did during Piece 8 and we trust its audit chain).
+    # BAR already did during term analysis and we trust its audit chain).
     result["source"] = "promoted_bar"
     result["bar_id"] = promoted.bar_id
     result["bar_consumed"] = True
@@ -780,7 +780,7 @@ def create_s2t_from_promoted_bar(
     result["dbt_semantic_model_consumed"] = list(promoted.dbt_semantic_model_consumed)
     result["semantic_model_consumed"] = list(promoted.semantic_model_consumed)
     # Untouched-by-this-path attestation (the BAR audit discharged these
-    # during Piece 8; we're not re-citing per decision #73's scope —
+    # during term analysis; we're not re-citing per decision #73's scope —
     # BAR is authoritative, not the bundle).
     result.setdefault("domain_facts_consumed", False)
     result.setdefault("domain_facts_citations", [])
@@ -800,13 +800,13 @@ def create_s2t_from_promoted_bar(
         "layers_needed": ["marts"],
         "explanation": (
             f"Translated from promoted BAR {promoted.bar_id}. "
-            f"Source SQL validated by Piece 8 iteration loop at "
+            f"Source SQL validated by the term-analysis iteration loop at "
             f"{promoted.executed_at_utc}; this path only rewrote literal "
             f"refs to Jinja and added dbt wrapping (config + schema.yml). "
             f"No semantic changes."
         ),
     })
-    # Bundle metadata (§27.11 UI contract)
+    # Bundle metadata (UI contract)
     result["_bundle_fingerprint"] = bundle.debug["fingerprint"] if bundle.debug else ""
     result["_bundle_total_tokens"] = bundle.token_count
     result["_bundle_scope_strategy"] = bundle.scope_resolution.get("strategy_used", "unknown")
@@ -828,14 +828,14 @@ def create_s2t_with_implementation(
     term_grain: str,
     term_id: str,
 ):
-    """P7.2: helper-based Create S2T. Replaces the 9 inline context loads
+    """Helper-based Create S2T. Replaces the 9 inline context loads
     with a single assemble_context(purpose='create_s2t', ...) call and
     applies per-source consumption directives (domain_facts, analysis_findings,
-    DAR rows, BAR rows) following the D2.3-validated pattern.
+    DAR rows, BAR rows).
 
     The caller at Business_Glossary.py passes only term_id + term scalars;
-    all context is assembled inside this function. Phase 13 retry + Phase 14
-    semantic gate logic remain in the caller, unchanged.
+    all context is assembled inside this function. The deploy auto-retry +
+    semantic-validation gate logic remain in the caller, unchanged.
 
     Returns:
         {
@@ -846,7 +846,7 @@ def create_s2t_with_implementation(
             "dbt_models": [...],
             "warnings": [...],
             "confidence": "high|medium|low",
-            # P7.2 new: 8 attestation fields (4 *_consumed bools + 4
+            # 8 attestation fields (4 *_consumed bools + 4
             # *_citations arrays) plus llm_self_attestation_mismatch +
             # _citation_audit_issues diagnostic.
             "domain_facts_consumed": bool,
@@ -902,7 +902,7 @@ def create_s2t_with_implementation(
         return {"error": f"context degraded: {e}"}
 
     # ---------------------------------------------------------------
-    # 8.5 §27.3 dispatcher — promoted-BAR path (authoritative SQL) vs
+    # Dispatcher — promoted-BAR path (authoritative SQL) vs
     # generator path (today's behavior). Falls back to generator on
     # BarConsumptionError so Streamlit UI never hard-crashes on a
     # malformed promoted BAR.
@@ -1017,7 +1017,7 @@ DIRECTIVE 3d — BAR rows / business_term_analysis_results (in dynamic layer, te
 If the bundle contains BAR rows for this specific business_term_id (term-scoped analyses), treat them as HIGHER-PRIORITY than scope-only DAR rows — they reflect this term's own prior analyses. Cite at least one BAR finding in transformation_plain and apply the same analysis_type-specific rules as DAR rows above. RULE 42 rev #5: no cross-term inheritance — only BAR rows where business_term_id matches this term's id count.
 On conflict between DAR and BAR findings for the same attribute (e.g., same column appears in both a DAR completeness row and a BAR completeness row with different reliability), prefer BAR and cite both in bar_citations with the conflict noted.
 
-DIRECTIVE 3f — dbt_semantic_model / Layer B (in static layer, v3.7 §23.7 consumer):
+DIRECTIVE 3f — dbt_semantic_model / Layer B (in static layer):
 If the bundle's static layer contains a "dbt Semantic Model (Layer B)" block, each row is the canonical SQL-writing convention for a dbt model (staging / vault / marts / obt / knowledge) that covers one or more raw scope tables. Consumer priority is LAYER B FIRST (dbt-covered), LAYER A SECOND (raw-only), BASE LLM KNOWLEDGE THIRD.
 When Layer B applies:
   - in your `dbt_models[].sql` output, use `{{ ref('<model_name>') }}` (Jinja; dbt renders at compile time) — the seed stores reference_sql in this canonical form and for this consumer it is passed through unchanged;
@@ -1045,7 +1045,7 @@ When the term's grain requires linkage between entities and no direct per_record
 
 Cite each cardinality DAR you consulted in a new attestation list `join_cardinality_consulted: [DAR-NNNNN, ...]`. If you ignore cardinality evidence and propose a join classified as `catastrophic_fanout`, your output will be rejected by the post-generation validator (Direction F.3).
 
-DIRECTIVE 3h — bridge_coverage_by_filter evidence (in dynamic layer, Option B Phase 1 consumer):
+DIRECTIVE 3h — bridge_coverage_by_filter evidence (in dynamic layer):
 
 The dynamic layer renders BRIDGE-COVERAGE entries when the bundle includes bridge_coverage_by_filter DARs. Each entry reports EMPIRICALLY MEASURED reachability of filter values through a specific join path:
 
@@ -1061,7 +1061,7 @@ If the metric requires unreachable filter values, do NOT generate SQL. Set `conf
 
 Cite each bridge_coverage_by_filter DAR you consulted in a new attestation list `bridge_coverage_consulted: [DAR-NNNNN, ...]`. An empty list when DARs are present in scope means you ignored available reachability evidence — discipline failure that fails the audit.
 
-DIRECTIVE 3e — semantic_model / Layer A (in static layer, v3.6 §22.7 consumer):
+DIRECTIVE 3e — semantic_model / Layer A (in static layer):
 If the bundle's static layer contains a "Semantic Model (Layer A)" block, each row is the canonical SQL-writing convention for a raw source table that lacks dbt ontology coverage. Consumer priority is ONTOLOGY FIRST, LAYER A SECOND:
   - if the raw table has ontology coverage (any main_staging/main_vault/main_marts model references it in the ontology layer's column lineage), use the ontology path (ref() to the mart/staging model) and do NOT consult Layer A;
   - only when the raw table has no ontology coverage, use the Layer A row.
@@ -1470,7 +1470,7 @@ def validate_model_semantics(
     column_types: dict,
     sample_rows: list,
 ) -> dict:
-    """Phase 14 — validate a deployed model against its business term.
+    """Semantic gate — validate a deployed model against its business term.
 
     Three deterministic dimensions: grain (row granularity vs term.grain),
     filter (exclusion rules from term definition present in SQL WHERE),
@@ -1547,7 +1547,7 @@ def repair_semantic_mismatch(
     model_sql: str,
     issues: list,
 ) -> dict:
-    """Phase 14 — given critical issues from validate_model_semantics,
+    """Given critical issues from validate_model_semantics,
     return corrected SQL. Preserves jinja `{{ ref(...) }}` calls.
 
     Returns `{"sql": "..."}` on success or `{"error": "..."}` on failure.
@@ -1617,7 +1617,7 @@ def interpret_domain_fact(
 
     On Anthropic error: returns {"error": ...}. On JSON parse error: returns
     {"error": ..., "raw_response": "..."} — caller synthesises the fallback
-    fact card with confidence='low' per Phase 9 spec.
+    fact card with confidence='low'.
     """
     if not API_KEY or API_KEY == "your-api-key-here":
         return {"error": "ANTHROPIC_API_KEY not set. Add it to .env file in project root."}

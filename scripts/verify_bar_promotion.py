@@ -1,6 +1,6 @@
-"""Piece 8.5 §27 — Verify a term has a promoted BAR.
+"""Verify a term has a promoted BAR.
 
-Diagnostic helper for the 8.5 live-verification prerequisite. Promotion
+Diagnostic helper for the Create S2T prerequisite check. Promotion
 is human-gated (anti-pattern #18 / RULE 22); this script only READS
 state. Prints a clear status report so the analyst knows whether the
 Create S2T BAR-consumer path will activate.
@@ -56,7 +56,7 @@ def main(argv: list[str] | None = None) -> int:
     if not all_bars:
         print(f"Term {args.term_id}: NO BAR rows exist.")
         print()
-        print("  Before running Piece 8.5 Create S2T, execute Piece 8 first:")
+        print("  Before running Create S2T, execute the term-analysis (BAR) runner first:")
         print(f"    python scripts/run_term_injection.py --term-id {args.term_id}")
         return 1
 
@@ -86,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print(f"RESULT: Term {args.term_id} HAS promoted BAR {promoted[0][0]}.")
-    print("  Create S2T will use the BAR-consumer path (§27.2).")
+    print("  Create S2T will use the BAR-consumer path.")
     return 0
 
 

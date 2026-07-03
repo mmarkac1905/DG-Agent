@@ -1,4 +1,4 @@
-"""8.4.8 Part 1 unit tests for _OUTPUT_ALIAS_PATTERN.
+"""Unit tests for _OUTPUT_ALIAS_PATTERN.
 
 Verifies the tightened regex rejects numeric tokens from CAST type args
 while still matching real SELECT output aliases. Run standalone:
@@ -50,7 +50,7 @@ CASES: list[tuple[str, list[str]]] = [
         "SELECT ekko.LIFNR AS vendor_id, SUM(ekpo.MENGE) AS po_qty FROM t",
         ["vendor_id", "po_qty"],
     ),
-    # 8.4.7 actual SQL fragment that tripped the regex pre-fix
+    # actual SQL fragment that tripped the regex pre-fix
     (
         "CAST(STRFTIME(ekko.BEDAT, '%Y-%m-01') AS DATE) AS month",
         ["DATE", "month"],

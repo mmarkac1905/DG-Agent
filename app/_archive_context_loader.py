@@ -1,4 +1,4 @@
-"""Phase 12 — LLM context loader for same-name S2T re-attempts.
+"""LLM context loader for same-name S2T re-attempts.
 
 `load_archived_term_context(term_name)` reads `main_seeds.archive_log`
 through the normal `db.query()` path, filters on:

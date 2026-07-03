@@ -1,4 +1,4 @@
-"""Phase 15a piece 6 Gate D2.2 — Code Tables analysis end-to-end.
+"""Code Tables analysis end-to-end.
 
 CLI:
   python scripts/run_code_tables_analysis.py --table mseg
@@ -168,7 +168,7 @@ def _call_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict:
     return {"payload": json.loads(text), "usage": usage}
 
 
-# 8.5.1 Part 2 — heuristic dimension-candidate discovery used when
+# Heuristic dimension-candidate discovery used when
 # source_column_roles has no entries for the table. Short-VARCHAR + name
 # pattern match, same cardinality window [2, 50] as the roles-based path.
 _CODE_COL_NAME_SUFFIXES = ("_STATUS", "_TYPE", "_CODE", "_KEY", "_IND",
@@ -226,14 +226,14 @@ def _auto_pick_code_column(conn, table: str) -> str | None:
     code. Within the window, prefer lower cardinality (classic SAP codes are
     typically 4-15 distinct values).
 
-    8.4.8 Part 2 refinement (known_issue #27 resolution):
+    Refinements (known_issue #27 resolution):
     - Excludes distinct_count < 2 (unchanged — already in place)
     - Prefers columns whose name matches a discovered decoder's code column
       (convention-based discovery via _discover_decoder_candidates) BEFORE
       the legacy BWART preference and lowest-cardinality tiebreaker.
     - BWART preference retained as final SAP-standard bias.
 
-    8.5.1 Part 2: when source_column_roles has no entries for the table,
+    When source_column_roles has no entries for the table, this
     falls back to heuristic discovery via
     _discover_dimension_candidates_heuristic rather than hard-erroring.
 
@@ -266,7 +266,7 @@ def _auto_pick_code_column(conn, table: str) -> str | None:
     if not sized:
         return None
 
-    # 8.4.8 Part 2: prefer columns matched by a discovered decoder's code col.
+    # Prefer columns matched by a discovered decoder's code col.
     # A column matches when its name (upper-cased) equals or ends with the
     # decoder's code column name. Example: APPR_STATUS matches a decoder
     # whose code column is 'code' via the convention-discovery logic.
@@ -289,7 +289,7 @@ def _auto_pick_code_column(conn, table: str) -> str | None:
     return sized[0][0]
 
 
-# 8.4.8 Part 2 — convention-based decoder discovery (known_issue #40).
+# Convention-based decoder discovery (known_issue #40).
 # Replaces the hardcoded description-source allowlist with a runtime
 # query against main_seeds. A seed qualifies as a decoder when:
 #   - has <= 500 rows (decoders are small; larger seeds are not code tables)
@@ -421,7 +421,7 @@ def run(table: str, code_column: str | None, term_id: str | None,
         if not code_column:
             code_column = _auto_pick_code_column(conn, table)
             if not code_column:
-                # 8.5.1 Part 2: neither source_column_roles nor the heuristic
+                # Neither source_column_roles nor the heuristic
                 # fallback found a candidate in the [2,50] cardinality window.
                 # Stage D.1: emit canonical skipped DAR (prereq counts it as
                 # satisfying 'code_tables' requirement).
@@ -452,7 +452,7 @@ def run(table: str, code_column: str | None, term_id: str | None,
             print(f"  auto-picked code column: {code_column}")
 
         schema_version = _schema_version(conn, table)
-        # 8.4.8 Part 2 — convention-discovered decoder list injected into
+        # Convention-discovered decoder list injected into
         # the prompt via {decoder_candidates} placeholder. Enables the LLM
         # to JOIN against project-added decoders (e.g. zmm_approval_status)
         # without the analyzer's hardcoded allowlist being updated per seed.

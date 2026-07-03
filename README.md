@@ -165,7 +165,7 @@ python scripts/bootstrap.py
 streamlit run app/Home.py
 ```
 
-After step 3 you have a fully populated `cpe_analytics.duckdb` (~250 MB) and **135 dbt models** across
+After step 3 you have a fully populated `cpe_analytics.duckdb` (~200 MB) and **135 dbt models** across
 every layer — ready to query, dashboard, and run the AI pipeline against.
 
 <details><summary><b>What <code>bootstrap.py</code> runs</b> (the same steps, by hand)</summary>
@@ -210,7 +210,9 @@ CLAUDE.md       agent & contributor guide (conventions for working in the repo)
 
 All data is **synthetic**, produced by the generators in `scripts/`. **Helios Telecom** is a **fictional**
 operator; the org structure, ABAP catalog, and SAP customizations are illustrative examples of *typical*
-telco patterns — not any real company's system, and nothing proprietary.
+telco patterns — not any real company's system, and nothing proprietary. Vendor names (Huawei, ZTE,
+Nokia, …) are real CPE manufacturers used for realism, but **every figure, event, and quality record
+attributed to them is invented**.
 
 The AI pipeline calls the Anthropic API and **incurs token cost on your own key**. The repo never
 contains a key — `.env` is git-ignored; copy `.env.example` to start.

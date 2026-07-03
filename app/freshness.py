@@ -1,4 +1,4 @@
-"""Domain-facts freshness gate (Phase 11).
+"""Domain-facts freshness gate.
 
 Computes the age gap between the most recent raw-data ingestion
 (`main_seeds.ingestion_log.finished_at_utc`) and the oldest active

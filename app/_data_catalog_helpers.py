@@ -28,9 +28,10 @@ def has_semantic_model_row(conn: Any, table: str) -> bool:
     Data_Catalog.py's Layer A panel uses this to branch between
     "row exists → render" and "no row → run compile" empty state.
     Replaces the former ontology_covers_table helper (retired as
-    part of known_issue #79: §22.2 consumer-priority discipline
+    part of known_issue #79: the consumer-priority discipline
     was removed because Layer A and ontology are non-overlapping
-    context layers, both consumed by Piece 8 independently).
+    context layers, both consumed independently by the
+    term-analysis (BAR) runner).
 
     Fails open (returns False) on query error so a DuckDB hiccup
     shows the "run compile" empty state rather than masking an

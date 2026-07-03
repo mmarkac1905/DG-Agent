@@ -1,9 +1,9 @@
 """Shared helper for writing artifact sidecar JSON files + supporting
 hash/time computations.
 
-See context/phase_15_governance_fix_sidecar_design.md for the design.
-All functions raise cleanly on error — no silent fallbacks. Callers
-decide fallback semantics.
+Sidecars record what inputs an artifact was built against, enabling
+staleness detection. All functions raise cleanly on error — no silent
+fallbacks. Callers decide fallback semantics.
 """
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def compute_file_hash(path: Path) -> str:
 
 
 def compute_duckdb_content_hash(conn, schema: str, table: str) -> str:
-    """Per design §OQ2: md5(string_agg(t::TEXT ORDER BY t::TEXT)).
+    """md5(string_agg(t::TEXT ORDER BY t::TEXT)).
 
     Uses DuckDB-native md5 (fast, stable across restarts). Value is a
     content-equality token — not a cryptographic proof, just a detector
@@ -61,7 +61,7 @@ def compute_duckdb_content_hash(conn, schema: str, table: str) -> str:
 
 
 def compute_duckdb_row_count(conn, schema: str, table: str) -> int:
-    """COUNT(*). Used by parquet sidecar per §OQ2 resolution (row_count
+    """COUNT(*). Used by the parquet sidecar (row_count
     only, no content hash, because parquet export is unconditional)."""
     row = conn.execute(f'SELECT COUNT(*) FROM "{schema}"."{table}"').fetchone()
     return int(row[0]) if row else 0
@@ -71,7 +71,7 @@ def write_sidecar(artifact_name: str, payload: dict) -> None:
     """Atomically write logs/<artifact_name>_built_against.json.
 
     Write-to-tempfile + os.replace(). Creates logs/ if missing. Raises
-    on failure. No post-write editing permitted (decision §4: sidecars
+    on failure. No post-write editing permitted (sidecars
     are written by their owning script, once per build).
     """
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -134,14 +134,14 @@ def overall_hash_from_inputs(per_input_hashes: dict[str, str]) -> str:
     """Deterministic sha256 over concatenated per-input hashes, sorted by key.
 
     Used by wiki + context sidecars. Parquet sidecar uses a row_count-based
-    overall hash computed inline (per §OQ2 resolution).
+    overall hash computed inline.
     """
     payload = "\n".join(f"{k}={per_input_hashes[k]}" for k in sorted(per_input_hashes))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
 
 
 # ---------------------------------------------------------------------
-# Staleness detection (design §3 read flow)
+# Staleness detection (read flow)
 # ---------------------------------------------------------------------
 
 SIDECAR_SCHEMA_VERSION = 1
@@ -205,8 +205,8 @@ def _check_wiki(stored_inputs: dict) -> dict:
     """Wiki sidecar stores per-CSV sha256 for stable seeds + an upstream
     dbt_models_sql_tree hash (replaces scanner-seed tracking).
 
-    Old-format sidecars (step-3 schema, no dbt_models_sql_tree key) are
-    treated as outdated → force-rebuild. See step-4 §4 of fix design.
+    Old-format sidecars (no dbt_models_sql_tree key) are
+    treated as outdated → force-rebuild.
     """
     if "dbt_models_sql_tree" not in stored_inputs:
         return _stale_result(
@@ -286,7 +286,7 @@ def _check_context(stored_inputs: dict) -> dict:
 
 def _check_source_column_roles(stored_inputs: dict) -> dict:
     """Source-column-roles sidecar stores sha256 of both seed CSVs. Fresh
-    when on-disk sha256 matches stored. Phase 15a piece 3 §8c."""
+    when on-disk sha256 matches stored."""
     changed: list[str] = []
     for name in ("source_column_roles.csv", "source_column_role_changes.csv"):
         path = ROOT / "dbt" / "seeds" / name
@@ -306,7 +306,7 @@ def _check_source_column_roles(stored_inputs: dict) -> dict:
 
 
 def _check_parquet(stored_inputs: dict) -> dict:
-    """Parquet sidecar stores per-table row_count only (§OQ2). Recompute + compare.
+    """Parquet sidecar stores per-table row_count only. Recompute + compare.
     Parquet is forensic-only — rebuild is unconditional elsewhere. This check
     exists for the warning message; it does not skip-gate export."""
     import duckdb
@@ -330,7 +330,7 @@ def _check_parquet(stored_inputs: dict) -> dict:
         conn.close()
     if not changed:
         return _fresh_result("parquet")
-    # Truncate noise per design §3
+    # Truncate noise in the warning message
     displayed = sorted(changed)[:5]
     tail = f" (+{len(changed) - 5} more)" if len(changed) > 5 else ""
     return _stale_result(

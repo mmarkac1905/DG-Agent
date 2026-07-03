@@ -1,6 +1,6 @@
-"""Piece 9 Stage C — Prior TAR discovery for knowledge reuse.
+"""Stage C — Prior TAR discovery for knowledge reuse.
 
-Implements v5 Edit 4's s2t_mapping-overlap policy. Given a current
+Implements the s2t_mapping-overlap policy. Given a current
 term_id, discovers candidate prior TAR rows from OTHER terms whose
 scope tables overlap with the current term's scope.
 
@@ -15,9 +15,9 @@ Cap of 20 rows per call prevents unbounded bundle growth on mature
 corpora. Caller can log the truncation count if it matters.
 
 Superseded rows are INCLUDED in the candidate set. Rationale: a
-superseded TAR was once-correct historical evidence. Piece 8's
+superseded TAR was once-correct historical evidence. The term-analysis
 bundle renders them with a `[CITATION NOTE]` staleness annotation
-(v5 Edit 7) so the downstream LLM knows to prefer current-success
+so the downstream LLM knows to prefer current-success
 evidence where both exist.
 """
 from __future__ import annotations
@@ -43,7 +43,7 @@ def load_candidate_prior_tars(
       - The originating term's current s2t_mapping scope has at least
         one source_table in common with the current term's scope.
       - status in ('success', 'superseded'). Superseded rows come
-        through with the `superseded_flag=True` annotation so Piece 8
+        through with the `superseded_flag=True` annotation so the bundle
         can render them with a freshness note.
 
     Returns list of dicts sorted by executed_at_utc DESC (most recent
@@ -104,7 +104,7 @@ def load_candidate_prior_tars(
     ).fetchall()
 
     # For superseded rows, optionally resolve the current-success
-    # successor id so Piece 8 can point readers at fresh evidence.
+    # successor id so the bundle can point readers at fresh evidence.
     result: list[dict] = []
     for r in rows:
         (tar_id, term_id, row_type, analysis_lens, stage, query_index,
@@ -117,7 +117,7 @@ def load_candidate_prior_tars(
         if superseded_flag:
             # Find the most recent success query row for the same
             # originating term + lens + stage (heuristic match — the
-            # successor isn't formally linked per A.8 "no cascade").
+            # successor isn't formally linked; no supersede cascade).
             try:
                 sr = conn.execute(
                     """

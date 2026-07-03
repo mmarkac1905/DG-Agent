@@ -35,7 +35,7 @@ models:
     knowledge:
       +materialized: view
       +schema: knowledge
-    # Phase 12 / Rule 33: archived term artefacts move to
+    # Rule 33: archived term artefacts move to
     # dbt/models/archive/<ARC-...>/. Disabled so dbt never compiles or
     # materialises them, but files remain on disk for audit.
     archive:

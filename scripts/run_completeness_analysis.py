@@ -1,4 +1,4 @@
-"""Phase 15a piece 5 Gate B — Completeness analysis end-to-end.
+"""Completeness analysis end-to-end.
 
 CLI: python scripts/run_completeness_analysis.py --table ekpo [--term-id BG012]
 
@@ -7,9 +7,9 @@ Flow:
   2. Build context bundle via assemble_context(purpose='eda_sql_generation').
   3. Call Claude with bundle + completeness prompt template.
   4. Execute returned SQL against raw_sap.<table>. RULE 38 retry loop on error.
-  5. Post-process null_count/total_rows → reliability + structured JSON per
-     piece 2 §4b shape.
-  6. Append row to domain_analysis_results.csv with full piece 2 §1 schema.
+  5. Post-process null_count/total_rows → reliability + structured JSON in
+     the standard completeness result shape.
+  6. Append row to domain_analysis_results.csv with the full DAR schema.
 
 Exit codes:
   0 — success
@@ -366,7 +366,7 @@ def run(table: str, term_id: str | None, verbose: bool) -> int:
             print(f"  error row {err_row['id']} written to {DAR_CSV.name}")
             return 2 if exec_error else 1
 
-        # Stage 5: post-process into piece 2 §4b shape
+        # Stage 5: post-process into the standard completeness result shape
         column_checks = []
         total_rows_val = 0
         for row in query_result:

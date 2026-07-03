@@ -1,4 +1,4 @@
-"""Phase 15b 8.5.2 — sap_data_dictionary full-coverage backfill.
+"""sap_data_dictionary full-coverage backfill.
 
 Generates the ~269 missing (table, field) rows via LLM-per-table
 with prompt caching. Preserves 57 existing rows untouched (tagged
@@ -6,7 +6,7 @@ description_source='existing', needs_review=0 — set by Part 1 schema
 migration before this script runs).
 
 known_issue #53 note: deliberately NOT wired to sync_parquet_and_invalidate.
-This is a one-shot utility (rare re-run after initial 8.5.2 landing); if
+This is a one-shot utility (rarely re-run after the initial backfill); if
 run while Streamlit is open, manually restart the dashboard OR run
 `python scripts/export_parquet.py` afterward to refresh the view catalog.
 

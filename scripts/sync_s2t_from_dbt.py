@@ -30,7 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SEED_DIR = ROOT / "dbt" / "seeds"
 
-# Import CSV write safeguard from app/ (Phase 12 hotfix 5).
+# Import CSV write safeguard from app/.
 sys.path.insert(0, str(ROOT / "app"))
 from _csv_safeguard import assert_csv_safe, assert_fieldnames_cover_rows  # noqa: E402
 

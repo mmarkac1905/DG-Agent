@@ -1,4 +1,4 @@
-"""Phase 15a piece 5 Gate C — Dimensions analysis end-to-end.
+"""Dimensions analysis end-to-end.
 
 CLI: python scripts/run_dimensions_analysis.py --table ekpo [--term-id BG012]
 

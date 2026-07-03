@@ -1,6 +1,6 @@
-"""Piece 9 Stage D.1 — Term EDA prerequisite check (run-all canonical).
+"""Term EDA prerequisite check (run-all canonical).
 
-Per v4 D5 + v5 Edit 5 + Stage D.1 §28.11.8:
+Rules:
 
   - Term status must be in the allowed set: {scope_confirmed,
     domain_eda_pending, term_eda_pending, ready_for_s2t}.
@@ -21,7 +21,7 @@ Per v4 D5 + v5 Edit 5 + Stage D.1 §28.11.8:
       * performance_baseline is co-emitted with magnitude. Satisfied
         iff magnitude DAR exists with status IN ('success', 'skipped').
 
-Response shape (Stage D.1):
+Response shape:
     {
         "ready": bool,
         "term_status_ok": bool,

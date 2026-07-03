@@ -6,8 +6,7 @@ treatment for status=needs_data_extension surfaces the C5 sourcing
 recommendations + the Option B gate's reachability violations so
 the analyst can act on a structurally-unanswerable term.
 
-Per tasks/c5_design.md Component 5. ~150 LOC; pure rendering, no
-state mutation, no LLM calls.
+~150 LOC; pure rendering, no state mutation, no LLM calls.
 
 Public entry point: render_bar_section(term_id, query).
 """
@@ -319,7 +318,8 @@ def render_bar_section(
     """
     st.subheader("📊 Term Analysis Result")
     st.caption(
-        "Latest result of the LLM-driven SQL iteration loop (Piece 8). "
+        "Latest result of the LLM-driven SQL iteration loop (the "
+        "term-analysis runner). "
         "Status reflects analysis outcome; if the system couldn't answer "
         "the term from the confirmed scope, sourcing recommendations show "
         "which additional tables would close the gap."
@@ -336,7 +336,7 @@ def render_bar_section(
             )
             return
         st.info(
-            "No analysis result yet. Run the Piece 8 iteration loop to "
+            "No analysis result yet. Run the term-analysis (BAR) runner to "
             "produce one (`python scripts/run_term_injection.py "
             f"--term-id {term_id}`)."
         )

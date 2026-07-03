@@ -129,7 +129,7 @@ def classify_dbt_error(err_text) -> dict:
     if not text.strip():
         return base
 
-    # 3. Binder column-not-found (preserved from Phase 13, most specific).
+    # 3. Binder column-not-found (the original retry case, most specific).
     col_m = _BINDER_COL_RE.search(text)
     if col_m:
         cand_m = _BINDER_CAND_RE.search(text)
@@ -254,19 +254,19 @@ def status_to_stage_index(status: str) -> int:
 
 
 def has_piece8_s2t_rows(term_s2t_df) -> bool:
-    """Discriminator for "Piece 8 Create-S2T + Deploy has completed."
+    """Discriminator for "Create-S2T + Deploy has completed."
 
     Stage A's `_rewrite_s2t_for_term` writes s2t_mapping rows at
     scope_confirmed time with empty `target_model` — those rows exist
     solely to carry scope table + source field + rationale, not a
-    target mapping. Piece 8's Deploy handler writes rows with
+    target mapping. The Deploy handler writes rows with
     `target_model` populated (e.g. 'fact_cpe_deployments').
 
     Returns True iff at least one row in the slice has a non-empty
     target_model. For a term still at Stage A (pre-Create-S2T), this
     returns False even though the DataFrame isn't strictly empty —
     fixing the gating regression where term_s2t.empty routed BG027 and
-    other Piece 8 pipeline terms into the existing-S2T lineage branch
+    other pipeline terms into the existing-S2T lineage branch
     before they had any Deploy output.
     """
     if term_s2t_df is None or term_s2t_df.empty:
@@ -427,11 +427,11 @@ def get_s2t_action(
 ) -> dict:
     """Return action descriptor for tab_spec based on (status, has_piece8_mapping).
 
-    `has_piece8_mapping` is True iff Piece 8 Create-S2T + Deploy has
+    `has_piece8_mapping` is True iff Create-S2T + Deploy has
     produced at least one s2t_mapping row with populated `target_model`
     for this term. Use `has_piece8_s2t_rows(term_s2t)` at the call site.
     This replaces the earlier `term_s2t_empty` flag which was False
-    for Stage A-only rows (target_model=NULL), misrouting Piece 8
+    for Stage A-only rows (target_model=NULL), misrouting
     pipeline terms into the existing-S2T branch.
 
     `glossary_row` is a dict-like (pandas Series .to_dict() or dict)

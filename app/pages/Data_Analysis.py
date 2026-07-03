@@ -1,16 +1,15 @@
 """Data Analysis — AI-powered data exploration with knowledge accumulation.
 
 Five tabs:
-  - 🧭 Term Scope                — Stage A LLM-driven scope derivation + prereqs (§28)
+  - 🧭 Term Scope                — Stage A LLM-driven scope derivation + prereqs
   - 🌐 Domain Analysis           — Stage B per-table analyzers (Run All on selected table; collapsible DAR cells)
   - 🎯 Business Term Analysis    — Stage C Term EDA: prereq grid, grain-relationship pair runner, Term EDA dispatch
   - 🔍 Explore Data              — open-ended NL→SQL Q&A with knowledge reuse
   - 📄 Domain Report             — auto-generated narrative from findings + Q&A + domain facts
 
-Stage D.1 removed the legacy Phase 11 `domain_facts` UI from Domain Analysis
+Stage D.1 removed the legacy `domain_facts` UI from Domain Analysis
 and the legacy `analysis_findings` per-query flow from Business Term Analysis.
-The underlying seeds remain queryable via DuckDB for historical audit; see
-§28.11.8.
+The underlying seeds remain queryable via DuckDB for historical audit.
 """
 import csv
 import json
@@ -33,7 +32,7 @@ from _data_analysis_shared import (
     load_actual_staging_schema as _load_actual_staging_schema,
 )
 
-# Piece 9 Stage A — import scope-derivation backend
+# Stage A — import scope-derivation backend
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 try:
@@ -52,7 +51,7 @@ except Exception as _exc:  # noqa: BLE001
 
 
 def _run_term_eda_subprocess(term_id: str) -> None:
-    """Piece 9 Stage C — dispatch scripts/run_term_eda.py as subprocess.
+    """Stage C — dispatch scripts/run_term_eda.py as subprocess.
 
     Timeout 900s (Stage C can run 3-8 LLM turns plus query execution;
     more generous than Stage B's 600s analyzers). Session-state ACKs
@@ -741,9 +740,9 @@ def _run_analyzer_subprocess(
     table: str,
     arg_flavor: str,
 ) -> None:
-    """Piece 9 Stage B — dispatch a DAR analyzer CLI as subprocess.
+    """Stage B — dispatch a DAR analyzer CLI as subprocess.
 
-    Timeout policy per §Part 3: 600s bounds the DuckDB-lock-contention
+    Timeout policy: 600s bounds the DuckDB-lock-contention
     tail risk. Internal LLM calls already bound themselves at 180s.
     """
     import subprocess as _sp
@@ -1094,7 +1093,7 @@ def _render_fact_card(fact: dict, *, key_suffix: str):
                         pass
 
 
-# ─── Piece 9 Stage A UI helpers ───
+# ─── Stage A UI helpers ───
 
 def _render_prereq_section(prereq) -> None:
     """Render PrerequisitesStatus dataclass in the Term Scope tab."""
@@ -1163,7 +1162,7 @@ def _render_proposal_section(term_id, latest_iter, iterations, conn) -> None:
         st.dataframe(pd.DataFrame(join_path), hide_index=True,
                      use_container_width=True)
 
-    # Blockers — §28.11 cross-stage contract. 6 augmentation fields drive
+    # Blockers — cross-stage contract. 6 augmentation fields drive
     # the structured view; older proposals render via backward-compat path.
     if blockers:
         st.markdown("### Blockers")
@@ -1298,7 +1297,7 @@ def _live_raw_sap_tables(conn) -> set:
     return {r[0].lower() for r in rows}
 
 
-# Piece 9 Stage A (§28) — Term Scope tab added as FIRST tab. Note for
+# Stage A — Term Scope tab added as FIRST tab. Note for
 # returning users: default landing is no longer "Business Term
 # Analysis"; Term Scope is the new gateway for draft terms.
 # Tab order (post-Stage-B): Term Scope → Domain Analysis → Business
@@ -1432,9 +1431,8 @@ with tab_scope:
 with tab_guided:
 
     # ============================================================
-    # SECTION 1 (NEW) — 🎯 Term EDA (Piece 9 Stage C)
-    # Baraa 8-lens framework, knowledge reuse, sufficiency loop.
-    # See context/phase_15b_piece_8_pre_s2t_reasoning_layer.md §28.11.7.
+    # SECTION 1 (NEW) — 🎯 Term EDA (Stage C)
+    # 8-lens EDA framework, knowledge reuse, sufficiency loop.
     # ============================================================
     st.subheader("🎯 Term EDA")
     st.caption(
@@ -1734,10 +1732,9 @@ with tab_domain:
 
     # ============================================================
     # SECTION 1 (NEW) — Per-Table Domain EDA
-    # Piece 9 Stage B: per-table analyzer dispatch with automatic
+    # Stage B: per-table analyzer dispatch with automatic
     # Stage A blocker injection. Analysts arrive here from the Term
-    # Scope tab's next_steps hints. See context/phase_15b_piece_8_pre_
-    # s2t_reasoning_layer.md §28.11.2.
+    # Scope tab's next_steps hints.
     # ============================================================
     st.subheader("🎯 Per-Table Domain EDA")
     st.caption(
@@ -2375,7 +2372,7 @@ with tab_report:
     if all_findings.empty and all_qa.empty:
         st.caption("No findings to generate a report from.")
     else:
-        # Phase 11: Domain Report is a write-path action — blocked on red.
+        # Freshness gate: Domain Report is a write-path action — blocked on red.
         from freshness import render_freshness_banner as _ffresh_banner_dr, is_write_blocked as _is_blocked_dr
         _ffresh_banner_dr("domain_report")
         _dr_blocked = _is_blocked_dr()
@@ -2405,7 +2402,7 @@ with tab_report:
             _qa_text = (
                 all_qa.to_csv(index=False) if not all_qa.empty else "No Q&A yet"
             )
-            # Phase 12 hotfix 8: archived terms are out of scope for a
+            # Archived terms are out of scope for a
             # live Domain Report — audit lives in archive_log.
             _active_gl = filter_active_terms(glossary)
             _glossary_text = _active_gl[

@@ -1111,8 +1111,8 @@ def render_approval_form(term, term_id):
 def _load_term_analysis_findings(term_id: str):
     """Return analysis_findings rows for this term, or an empty DataFrame.
 
-    Phase 12 hotfix 8 extension 2 (2026-04-18): cross-term inheritance
-    removed. Each term owns its own findings; a re-created term with the
+    Cross-term inheritance was removed (2026-04-18).
+    Each term owns its own findings; a re-created term with the
     same term_name starts from zero and must run fresh Guided Analysis.
     Archive is final — audit trail stays with the archived term, new
     term gets a clean slate. See RULE 42 revision #5.
@@ -1132,7 +1132,8 @@ def _load_term_analysis_findings(term_id: str):
 
 def render_ask_claude(term, term_id):
     """Claude-backed Create S2T entry point. Stage D.2 dual-path:
-      - Legacy path: analysis_findings rows exist (Phase 11 workflow).
+      - Legacy path: analysis_findings rows exist (the original
+        guided-analysis workflow).
       - New pipeline path: status in ('ready_for_s2t', 'approved').
 
     Status-specific messaging for ineligible terms now lives in
@@ -1171,7 +1172,7 @@ def render_ask_claude(term, term_id):
                 st.markdown(f"- **{f_row.get('finding_type', '?')}:** {summary}")
 
         # --- Missing-data blocker: legacy-path only ---
-        # The session_state flag was written by the Phase 11 Data Analysis UI
+        # The session_state flag was written by the legacy Data Analysis UI
         # that Stage D.1 deleted, so it is now inert. Kept for defense in
         # depth in case anything else ever sets it.
         is_blocked = bool(st.session_state.get(f"s2t_blocked_{term_id}", False))
@@ -1221,7 +1222,7 @@ def render_ask_claude(term, term_id):
   we only build what's missing on top of it (never rebuild existing layers)"""
     )
 
-    # Phase 11: S2T build is a write-path action — blocked on red.
+    # Freshness gate: S2T build is a write-path action — blocked on red.
     from freshness import render_freshness_banner as _ffresh_banner_s2t, is_write_blocked as _is_blocked_s2t
     _ffresh_banner_s2t("s2t")
     _s2t_blocked = _is_blocked_s2t()
@@ -1412,7 +1413,7 @@ def render_ask_claude(term, term_id):
                 # the CSV in an inconsistent state. ID match is robust to any
                 # mid-pipeline reshuffling that doesn't touch Step a's IDs.
                 #
-                # RULE 39 extension #2 (Phase 13 hotfix 2): also drop Rule 14
+                # RULE 39 extension #2: also drop Rule 14
                 # placeholder rows that piggy-backed on the new model files
                 # being deleted here. Without this, rollback leaves orphan
                 # rows pointing at .sql files it just removed, creating CSV
@@ -1463,8 +1464,8 @@ def render_ask_claude(term, term_id):
                 """Run a subprocess with timeout. Returns (stdout, stderr) or raises.
 
                 Default 300s matches dbt seed/run/test which are bounded.
-                Caller passes `timeout=900` for Step f end_of_task — Phase 13
-                retry can trigger Rule 14 placeholder insertions which in turn
+                Caller passes `timeout=900` for Step f end_of_task — the deploy
+                auto-retry can trigger Rule 14 placeholder insertions which in turn
                 force sync_s2t_plain LLM cache misses for each new row; the
                 aggregate can exceed 5 min on a cold cache.
                 """
@@ -1583,7 +1584,7 @@ def render_ask_claude(term, term_id):
                         fail_error = "Timed out after 5 minutes"
                         _log(f"  TIMEOUT")
 
-                # --- Step d: dbt run (Phase 13: auto-retry with LLM error feedback) ---
+                # --- Step d: dbt run (auto-retry with LLM error feedback) ---
                 # When LLM-generated SQL references a non-existent column (classic
                 # hallucination — e.g. `material_description` when the candidate is
                 # `model_description`), dbt run fails with a parseable Binder Error.
@@ -1757,7 +1758,7 @@ def render_ask_claude(term, term_id):
                         failed_step = "dbt run"
                         fail_error = (
                             last_run_error
-                            + f"\n\n[Phase 13] Deploy failed after {dbt_run_attempt} "
+                            + f"\n\nDeploy failed after {dbt_run_attempt} "
                             f"attempt(s) (max {dbt_run_max_attempts}). The term may "
                             "need more domain context. Go to Data Analysis → Guided "
                             "Analysis — Business Term, select this term, and run "
@@ -1765,7 +1766,7 @@ def render_ask_claude(term, term_id):
                             "better. Then retry Deploy."
                         )
 
-                # --- Step d.5: Phase 14 semantic validation gate ---
+                # --- Step d.5: semantic validation gate ---
                 # SQL that compiles and runs is not proof it measures what
                 # the business term claims to measure. Validate across
                 # grain / filter / unit via LLM. Max 3 repair attempts per
@@ -1794,7 +1795,7 @@ def render_ask_claude(term, term_id):
                         layer_name = sql_path.parent.name
                         schema_name = f"main_{layer_name}"
                         st.write(
-                            f"-> [Phase 14] Semantic validation for "
+                            f"-> Semantic validation for "
                             f"`{schema_name}.{model_name}`..."
                         )
                         _log(f"Step d.5 semantic: {schema_name}.{model_name}")
@@ -1870,7 +1871,7 @@ def render_ask_claude(term, term_id):
 
                             if validation.get("match") or not critical:
                                 st.write(
-                                    f"OK [Phase 14] semantic PASS on attempt "
+                                    f"OK semantic PASS on attempt "
                                     f"{sem_attempt}/{SEMANTIC_MAX_ATTEMPTS}: {summary}"
                                 )
                                 sem_ok = True
@@ -1888,7 +1889,7 @@ def render_ask_claude(term, term_id):
                             # Repair and re-run dbt run before next iteration.
                             dims = [i.get("dimension", "?") for i in critical]
                             st.write(
-                                f"-> [Phase 14] semantic repair "
+                                f"-> Semantic repair "
                                 f"{sem_attempt}/{SEMANTIC_MAX_ATTEMPTS} "
                                 f"({', '.join(dims)})..."
                             )
@@ -1946,7 +1947,7 @@ def render_ask_claude(term, term_id):
                             failed_step = "semantic repair"
                             fail_error = (
                                 last_run_error
-                                + "\n\n[Phase 14] Semantic repair produced broken SQL. "
+                                + "\n\nSemantic repair produced broken SQL. "
                                 "This usually means the term definition is ambiguous "
                                 "or conflicts with available source data. Review term "
                                 "definition and retry."
@@ -1999,8 +2000,8 @@ def render_ask_claude(term, term_id):
                         _log(f"  TIMEOUT")
 
                 # --- Step f: end_of_task.py ---
-                # Timeout raised to 900s (from the 300s default): when Phase 13
-                # retry rewrites a model, Rule 14 in sync_s2t_from_dbt inserts
+                # Timeout raised to 900s (from the 300s default): when the deploy
+                # auto-retry rewrites a model, Rule 14 in sync_s2t_from_dbt inserts
                 # new placeholder rows and sync_s2t_plain_from_dbt must then
                 # regenerate LLM descriptions for each one (cache miss). That
                 # aggregate can push end_of_task past 5 min on a cold cache.
@@ -2059,7 +2060,7 @@ def render_ask_claude(term, term_id):
 # ============================================================
 # SHARED TERM SELECTOR STATE
 # ============================================================
-# Phase 12 / Rule 33: archived terms are preserved as audit record but
+# Rule 33: archived terms are preserved as audit record but
 # do not appear in the interactive selector. `glossary` (full table)
 # stays available to the archive context loader so prior attempts can
 # feed the LLM. Stage D.1: centralized via `filter_active_terms`.
@@ -2070,7 +2071,7 @@ term_names = _active_glossary['display_name'].tolist()
 def _resolve_active_term(selected_name: str):
     """Resolve a display_name selection to a single `_active_glossary` row.
 
-    Phase 12 hotfix 8 — lookup-scope must match selector-scope. Archiving
+    Lookup-scope must match selector-scope. Archiving
     a term leaves a row with the same `display_name` in the glossary; a
     naive `glossary[display_name==X].iloc[0]` on ORDER-BY-id data picks
     the OLDER (archived) row over the active draft, so every tab ends
@@ -2317,8 +2318,7 @@ with tab_detail:
         # Renders the latest business_term_analysis_results row for the
         # selected term. For status=needs_data_extension, surfaces
         # sourcing_recommendations + reachability violations from the
-        # Option B gate so the analyst can decide what to ingest. Per
-        # tasks/c5_design.md Component 5.
+        # Option B gate so the analyst can decide what to ingest.
         try:
             from _bar_section import render_bar_section
             st.divider()
@@ -2387,7 +2387,7 @@ with tab_spec:
         st.divider()
 
         if not _has_piece8:
-            # No Piece 8 Deploy output yet — either totally empty
+            # No Create-S2T Deploy output yet — either totally empty
             # s2t_mapping OR Stage A wrote source-only rows with
             # target_model=NULL. In both sub-cases the Create S2T
             # button is the correct affordance (gated on eligibility
@@ -3367,7 +3367,7 @@ with tab_new:
             if not new_term_name or not new_display_name or not new_definition:
                 st.error("Term name, display name, and definition are required.")
             else:
-                # Phase 12 / Rule 33: composite uniqueness is
+                # Rule 33: composite uniqueness is
                 # (term_name) WHERE status != 'archived'. Allows a new
                 # active term to reuse a name whose prior instance is
                 # archived, but still blocks duplicates among live terms.
@@ -3390,8 +3390,8 @@ with tab_new:
                     new_id = f"BG{int(max_id) + 1:03d}"
 
                     csv_path = SEED_DIR / "business_glossary.csv"
-                    # Match the full 19-column schema (Phase 12 added 4
-                    # archive columns on top of the 15 original fields).
+                    # Match the full 19-column schema (4 archive columns
+                    # on top of the 15 original fields).
                     with open(csv_path, 'a', encoding='utf-8', newline='') as f:
                         writer = csv.writer(f, lineterminator='\n')
                         writer.writerow([

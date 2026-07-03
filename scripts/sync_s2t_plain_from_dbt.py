@@ -31,8 +31,8 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent
 SEED_DIR = ROOT / "dbt" / "seeds"
 
-# CSV write safeguard — Phase 12 hotfix 5 extension. Fourth s2t_mapping
-# writer identified; guard it at the write boundary like the other three.
+# CSV write safeguard. This is the fourth s2t_mapping writer; guard it
+# at the write boundary like the other three.
 sys.path.insert(0, str(ROOT / "app"))
 from _csv_safeguard import assert_csv_safe, assert_fieldnames_cover_rows  # noqa: E402
 ENV_PATH = ROOT / ".env"
@@ -62,10 +62,10 @@ def load_csv(name):
 def save_csv(name, rows, fieldnames):
     path = SEED_DIR / f"{name}.csv"
     # Two guards run BEFORE opening the file for writing:
-    #  1. Row count — catches catastrophic truncation (Phase 12 hotfix 5).
+    #  1. Row count — catches catastrophic truncation.
     #  2. Fieldnames-cover-rows — catches csv.DictWriter's truncate-then-
     #     fail pattern, where open("w", ...) truncates to 0 before
-    #     DictWriter validates row keys (Phase 12 hotfix 5 extension).
+    #     DictWriter validates row keys.
     assert_csv_safe(path, pd.DataFrame(rows))
     assert_fieldnames_cover_rows(fieldnames, rows)
     with path.open("w", encoding="utf-8", newline="") as f:

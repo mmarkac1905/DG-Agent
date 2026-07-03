@@ -1,4 +1,4 @@
-"""Piece 8.5 §27.3 / §27.4 — Promoted BAR consumer for Create S2T.
+"""Promoted BAR consumer for Create S2T.
 
 Resolves a term's promoted BAR (status='promoted', latest-executed) and
 packages the fields Create S2T's BAR-consumer path needs as a typed
@@ -46,9 +46,8 @@ class BarConsumptionError(RuntimeError):
 class PromotedBarInput:
     """Typed container for promoted BAR fields consumed by Create S2T.
 
-    See §27.4 for the per-field contract. Required vs optional is
-    enforced by resolve_promoted_bar(); callers can trust non-None /
-    non-empty values for the required set.
+    Required vs optional is enforced by resolve_promoted_bar();
+    callers can trust non-None / non-empty values for the required set.
     """
 
     bar_id: str
@@ -114,7 +113,7 @@ def resolve_promoted_bar(
 ) -> Optional[PromotedBarInput]:
     """Return the latest promoted BAR for term_id, or None if none exist.
 
-    Per §27.9(a): a BAR at `status='promoted'` is sticky. A newer
+    A BAR at `status='promoted'` is sticky. A newer
     `status='converged'` or `hard_stop` BAR does NOT replace it; only
     a subsequent explicit promotion would.
 
@@ -152,7 +151,7 @@ def resolve_promoted_bar(
      conditions_raw, metric_interp, trace_raw, confidence,
      iter_count, executed_at) = row
 
-    # Required-field validation per §27.4
+    # Required-field validation
     if not final_sql or not final_sql.strip():
         raise BarConsumptionError(
             f"{bar_id}: final_query_sql is empty — cannot consume"
@@ -169,15 +168,15 @@ def resolve_promoted_bar(
     )
     trace = _parse_json_trace(trace_raw, bar_id)
 
-    # §27.4: at least one dbt_semantic_model_consumed ref target must
-    # exist for a promoted BAR (every Piece 8 run on an ontology-covered
+    # At least one dbt_semantic_model_consumed ref target must exist
+    # for a promoted BAR (every term-analysis run on an ontology-covered
     # scope produces at least one Layer B citation). If absent, the
     # promotion is suspect — refuse to consume.
     if not dsm_consumed:
         raise BarConsumptionError(
             f"{bar_id}: dbt_semantic_model_consumed is empty — a promoted "
             f"BAR should reference at least one Layer B model; "
-            f"refusing to consume (re-run Piece 8 and re-promote)"
+            f"refusing to consume (re-run the term analysis and re-promote)"
         )
 
     # Required: metric_interpretation non-empty (becomes dbt model description)
