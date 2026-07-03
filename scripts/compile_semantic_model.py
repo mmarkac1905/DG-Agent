@@ -76,7 +76,7 @@ if _ENV_PATH.exists():
             os.environ.setdefault(_k.strip(), _v.strip())
 
 _API_URL = "https://api.anthropic.com/v1/messages"
-_MODEL = "claude-sonnet-4-6"
+from _model_config import MODEL as _MODEL  # single source of truth (env: DG_AGENT_MODEL)
 _API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
 # Column order locked to dbt/seeds/semantic_model.csv header and schema.yml

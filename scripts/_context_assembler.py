@@ -90,7 +90,7 @@ PURPOSE_WEIGHTS: dict[str, dict[str, str]] = {
 WEIGHT_UNITS = {"HEAVY": 40, "heavy": 25, "light": 10, "off": 0}
 OVERHEAD_RATIO = 0.10
 
-MODEL = "claude-sonnet-4-6"
+from _model_config import MODEL  # single source of truth (env: DG_AGENT_MODEL)
 
 # Layer source CSVs used for content-hash fingerprint
 LAYER_SOURCE_CSVS: dict[str, list[str]] = {

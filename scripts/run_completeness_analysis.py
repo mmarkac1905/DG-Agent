@@ -50,7 +50,7 @@ from _stage_a_blocker_loader import (  # noqa: E402
 from _dar_supersede import supersede_prior_dars_for_table  # noqa: E402
 
 API_URL = "https://api.anthropic.com/v1/messages"
-MODEL = "claude-sonnet-4-6"
+from _model_config import MODEL  # single source of truth (env: DG_AGENT_MODEL)
 MAX_RETRIES = 3
 
 DAR_FIELDS = [

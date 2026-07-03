@@ -61,7 +61,7 @@ _BG_CSV = _ROOT / "dbt" / "seeds" / "business_glossary.csv"
 _S2T_CSV = _ROOT / "dbt" / "seeds" / "s2t_mapping.csv"
 
 _API_URL = "https://api.anthropic.com/v1/messages"
-_MODEL = "claude-sonnet-4-6"
+from _model_config import MODEL as _MODEL  # single source of truth (env: DG_AGENT_MODEL)
 _MAX_TOKENS = 16000  # 6000 truncated rich/wide-scope terms into invalid JSON (KI #127)
 
 

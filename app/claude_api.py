@@ -21,7 +21,13 @@ if ENV_PATH.exists():
 
 API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 API_URL = "https://api.anthropic.com/v1/messages"
-MODEL = "claude-sonnet-4-6"
+
+# Model id comes from scripts/_model_config.py (env override: DG_AGENT_MODEL)
+import sys as _sys
+_SCRIPTS_DIR = str(Path(__file__).resolve().parent.parent / "scripts")
+if _SCRIPTS_DIR not in _sys.path:
+    _sys.path.insert(0, _SCRIPTS_DIR)
+from _model_config import MODEL
 
 
 def llm_retry_on_error(

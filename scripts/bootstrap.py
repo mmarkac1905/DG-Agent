@@ -20,6 +20,7 @@ analyzers) additionally needs ANTHROPIC_API_KEY in .env, but is NOT needed for
 this build — the data layers are pure dbt SQL.
 """
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -47,6 +48,13 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--no-test", action="store_true", help="skip `dbt test`")
     args = ap.parse_args()
+
+    if shutil.which("dbt") is None:
+        print("\033[31mdbt not found on PATH.\033[0m  Activate the virtualenv first\n"
+              "  (Windows: .venv\\Scripts\\activate   |   Linux/macOS: source .venv/bin/activate)\n"
+              "or install dependencies: pip install -r requirements.txt",
+              file=sys.stderr)
+        return 1
 
     py = sys.executable
     for label, script in GENERATORS:

@@ -1,9 +1,10 @@
 """Scrape ~46 SAP table reference pages from sapdatasheet.org into
 dbt/seeds/sap_table_catalog.csv at per-table grain.
 
-Phase 1 of C5 catalog (per tasks/c5_design.md Component 1, with calibrated specs
-from Q1+Q2: Variant C scope, Table Category=TRANSP filter, top 15-20 fields per
-table).
+Scope: transparent tables only (Table Category=TRANSP), top 15-20 fields per
+table. This is how the SAP schema in the repo stays grounded in the real SAP
+data dictionary — the catalog structure is scraped from public references;
+only the table *contents* are synthetic.
 
 Idempotent: re-running updates existing rows in place rather than duplicating.
 Polite throttling: 1-2 req/sec, identifying User-Agent header.

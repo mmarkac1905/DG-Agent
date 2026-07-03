@@ -41,7 +41,7 @@ ENV_PATH = ROOT / ".env"
 # descriptions (the LLM rewords each call) and spam the git diff.
 CACHE_PATH = SEED_DIR / ".s2t_plain_cache.json"
 API_URL = "https://api.anthropic.com/v1/messages"
-MODEL = "claude-sonnet-4-6"
+from _model_config import MODEL  # single source of truth (env: DG_AGENT_MODEL)
 
 # Load .env from project root (same parser as app/claude_api.py)
 if ENV_PATH.exists():

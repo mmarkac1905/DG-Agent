@@ -78,6 +78,17 @@ knowledge/  generated governance wiki (regenerate with build_knowledge_wiki.py)
 tests/      pytest suite + fixtures
 ```
 
+## Vocabulary
+
+S2T = source-to-target mapping. DAR / TAR / BAR = domain / term / business-term
+analysis results — EDA findings at table, term, and full-analysis-run grain
+(each is a seed of the same name). Layer A / Layer B = per-table SQL-writing
+conventions (LLM-synthesized from EDA for raw-only tables / compiled from dbt's
+manifest for dbt-covered ones). Stage 0–E = spec → scope → blockers → domain
+EDA → term EDA (C′) → generation → deploy. F.3 = the post-generation join
+validator that rejects `catastrophic_fanout` joins. See the README's
+vocabulary table for the longer version.
+
 ## Conventions (read before changing things)
 
 - **Run dbt from `dbt/`.** `dbt/profiles.yml` uses a relative DuckDB path

@@ -59,7 +59,7 @@ from _sidecar import (  # noqa: E402
 )
 
 API_URL = "https://api.anthropic.com/v1/messages"
-MODEL = "claude-sonnet-4-6"
+from _model_config import MODEL  # single source of truth (env: DG_AGENT_MODEL)
 PROMPT_VERSION = 1
 BATCH_SIZE = 50
 CAP_PER_RUN = 50

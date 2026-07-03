@@ -1,4 +1,4 @@
-# DG AI Agent — it learns your source system and writes the source-to-target mappings
+# DG AI Agent — it learns a source system and writes the source-to-target mappings
 
 [![CI](https://github.com/mmarkac1905/DG-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/mmarkac1905/DG-Agent/actions/workflows/ci.yml)
 
@@ -6,15 +6,16 @@
 *The Streamlit app on the generated data: procurement KPIs on the left-nav Dashboard pages, the
 governance layer (glossary, S2T, catalog, lineage) under Data Governance.*
 
-**Point it at a source system. It profiles the schema, learns the relationships from the actual data,
-then generates the source-to-target mappings and the transformation SQL itself — verified, deployed,
-lineage-tracked.** A business metric goes from a one-line definition to a tested data mart with no human
-writing SQL.
+**Give it a business-term definition. It learns the source system from the actual data — profiles every
+table, measures how tables *really* join — then generates the source-to-target mapping and the
+transformation SQL, verified and deployed.** A business metric goes from a one-line definition to a
+tested data mart with no human writing SQL. Demonstrated end-to-end on one synthetic SAP MM source
+(real SAP schema, generated data — see [Honest limitations](#honest-limitations)).
 
-That is the part the catalog tools don't do. **Informatica and Collibra are passive repositories you fill
-in by hand** — a person inventories the source tables, writes the S2T mapping in a spreadsheet, and
-hand-codes the SQL. They don't *learn* a source system and they don't *generate* a mapping. DG AI Agent
-does both, end to end, with every step checked by deterministic gates.
+That generation step is the part the catalog tools don't do. Informatica and Collibra do harvest schemas
+and trace lineage — but a person still writes the S2T mapping in a spreadsheet and hand-codes the
+transformation SQL. **They don't *generate* the mapping or the SQL.** DG AI Agent does, end to end, with
+every step checked by deterministic gates.
 
 > **Stack:** DuckDB · dbt · Streamlit · Claude (Anthropic API) · Python
 > **License:** MIT · **Status:** working MVP on 100% synthetic data
@@ -37,8 +38,8 @@ That requires **learning the source system from its data**, not just storing met
 
 | | Informatica / Collibra (catalog tools) | **DG AI Agent** |
 |---|---|---|
-| Inventory the source | manual data entry | **auto-profiled from the live database** |
-| Discover joins · PK/FK · cardinality | not done (or hand-documented) | **empirically learned from the data (EDA)** |
+| Inventory the source | schema-level metadata scanners | **value-level profiling from the live data** (nulls, codes, magnitudes) |
+| Discover joins · PK/FK · cardinality | declared/hand-documented relationships | **empirically measured from the data (EDA)** — incl. fanout risk |
 | Source→target mapping | hand-written in Excel / a mapping UI | **LLM-generated, evidence-cited** |
 | Transformation SQL | hand-coded by an engineer | **generated and build-tested** |
 | Verify it's correct | manual review | **deterministic gates + `dbt test`** |
@@ -215,6 +216,40 @@ CLAUDE.md       agent & contributor guide (conventions for working in the repo)
 ```
 
 ---
+
+## Vocabulary (acronyms you'll meet in the code)
+
+| Term | Meaning |
+|---|---|
+| **S2T** | source-to-target mapping — which source columns feed which target columns, and how |
+| **DAR** | domain analysis result — one EDA finding about a source table (seed: `domain_analysis_results`) |
+| **TAR** | term analysis result — one EDA finding scoped to a specific business term (`term_analysis_results`) |
+| **BAR** | business-term analysis result — one full run of the multi-turn term-analysis loop, with its evidence, convergence status, and token cost (`business_term_analysis_results`) |
+| **Layer A / Layer B** | SQL-writing conventions per source table: Layer B is compiled deterministically from dbt's manifest (dbt-covered tables); Layer A is LLM-synthesized from EDA for raw-only tables |
+| **Stage 0–E** | the pipeline: spec → A scope → B blockers → C domain EDA → C′ term EDA → D generation → E deploy |
+| **F.3** | the post-generation join validator — rejects SQL whose joins the cardinality evidence classifies as `catastrophic_fanout` |
+| **Grain** | the row-level unit a metric is measured at (e.g. *vendor × month*) — validated at deploy |
+
+## Honest limitations
+
+Read this before extrapolating from the demo:
+
+- **One source, and it's synthetic.** The *schema* is real SAP — the table/field catalog is scraped from
+  public SAP references (`scripts/scrape_sap_catalog.py`); the *rows* are generated. The EDA runs blind
+  (the LLM only ever sees live query results — never the generator code), so the join graph really is
+  *discovered*, not leaked. But generated data is cleaner than production SAP: near-perfect referential
+  integrity, one client, no orphaned FKs or archived-row weirdness. What's demonstrated is the
+  **mechanism**, not robustness against real-world data quality.
+- **No "point it at your system" connector yet.** The DuckDB path and the `raw_sap` schema are
+  hardwired. Adapting to another source today means editing config and generator/staging code, not
+  passing a connection string.
+- **N = 1 evaluation.** One term (BG030) is fully worked end-to-end in the repo. There is no
+  success-rate eval across dozens of term definitions and no failure-mode catalog yet. Every run does
+  record its evidence, convergence status, and cost into the seeds, so the substrate for that eval
+  exists — it just hasn't been run at scale.
+- **Token cost.** Recorded term-analysis runs in the shipped seeds cost **$0.08–$0.74 each**
+  (`business_term_analysis_results.llm_total_cost_usd`); a full Stage A→E pass makes several LLM calls —
+  budget a few dollars per term.
 
 ## Data & disclaimer
 

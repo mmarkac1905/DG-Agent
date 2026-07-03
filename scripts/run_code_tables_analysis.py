@@ -70,7 +70,7 @@ def _extract_blockers_addressed(
     return (value, False, "")
 
 API_URL = "https://api.anthropic.com/v1/messages"
-MODEL = "claude-sonnet-4-6"
+from _model_config import MODEL  # single source of truth (env: DG_AGENT_MODEL)
 MAX_RETRIES = 3
 
 DAR_FIELDS = [

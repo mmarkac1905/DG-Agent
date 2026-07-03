@@ -50,7 +50,7 @@ _PROMPT_PATH = _ROOT / "scripts" / "prompts" / "term_eda_prompt.md"
 _BG_CSV = _ROOT / "dbt" / "seeds" / "business_glossary.csv"
 
 _API_URL = "https://api.anthropic.com/v1/messages"
-_MODEL = "claude-sonnet-4-6"
+from _model_config import MODEL as _MODEL  # single source of truth (env: DG_AGENT_MODEL)
 _MAX_TOKENS = 8000
 
 # Lens enum per v5 Edit 2 (post-rename).
