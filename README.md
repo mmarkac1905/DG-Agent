@@ -9,8 +9,10 @@ governance layer (glossary, S2T, catalog, lineage) under Data Governance.*
 **Give it a business-term definition. It learns the source system from the actual data — profiles every
 table, measures how tables *really* join — then generates the source-to-target mapping and the
 transformation SQL, verified and deployed.** A business metric goes from a one-line definition to a
-tested data mart with no human writing SQL. Demonstrated end-to-end on one synthetic SAP MM source
-(real SAP schema, generated data — see [Honest limitations](#honest-limitations)).
+tested data mart with no human writing SQL. Demonstrated end-to-end on **two source systems**: a
+synthetic SAP MM system, and the public Olist e-commerce dataset — real data this repo's authors did
+not generate, where the pipeline discovered the join graph blind and side-stepped a semantic trap that
+silently yields a 100%-wrong metric (see [Pointing it at another source](#pointing-it-at-another-source)).
 
 That generation step is the part the catalog tools don't do. Informatica and Collibra do harvest schemas
 and trace lineage — but a person still writes the S2T mapping in a spreadsheet and hand-codes the
@@ -18,9 +20,10 @@ transformation SQL. **They don't *generate* the mapping or the SQL.** DG AI Agen
 every step checked by deterministic gates.
 
 > **Stack:** DuckDB · dbt · Streamlit · Claude (Anthropic API) · Python
-> **License:** MIT · **Status:** working MVP on 100% synthetic data
-> **Example source system:** SAP MM — *Customer Premises Equipment (CPE)* procure-to-deploy, for a
-> fictional operator, **Helios Telecom**.
+> **License:** MIT · **Status:** working MVP — primary demo on 100% synthetic data, second source on real public data
+> **Source systems:** SAP MM — *Customer Premises Equipment (CPE)* procure-to-deploy for a fictional
+> operator, **Helios Telecom** (synthetic, primary demo) · **Olist** Brazilian e-commerce
+> (real public dataset, opt-in second source).
 
 > ⚡ **"Where's the data?"** There's no database in this repo — *by design*. The repo ships the
 > **generators**, not a 250 MB binary. One command — `python scripts/bootstrap.py` — fabricates the
@@ -232,10 +235,32 @@ CLAUDE.md       agent & contributor guide (conventions for working in the repo)
 
 ## Pointing it at another source
 
-The pipeline is **source-agnostic by configuration** — proven by onboarding the public
-[Olist Brazilian e-commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
-(9 tables, ~100k orders, data this repo's authors did not generate) and taking two business terms
-from definition to deployed, reconciled dbt marts for ~$3 in LLM cost. The recipe:
+The pipeline is **source-agnostic by configuration**. To prove it — and to answer the fair criticism
+that a system validated only on data its own author generated proves the *mechanism* but not
+*robustness* — we pointed it at the public
+[Olist Brazilian e-commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce):
+9 tables, ~100k real orders (2016–2018), loaded as-is with all its real-world dirt (duplicate review
+ids, multiple payment rows per order, a geolocation table that fans out ×1,100 per zip prefix, and an
+order-scoped customer key).
+
+### What happened
+
+Two business terms went from a one-line definition to deployed, tested dbt marts, for **~$3 total in
+LLM cost**, with every number below independently re-verified by hand-written SQL:
+
+| Term | What the pipeline did | Result |
+|---|---|---|
+| **Monthly GMV by category** | Scoped 4 of 9 tables, learned the join graph blind from the data, generated a full greenfield chain (4 staging → 6 vault → mart → OBT), joins written in the fanout-safe direction *citing the cardinality evidence by id* | Deployed mart reconciles **to the cent**: 13,496,408.43 BRL across 1,282 category-months |
+| **Repeat customer rate** | The trap term: Olist's `customer_id` is unique *per order*, so the obvious key yields a repeat rate of **0.0%** — plausible-looking, silently 100% wrong. The pipeline's scope stage identified `customer_unique_id` as the required person key from the profiled evidence and built on it | Deployed mart computes the correct **~3.0%**; the semantic validator flagged two genuine edge-case warnings for analyst review |
+
+The experiment also did what a second source should do: it **broke things, and the breaks became
+fixes** — direction-aware join-fanout evidence, source-neutral repair hints, schema grounding for
+cross-mart refs, and a greenfield path so a brand-new source can have its staging → vault → mart
+chain proposed in one generation pass. The still-open gaps are recorded honestly in
+`known_issues` (#131–134). Every step of the run — evidence, costs, decisions — is in the
+seeds/knowledge graph like any other run.
+
+### The recipe
 
 1. **Load** the source's tables into a new DuckDB schema (e.g. `raw_olist`) in `cpe_analytics.duckdb`.
 2. **Document** them: add per-column rows to `sap_data_dictionary.csv` (see
