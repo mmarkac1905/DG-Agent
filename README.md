@@ -72,6 +72,62 @@ and `dbt build` refuses anything that wouldn't run — so the LLM's judgment is 
 
 ---
 
+## The EDA framework — how it actually *learns* a source
+
+The "learning" in stages C / C′ is two passes of structured exploratory data analysis. Together they turn
+a pile of opaque SAP tables into the **evidence** the generator needs to write a *correct* mapping — so by
+the time any SQL is written, the LLM is reasoning about *this* source system's measured shape, not an
+abstract schema.
+
+### Pass 1 — Domain EDA: profile each table on its own
+
+A suite of analyzers runs per source table. Four are **LLM-assisted** (the LLM writes the profiling SQL,
+DuckDB executes it, the LLM interprets the result); four are **deterministic** (pure SQL). Each answers
+one question the mapping will depend on:
+
+| Analyzer | What it measures | Why the mapping needs it |
+|---|---|---|
+| **completeness** | null rate per column | a measure that's 40% null needs `COALESCE`/a filter — or isn't usable |
+| **dimensions** | distinct values / cardinality per column | finds the grouping axes and which columns are codes |
+| **magnitude** | scale of each measure (sum, by dimension) | sanity scale + a reconciliation anchor (does it total what it should?) |
+| **code_tables** | decode coded columns by **joining a decoder** (never a hallucinated `CASE`) | turns `BWART=101` / `MTART=CPE` into the meaning the filter logic needs |
+| **date** | temporal span, gaps, granularity | confirms a `month` grain is even possible; finds missing periods |
+| **segmentation** | value thresholds (quartiles) | banding for bucketed metrics |
+| **schema_discovery** | PK / FK candidates + referential-integrity % | **discovers how the tables join** — the backbone of any S2T |
+| **grain_relationship** | fanout class per table pair (`per_record_key` / `header_detail` / `catastrophic_fanout`) | tells the generator which joins are **safe** vs which would silently multiply rows and corrupt every aggregate |
+
+The last two are the crux: the system **learns the join graph empirically** — from referential integrity
+and cardinality in the *actual data*, not a hand-drawn ER diagram. That's how it avoids the classic
+failure where a mapping joins two tables and silently 10×'s the revenue.
+
+### Pass 2 — Term EDA: validate *this metric's* logic
+
+Domain EDA learns the tables; Term EDA learns whether **your specific term** survives contact with the
+data. It's a multi-turn agent that considers an 8-lens analytical framework and emits only the queries
+that apply:
+
+| Lens | Question it asks of the term |
+|---|---|
+| `measures_overview` | what are the headline totals / counts? |
+| `by_dimension` | does the measure split cleanly by the chosen dimension? |
+| `ranking` | top / bottom — any outliers that break the logic? |
+| `time_trend` | does it behave sensibly over the date grain? |
+| `cumulative` | do running totals make sense? |
+| `variance` | actual vs target / prior — is the comparison meaningful? |
+| `bucketing` | do the `CASE WHEN` bands populate? |
+| `part_to_whole` | do the shares sum to 100%? |
+
+It runs in three phases: **(1) framework floor** — consider all 8 lenses, pick or skip each *with a
+reason*; **(2) reflection** — find the single biggest remaining gap and probe it; **(3) sufficiency
+loop** — keep going until the evidence is enough to author a confident mapping, then stop. Every result
+is recorded, so Stage D cites *real numbers* ("revenue sums to X; this join is 1:1") instead of guessing.
+
+**Net effect:** when the LLM finally writes the S2T mapping and SQL, it already knows which columns are
+populated, what the codes mean, how the tables genuinely join, and whether the metric holds up — because
+it *measured* all of it first.
+
+---
+
 ## Architecture
 
 ```
