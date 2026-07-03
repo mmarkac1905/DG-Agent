@@ -2127,6 +2127,29 @@ tab_overview, tab_detail, tab_spec, tab_dq, tab_new = st.tabs([
 # ============================================================
 # TAB 1: OVERVIEW
 # ============================================================
+@st.cache_data(ttl=60)
+def _term_source_map() -> dict:
+    """term_id -> source-system tag, inferred from the term's confirmed
+    scope tables via the data dictionary's description_source. Interim
+    V1 inference — replaced by a first-class source_system column when
+    the catalog is consolidated across sources."""
+    try:
+        df = query("""
+            SELECT DISTINCT s.business_term_id AS term_id,
+                   CASE WHEN d.description_source = 'olist_kaggle_documentation'
+                        THEN 'olist' ELSE 'sap' END AS src
+            FROM main_seeds.s2t_mapping s
+            JOIN main_seeds.sap_data_dictionary d
+              ON LOWER(s.source_table) = LOWER(d.table_name)
+        """)
+    except Exception:
+        return {}
+    out: dict = {}
+    for _, r in df.iterrows():
+        out.setdefault(r["term_id"], set()).add(r["src"])
+    return {k: "+".join(sorted(v)) for k, v in out.items()}
+
+
 with tab_overview:
     st.subheader("Business Terms")
 
@@ -2157,6 +2180,9 @@ with tab_overview:
                 st.markdown(f"<span style='color:{status_color};font-weight:bold'>{term['status'].upper()}</span>", unsafe_allow_html=True)
             with col3:
                 st.caption(f"Domain: {term['domain']}")
+                _src = _term_source_map().get(term['id'])
+                if _src:
+                    st.caption(f"Source: {_src}")
             with col4:
                 st.caption(f"Grain: {term['grain']}")
             st.divider()
