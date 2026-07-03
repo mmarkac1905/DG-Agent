@@ -5,6 +5,9 @@
 # Parquet export (regenerated from cpe_analytics.duckdb by scripts/export_parquet.py)
 data/parquet/
 
+# Olist second-source download cache (scripts/load_olist_source.py)
+data/olist_source/
+
 __pycache__/
 .env
 target/

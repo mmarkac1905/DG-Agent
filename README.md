@@ -262,7 +262,9 @@ seeds/knowledge graph like any other run.
 
 ### The recipe
 
-1. **Load** the source's tables into a new DuckDB schema (e.g. `raw_olist`) in `cpe_analytics.duckdb`.
+1. **Load** the source's tables into a new DuckDB schema in `cpe_analytics.duckdb`. For Olist this is
+   one command — `python scripts/load_olist_source.py` downloads the public dataset and loads all nine
+   tables into `raw_olist` with row-count sanity checks.
 2. **Document** them: add per-column rows to `sap_data_dictionary.csv` (see
    `scripts/generate_olist_data_dictionary.py` as a template — types from `information_schema`,
    descriptions from the source's docs) and `dbt seed`.
