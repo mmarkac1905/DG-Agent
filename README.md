@@ -1,5 +1,7 @@
 # DG AI Agent — it learns your source system and writes the source-to-target mappings
 
+[![CI](https://github.com/mmarkac1905/DG-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/mmarkac1905/DG-Agent/actions/workflows/ci.yml)
+
 **Point it at a source system. It profiles the schema, learns the relationships from the actual data,
 then generates the source-to-target mappings and the transformation SQL itself — verified, deployed,
 lineage-tracked.** A business metric goes from a one-line definition to a tested data mart with no human
