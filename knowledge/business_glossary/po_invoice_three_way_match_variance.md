@@ -1,6 +1,6 @@
 # Business Term: PO-Invoice Three-Way Match Variance
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 ## Definition
 
@@ -19,7 +19,7 @@ For each vendor x month, percentage of PO lines where PO quantity, goods-receipt
 
 ## Source-to-Target Mapping
 
-### Source Tables (SAP)
+### Source Tables
 
 | Table | Field | Description |
 | --- | --- | --- |

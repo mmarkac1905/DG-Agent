@@ -1,6 +1,7 @@
 # DG AI Agent — it learns a source system and writes the source-to-target mappings
 
 [![CI](https://github.com/mmarkac1905/DG-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/mmarkac1905/DG-Agent/actions/workflows/ci.yml)
+[![Olist second source](https://github.com/mmarkac1905/DG-Agent/actions/workflows/olist.yml/badge.svg)](https://github.com/mmarkac1905/DG-Agent/actions/workflows/olist.yml)
 
 ![Procurement Overview dashboard](docs/img/dashboard.png)
 *The Streamlit app on the generated data: procurement KPIs on the left-nav Dashboard pages, the
@@ -11,8 +12,8 @@ table, measures how tables *really* join — then generates the source-to-target
 transformation SQL, verified and deployed.** A business metric goes from a one-line definition to a
 tested data mart with no human writing SQL. Demonstrated end-to-end on **two source systems**: a
 synthetic SAP MM system, and the public Olist e-commerce dataset — real data this repo's authors did
-not generate, where the pipeline discovered the join graph blind and side-stepped a semantic trap that
-silently yields a 100%-wrong metric (see [Pointing it at another source](#pointing-it-at-another-source)).
+not generate, with results **reproducible to the cent from a clean clone**
+(see [Pointing it at another source](#pointing-it-at-another-source)).
 
 That generation step is the part the catalog tools don't do. Informatica and Collibra do harvest schemas
 and trace lineage — but a person still writes the S2T mapping in a spreadsheet and hand-codes the
@@ -245,20 +246,31 @@ order-scoped customer key).
 
 ### What happened
 
-Two business terms went from a one-line definition to deployed, tested dbt marts, for **~$3 total in
-LLM cost**, with every number below independently re-verified by hand-written SQL:
+**Everything below is reproducible from a clean clone** — `scripts/load_olist_source.py` downloads
+the dataset, the committed models build against it, and the numbers land to the cent (an independent
+reviewer did exactly this). Two business terms went from a one-line definition to deployed, tested
+dbt marts, for **~$3 total in LLM cost**:
 
 | Term | What the pipeline did | Result |
 |---|---|---|
-| **Monthly GMV by category** | Scoped 4 of 9 tables, learned the join graph blind from the data, generated a full greenfield chain (4 staging → 6 vault → mart → OBT), joins written in the fanout-safe direction *citing the cardinality evidence by id* | Deployed mart reconciles **to the cent**: 13,496,408.43 BRL across 1,282 category-months |
-| **Repeat customer rate** | The trap term: Olist's `customer_id` is unique *per order*, so the obvious key yields a repeat rate of **0.0%** — plausible-looking, silently 100% wrong. The pipeline's scope stage identified `customer_unique_id` as the required person key from the profiled evidence and built on it | Deployed mart computes the correct **~3.0%**; the semantic validator flagged two genuine edge-case warnings for analyst review |
+| **Monthly GMV by category** | Scoped 4 of 9 tables, measured the joins it used empirically (direction-aware fanout evidence, cited by DAR id in the generated SQL), and proposed a full greenfield chain: 4 staging → 6 vault → mart → OBT | Deployed mart reconciles **to the cent**: 13,496,408.43 BRL across 1,282 category-months |
+| **Repeat customer rate** | The trap term: Olist's `customer_id` is unique *per order*, so the obvious key yields a **structurally guaranteed 0%** repeat rate — plausible-looking, silently 100% wrong. The pipeline correctly operationalized the person-identity constraint against the schema: it chose `customer_unique_id`, corroborated by the profiled 1:1 evidence | Deployed mart computes the correct **3.044%** (canceled-only filter per the term contract, first-order baseline over all orders) |
+
+Two honesty notes, because precision matters more than punch. First, BG033's original definition
+*named* the identity constraint — so we re-ran it **blind** (definition with no hint, `BG034` in the
+glossary): scope derivation still chose `customer_unique_id`, from the **catalog documentation plus
+the 1:1 EDA evidence** — and that run then refused to self-certify, hard-stopping on the
+citation-audit guardrail. Resolving a trap from a well-read catalog is the product working as
+designed; it is not blind discovery from data alone, and we don't claim it is. Second, the
+join-*discovery* machinery only proved itself on the joins these terms needed: its real failures on
+this source — a SAP-shaped pair pre-filter, a differently-named join key it never found — are
+recorded as open `known_issues` (#131–133), by us, before any reviewer found them.
 
 The experiment also did what a second source should do: it **broke things, and the breaks became
 fixes** — direction-aware join-fanout evidence, source-neutral repair hints, schema grounding for
 cross-mart refs, and a greenfield path so a brand-new source can have its staging → vault → mart
-chain proposed in one generation pass. The still-open gaps are recorded honestly in
-`known_issues` (#131–134). Every step of the run — evidence, costs, decisions — is in the
-seeds/knowledge graph like any other run.
+chain proposed in one generation pass. Every step — evidence, costs, decisions, the blind-probe
+outcome — is in the seeds/knowledge graph like any other run.
 
 ### The recipe
 

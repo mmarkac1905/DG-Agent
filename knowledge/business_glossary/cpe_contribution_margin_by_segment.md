@@ -1,6 +1,6 @@
 # Business Term: CPE Contribution Margin by Service Plan & Tenure
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 ## Definition
 
@@ -19,7 +19,7 @@ Per service plan type and customer tenure band (per month), contribution margin 
 
 ## Source-to-Target Mapping
 
-### Source Tables (SAP)
+### Source Tables
 
 | Table | Field | Description |
 | --- | --- | --- |

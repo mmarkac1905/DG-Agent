@@ -1,6 +1,6 @@
 # Business Term: Deployment to Return Ratio
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 ## Definition
 
@@ -19,7 +19,7 @@ Ratio of customer returns (mvt 161) to deployments (mvt 201) per equipment categ
 
 ## Source-to-Target Mapping
 
-### Source Tables (SAP)
+### Source Tables
 
 | Table | Field | Description |
 | --- | --- | --- |

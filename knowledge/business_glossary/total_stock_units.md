@@ -1,6 +1,6 @@
 # Business Term: Total Stock Units
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 ## Definition
 
@@ -19,7 +19,7 @@ Sum of unrestricted + quality inspection + blocked stock across all plants and s
 
 ## Source-to-Target Mapping
 
-### Source Tables (SAP)
+### Source Tables
 
 | Table | Field | Description |
 | --- | --- | --- |

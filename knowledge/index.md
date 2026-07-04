@@ -1,18 +1,18 @@
 # CPE Procurement Analytics — Knowledge Wiki
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand.
 
 ## System Snapshot
 
 - **Latest version (decisions seed):** `wire_dbt_compile_eot`
-- **Total decisions:** 125
+- **Total decisions:** 126
 - **Total domain relationships:** 0
-- **Total known issues:** 126 (38 open)
+- **Total known issues:** 126 (37 open)
 - **Data products tracked:** 0
 - **Data Vault entities designed:** 60 (15 hubs · 17 links · 28 satellites)
-- **Business glossary terms:** 33 (25 approved · 3 draft)
+- **Business glossary terms:** 34 (25 approved · 3 draft)
 - **ABAP custom programs:** 16 documented (2 critical · 4 high risk) · **Z-tables:** 11
 - **Data contracts:** 21 (15 daily · 6 weekly)
 - **dbt models scanned:** 135 (knowledge: 6, marts: 18, obt: 6, staging: 45, vault: 60)

@@ -1,6 +1,6 @@
 # SAP Tables: inventory
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 Keywords: `mard, mchb, mska, stock, inventory, labst, zaliha, skladišt, reorder, capacity, material_auth, transfer_rules, ZHT_REORDER, ZHT_PLANT_CAPACITY`
 

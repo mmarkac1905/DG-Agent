@@ -356,7 +356,7 @@ def build_glossary_page(
     lines += ["", "## Source-to-Target Mapping", ""]
 
     if mappings:
-        lines += ["### Source Tables (SAP)", "", "| Table | Field | Description |", "| --- | --- | --- |"]
+        lines += ["### Source Tables", "", "| Table | Field | Description |", "| --- | --- | --- |"]
         for m in mappings:
             if m.get("source_table") and m.get("source_field"):
                 lines.append(f"| {m['source_table']} | {m['source_field']} | {md_escape(m.get('source_description', ''))} |")

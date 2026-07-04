@@ -1,6 +1,6 @@
 # Business Term: CPE Deployment Rate
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 ## Definition
 
@@ -19,7 +19,7 @@ Percentage of CPE devices currently in deployed (INST) lifecycle status, per equ
 
 ## Source-to-Target Mapping
 
-### Source Tables (SAP)
+### Source Tables
 
 | Table | Field | Description |
 | --- | --- | --- |

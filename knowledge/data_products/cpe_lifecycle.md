@@ -1,10 +1,10 @@
 # Data Product: cpe_lifecycle
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 Keywords: `cpe, equipment, equi, serial, device, router, ont, set-top, stb, modem, lifecycle, installed, returned, defective`
 
-## Related Decisions (89)
+## Related Decisions (90)
 
 - **#1** (2026-04-13) — project_initialized: Framework ready for SAP sample data generation and Data Vault modeling
 - **#2** (2026-04-14) — sap_sample_data_generated: Sample data loaded into raw_sap schema in DuckDB. All 4 RI checks pass. Avg lead time 44.8d. Ready for staging layer.
@@ -95,12 +95,13 @@ Keywords: `cpe, equipment, equi, serial, device, router, ont, set-top, stb, mode
 - **#122** (2026-06-28) **[NEVER_REPEAT]** — bg030_mart_refactored_to_vault_layer: Marts must build on the vault layer; enforce the layering rule at GENERATION (prompt), not only at the commit gate.
 - **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
 - **#126** (2026-07-04) — greenfield_source_generation_contracts: Every generation-time contract needs a defined greenfield behavior. Grounding must cover everything the model is allowed to ref().
+- **#127** (2026-07-04) — blind_definition_probe_bg034_customer_key: Honest claim: the trap is resolved from CATALOG DOCUMENTATION + PROFILED EVIDENCE, not from the term definition - and not from data alone either (the dictionary rows carry the public dataset docs). Reading the catalog correctly is the product working as designed; claiming blind discovery would overstate it. The hard stop shows the convergence gate is stricter than the key choice.
 
 ## Related Domain Relationships (0)
 
 _(none)_
 
-## Open Issues (24)
+## Open Issues (23)
 
 - **#4** [open/low] Inventory MoS values unrealistic in sample data — Q7 discovery query showed months-of-stock ranging 650-6455 months across all materials/plants. Generator GR inflow far exceeds deployment outflow (~45K serial-tracked deployments vs ~180K received qty). MARD stock computed from net movements so it balloons. Real HT data would sho…
 - **#5** [open/medium] Vendor-equipment attribution requires vault traceability — Q4 discovery showed obt_procurement_overview alone cannot attribute equipment outcomes to vendors because multiple vendors share material numbers (join fan-out). Need a fact_equipment_with_vendor model built from link_equipment_gr -> link_gr_po -> link_po_vendor. Backlog for next…
@@ -125,7 +126,6 @@ _(none)_
 - **#122** [open/medium] dim_equipment uniqueness fails - link_equipment_material fan-out (1 device -> multiple materials) — link_equipment_material has 75236 rows for 45000 distinct equipment; 30236 devices (~67%) link to >1 material (e.g. CPE-00000330, an ONT, links to both CPE-ONT-003 and CPE-RTR-001). This fans dim_equipment out to 75236 rows, breaking unique_dim_equipment_equipment_number and uniq…
 - **#128** [open/low] Synthetic data: BWART=201 deployment movements lack serial-number linkage (only 101/GR linked) — All SERI (45000) and SER03 (2155) serial records point to BWART=101 goods-receipt movements; the 27000 BWART=201 deployment movements have ZERO serial/equipment linkage. So per-device deployment date cannot be derived from the 201 movement (forced the first-bill proxy for null EQ…
 - **#131** [open/medium] grain_relationship pre-filter requires shared numeric column names (SAP-shaped) — The analyzer's pair pre-filter needs a shared numeric column NAME between two tables (SAP header/detail convention). On Olist, where numeric column names never repeat across tables, it emitted 0 pairs — the sum-match heuristic produces no evidence on sources with distinct naming.…
-- **#134** [open/low] BG033 semantic validator warnings pending analyst review — fact_repeat_customer_rate passed semantic validation (match=true) with two warnings: (1) the first-order baseline excludes canceled/unavailable orders, so a person whose first-ever order was canceled is misclassified as first-time on their next order; (2) the mart also excludes s…
 
 ## DO NOT (Anti-patterns)
 

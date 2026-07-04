@@ -1,6 +1,6 @@
 # Data Vault: hub_design
 
-_Last generated: 2026-07-04 01:42:32_
+_Last generated: 2026-07-04 02:20:08_
 
 Keywords: `hub_, business key, golden id, hub design, surrogate key, hub_material, hub_vendor, hub_purchase_order, hub_equipment`
 
