@@ -424,7 +424,7 @@ def render_business_lineage(term_s2t, dashboard_pages, term_row=None):
         <div class="bl-box bl-box-source">
             <div class="bl-label bl-label-source">Source</div>
             <div class="bl-title">{_escape(g['name'])}</div>
-            <div class="bl-subtitle">SAP: {_escape(g['sap_code'])}</div>
+            <div class="bl-subtitle">Raw: {_escape(g['sap_code'])}</div>
             <ul class="bl-items">
                 {''.join(f'<li>{_escape(it)}</li>' for it in g['items'])}
             </ul>

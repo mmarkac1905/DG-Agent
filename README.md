@@ -272,6 +272,11 @@ cross-mart refs, and a greenfield path so a brand-new source can have its stagin
 chain proposed in one generation pass. Every step — evidence, costs, decisions, the blind-probe
 outcome — is in the seeds/knowledge graph like any other run.
 
+![Olist term in the governance UI](docs/img/olist_term_detail.png)
+*The GMV term in the governance UI, running in Olist mode (amber source badge, top-left): definition
+contract, scope status, and the business lineage cards carrying the pipeline's own per-table
+reasoning — "carries price (the BRL measure, explicitly excluding freight per definition)".*
+
 ### The recipe
 
 1. **Load** the source's tables into a new DuckDB schema in `cpe_analytics.duckdb`. For Olist this is
