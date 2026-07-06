@@ -282,6 +282,7 @@ dbt marts, for **~$5 total in LLM cost**:
 | **Monthly GMV by category** | Scoped 4 of 9 tables, measured the joins it used empirically (direction-aware fanout evidence, cited by DAR id in the generated SQL), and proposed a full greenfield chain: 4 staging → 6 vault → mart → OBT | Deployed mart reconciles **to the cent**: 13,496,408.43 BRL across 1,282 category-months |
 | **Repeat customer rate** | The trap term: Olist's `customer_id` is unique *per order*, so the obvious key yields a **structurally guaranteed 0%** repeat rate, plausible-looking and silently 100% wrong. The pipeline correctly operationalized the person-identity constraint against the schema: it chose `customer_unique_id`, corroborated by the profiled 1:1 evidence | Deployed mart computes the correct **3.044%** (canceled-only filter per the term contract, first-order baseline over all orders) |
 | **On-time delivery rate** | The clean-room test: executed **by the analyst through the UI's designed workflow** (scope confirm, domain EDA, term EDA, transition, Create S2T, approve). The run's trail is marked `executed_by: analyst` throughout, distinguishing it from the earlier operator-scripted runs; the approval was walked before Create S2T, which the approval form now calls out explicitly | Deployed mart reconciles exactly: **91.888%** from the mart vs 91.888% from independent hand-written SQL |
+| **Cross-state order share** | The trap-rich term, analyst-driven through the UI: order-grain metric over item-grain data (any-item rule, no double counting), with geographic columns that are joinable but catastrophic (x4,288 fanout, discovered by value-overlap probing). The pipeline dodged both traps, invented 3 correct vault models, and cited its evidence join by join. The deploy shipped an EMPTY mart (two sessions hashed the same key differently; dbt was green) and independent verification caught it: the repair produced an exact reconciliation, and the failure became a deterministic zero-row deploy gate plus a hash-recipe grounding rule | After repair, deployed mart reconciles exactly: **64.1576%** (61,898 / 96,478 delivered orders), month by month vs independent hand-written SQL |
 
 One honesty note, because precision matters more than punch: BG033's original definition
 *named* the identity constraint, so I re-ran it **blind** (definition with no hint, `BG034` in the
@@ -340,8 +341,11 @@ Read this before extrapolating from the demo:
 - **Sources are selected per run, not federated.** `DG_SOURCE_SCHEMA` points the whole pipeline at one
   source at a time. A consolidated multi-source catalog (source_system as a first-class column, terms
   scoped across the union of sources) is the designed next step, not the current state.
-- **N = 4 worked terms, no systematic eval.** BG030 (SAP) plus BG031/BG032/BG033 (Olist) are fully
-  worked end-to-end, BG032 by the analyst through the UI with no operator involvement. There is no
+- **N = 5 worked terms, no systematic eval.** BG030 (SAP) plus BG031/BG032/BG033/BG035 (Olist) are fully
+  worked end-to-end, BG032 and BG035 by the analyst through the UI. BG035 also shows the current
+  limit of the automated gates: an empty mart deployed green until independent reconciliation caught
+  it (now a deterministic zero-row gate; automated metric reconciliation is the next gate to build).
+  There is no
   success-rate eval across dozens of term definitions yet. Every run records its evidence,
   convergence status, and cost into the seeds, so the substrate for that eval exists. Human review
   of newly deployed terms remains part of the design.
