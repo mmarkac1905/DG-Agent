@@ -216,18 +216,133 @@ def _suffix_name_keys(t1_cols: dict[str, str],
     return out
 
 
+# Source E bounds: keep probing cheap, deterministic, and key-shaped.
+_OVERLAP_SAMPLE = 200          # distinct values sampled from the smaller side
+_OVERLAP_THRESHOLD = 0.5       # fraction of sampled values found on the other side
+_OVERLAP_MAX_PROBES = 20       # column pairs probed per table pair
+_OVERLAP_MIN_DISTINCT = 10     # string keys: skip near-constants
+_OVERLAP_MIN_DISTINCT_INT = 500  # integer keys: surrogate-key cardinality
+
+_INT_TYPES = ("INTEGER", "BIGINT", "HUGEINT", "SMALLINT", "TINYINT", "INT")
+
+
+def _keyish_columns(conn, table: str,
+                    cols: dict[str, str]) -> dict[str, int]:
+    """{original_column_name: approx_distinct} for columns plausible as
+    join keys. Strings qualify above a small cardinality floor. Integers
+    qualify only at surrogate-key cardinality (sequence numbers and
+    quantity columns overlap by coincidence, not semantics). Floats and
+    decimals never qualify — they are measures, and on the first live
+    sweep PAYMENT_VALUE 'joined' product weights at 95% overlap purely
+    by value-range coincidence. One aggregate query per table."""
+    def _eligible(c: str, t: str) -> bool:
+        if c.upper() in _BLACKLIST:
+            return False
+        fam = _type_family(t)
+        if fam == "string":
+            return True
+        if fam == "numeric":
+            return (t or "").upper().startswith(_INT_TYPES)
+        return False
+
+    eligible = [c for c, t in cols.items() if _eligible(c, t)]
+    if not eligible:
+        return {}
+    select = ", ".join(
+        f'approx_count_distinct("{c}") AS "{c}"' for c in eligible)
+    try:
+        row = conn.execute(
+            f'SELECT {select} FROM {SOURCE_SCHEMA}."{table}"').fetchone()
+    except duckdb.Error:
+        return {}
+    out = {}
+    for c, n in zip(eligible, row):
+        if n is None:
+            continue
+        floor = (_OVERLAP_MIN_DISTINCT
+                 if _type_family(cols[c]) == "string"
+                 else _OVERLAP_MIN_DISTINCT_INT)
+        if int(n) >= floor:
+            out[c] = int(n)
+    return out
+
+
+def _value_overlap_keys(conn, t1: str, t1_cols: dict[str, str],
+                        t2: str, t2_cols: dict[str, str],
+                        already: set) -> list[tuple[str, str]]:
+    """Source E: probe type-compatible, key-ish column pairs for actual
+    value overlap. A pair qualifies when >= _OVERLAP_THRESHOLD of a
+    sample of distinct values from the lower-cardinality side exists on
+    the other side. Deterministic (hash-ordered sampling), bounded
+    (_OVERLAP_MAX_PROBES per table pair), and name-agnostic — this is
+    what finds cust_id <-> customer_ref. Candidates still go through the
+    standard empirical fanout measurement downstream.
+    """
+    k1 = _keyish_columns(conn, t1, t1_cols)
+    k2 = _keyish_columns(conn, t2, t2_cols)
+    if not k1 or not k2:
+        return []
+
+    # Rank pairs by cardinality closeness: join keys have comparable or
+    # containable distinct counts; wildly mismatched pairs rarely join.
+    pairs = []
+    for c1, n1 in k1.items():
+        for c2, n2 in k2.items():
+            if (c1.upper(), c2.upper()) in already:
+                continue
+            if _type_family(t1_cols[c1]) != _type_family(t2_cols[c2]):
+                continue
+            ratio = max(n1, n2) / max(min(n1, n2), 1)
+            pairs.append((ratio, c1, c2))
+    pairs.sort(key=lambda p: p[0])
+
+    out: list[tuple[str, str]] = []
+    for _ratio, c1, c2 in pairs[:_OVERLAP_MAX_PROBES]:
+        # Sample from the lower-cardinality side; membership-test the other.
+        if k1[c1] <= k2[c2]:
+            st, sc, ot, oc = t1, c1, t2, c2
+        else:
+            st, sc, ot, oc = t2, c2, t1, c1
+        try:
+            row = conn.execute(f"""
+                WITH samp AS (
+                    SELECT DISTINCT "{sc}" AS val
+                    FROM {SOURCE_SCHEMA}."{st}"
+                    WHERE "{sc}" IS NOT NULL
+                    ORDER BY HASH(COALESCE(CAST("{sc}" AS VARCHAR), ''))
+                    LIMIT {_OVERLAP_SAMPLE}
+                )
+                SELECT COUNT(*) AS sampled,
+                       SUM(CASE WHEN EXISTS (
+                           SELECT 1 FROM {SOURCE_SCHEMA}."{ot}" o
+                           WHERE o."{oc}" = samp.val
+                       ) THEN 1 ELSE 0 END) AS hits
+                FROM samp
+            """).fetchone()
+        except duckdb.Error:
+            continue
+        sampled, hits = int(row[0] or 0), int(row[1] or 0)
+        if sampled and (hits / sampled) >= _OVERLAP_THRESHOLD:
+            out.append((c1.upper(), c2.upper()))
+    return out
+
+
 def _schema_discovery_fks(conn, table: str) -> list[dict]:
     """Read latest successful schema_discovery DAR for table; return its
-    fk_candidates list. Returns [] if no DAR.
+    fk_candidates list. Returns [] if no DAR (or no seeds schema at all —
+    hint sources degrade gracefully, like _semantic_model_key_cols).
     """
-    row = conn.execute("""
-        SELECT result_json FROM main_seeds.domain_analysis_results
-        WHERE analysis_type = 'schema_discovery'
-          AND status = 'success'
-          AND LOWER(source_tables) = LOWER(?)
-        ORDER BY executed_at_utc DESC
-        LIMIT 1
-    """, [table]).fetchone()
+    try:
+        row = conn.execute("""
+            SELECT result_json FROM main_seeds.domain_analysis_results
+            WHERE analysis_type = 'schema_discovery'
+              AND status = 'success'
+              AND LOWER(source_tables) = LOWER(?)
+            ORDER BY executed_at_utc DESC
+            LIMIT 1
+        """, [table]).fetchone()
+    except duckdb.Error:
+        return []
     if not row:
         return []
     try:
@@ -336,6 +451,19 @@ def _direct_candidates(conn, t1: str, t2: str) -> list[dict]:
         c = _ensure((col_up,), (col_up,))
         if "semantic_model_role" not in c["source"]:
             c["source"].append("semantic_model_role")
+
+    # Source E — value-overlap probing (known_issue #137, completes #132).
+    # Name-agnostic: finds keys like cust_id <-> customer_ref that no
+    # naming heuristic can see, by sampling actual values. Only pairs not
+    # already covered by Sources A-D are probed; hits enter the same
+    # empirical measurement pipeline as every other candidate.
+    already = {(k1[0], k2[0]) for (k1, k2) in candidates
+               if len(k1) == 1 and len(k2) == 1}
+    for c1_up, c2_up in _value_overlap_keys(conn, t1, t1_cols, t2, t2_cols,
+                                            already):
+        c = _ensure((c1_up,), (c2_up,))
+        if "value_overlap" not in c["source"]:
+            c["source"].append("value_overlap")
 
     return list(candidates.values())
 

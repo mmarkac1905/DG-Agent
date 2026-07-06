@@ -1,6 +1,6 @@
 # Data Product: cost_analysis
 
-_Last generated: 2026-07-06 19:11:41_
+_Last generated: 2026-07-06 19:29:00_
 
 Keywords: `cost, price, invoice, rbkp, rseg, netpr, netwr, tco, margin, budget, trošak, cijena`
 
@@ -52,13 +52,12 @@ Keywords: `cost, price, invoice, rbkp, rseg, netpr, netwr, tco, margin, budget, 
 
 _(none)_
 
-## Open Issues (5)
+## Open Issues (4)
 
 - **#5** [open/medium] Vendor-equipment attribution requires vault traceability — Q4 discovery showed obt_procurement_overview alone cannot attribute equipment outcomes to vendors because multiple vendors share material numbers (join fan-out). Need a fact_equipment_with_vendor model built from link_equipment_gr -> link_gr_po -> link_po_vendor. Backlog for next…
 - **#24** [open/low] Hashdiff macro treats NULL and empty-string as identical, suppressing SCD2 expansion for ELIKZ-class nullable columns — Observed 2026-04-20 during the ELIKZ null-injection loop-closure validation (decision #71). Sequence: (a) Pre-injection raw_sap.ekpo had 2200 rows with ELIKZ uniformly empty string ''. (b) Injected 110 explicit NULLs into ELIKZ (5%) via deterministic selector. (c) main_staging.st…
 - **#94** [open/low] Scope-aware ordering for the term-analysis DAR loader (Option beta) - deferred follow-up to #93 — During #93 fix design, scope-aware ORDER BY was investigated as Option beta: replace LIMIT 50 ORDER BY executed_at_utc DESC with a scope-overlap-first prioritization (rows whose source_tables overlap the term scope rank above non-overlapping rows; recency within priority). Premis…
 - **#97** [open/medium] create_s2t static layer overflows budget by ~979 tokens (pre-existing, surfaced during #95 fix-up budget audit) — scripts/_context_assembler.py:_load_static renders the static layer (Layer A semantic_model) at ~8479 tokens for BG027 under purpose=create_s2t against a 7500-token static budget — 979-token overrun. Pre-existing condition, not caused by #95 or its fix-up. Root cause: create_s2t'…
-- **#137** [open/medium] Join-key discovery: value-overlap probing (completes #132) — The #132 fix added suffix-token name matching, which found the zip-prefix joins but cannot see semantically joinable keys with unrelated names (cust_id vs customer_ref). The designed completion is value-overlap probing: for type-compatible column pairs, sample values and measure …
 
 ## DO NOT (Anti-patterns)
 

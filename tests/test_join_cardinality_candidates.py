@@ -106,3 +106,89 @@ def test_window_frame_keywords_not_flagged_as_columns():
     for kw in ("unbounded", "preceding", "following", "current", "range",
                "groups", "exclude", "ties", "window", "qualify"):
         assert kw in _SQL_KEYWORDS, f"missing window keyword: {kw}"
+
+
+# ─── Source E: value-overlap probing (known_issue #137) ────────────────
+
+def _overlap_conn():
+    import duckdb
+    conn = duckdb.connect(":memory:")
+    conn.execute("CREATE SCHEMA raw_sap")
+    conn.execute("CREATE TABLE raw_sap.custs (cust_id VARCHAR, name VARCHAR)")
+    conn.execute("CREATE TABLE raw_sap.orders (customer_ref VARCHAR, amt DOUBLE)")
+    conn.execute(
+        "INSERT INTO raw_sap.custs "
+        "SELECT 'C' || LPAD(CAST(i AS VARCHAR), 5, '0'), 'n' || i "
+        "FROM range(1, 501) t(i)")
+    conn.execute(
+        "INSERT INTO raw_sap.orders "
+        "SELECT 'C' || LPAD(CAST((i % 500) + 1 AS VARCHAR), 5, '0'), i * 1.5 "
+        "FROM range(1, 2001) t(i)")
+    return conn
+
+
+def test_value_overlap_finds_differently_named_key():
+    """The #137 case: cust_id <-> customer_ref share values but no name
+    tokens. Value probing must find them; name heuristics cannot."""
+    from run_join_cardinality_analysis import (
+        _value_overlap_keys, _table_columns, _suffix_name_keys,
+    )
+    conn = _overlap_conn()
+    c1 = _table_columns(conn, "custs")
+    c2 = _table_columns(conn, "orders")
+    # sanity: the naming heuristics are blind to this pair
+    assert _suffix_name_keys(c1, c2) == []
+    hits = _value_overlap_keys(conn, "custs", c1, "orders", c2, set())
+    assert ("CUST_ID", "CUSTOMER_REF") in hits
+    # non-key columns must not pair (name vs amt: different families)
+    assert all(h[0] != "NAME" for h in hits)
+    conn.close()
+
+
+def test_value_overlap_end_to_end_candidate_and_classification():
+    """Full path: Source E candidate enters the standard measurement and
+    classifies header_detail (each customer has ~4 orders)."""
+    from run_join_cardinality_analysis import _direct_candidates, _measure_direct
+    conn = _overlap_conn()
+    cands = _direct_candidates(conn, "custs", "orders")
+    ve = [c for c in cands if "value_overlap" in c["source"]]
+    assert any(c["key_columns_t1"] == ["CUST_ID"] and
+               c["key_columns_t2"] == ["CUSTOMER_REF"] for c in ve)
+    m = _measure_direct(conn, "custs", ["cust_id"], "orders", ["customer_ref"])
+    from run_join_cardinality_analysis import _classify
+    assert _classify(m) == "header_detail"
+    conn.close()
+
+
+def test_value_overlap_respects_already_covered_pairs():
+    from run_join_cardinality_analysis import _value_overlap_keys, _table_columns
+    conn = _overlap_conn()
+    c1 = _table_columns(conn, "custs")
+    c2 = _table_columns(conn, "orders")
+    hits = _value_overlap_keys(conn, "custs", c1, "orders", c2,
+                               {("CUST_ID", "CUSTOMER_REF")})
+    assert ("CUST_ID", "CUSTOMER_REF") not in hits
+    conn.close()
+
+
+def test_value_overlap_excludes_measures_and_small_ints():
+    """First live sweep lesson: float measures (payment_value vs weights)
+    and small-int sequences (payment_sequential vs photo counts) overlap
+    by coincidence. Floats never qualify; ints need key cardinality."""
+    import duckdb
+    from run_join_cardinality_analysis import _keyish_columns, _table_columns
+    conn = duckdb.connect(":memory:")
+    conn.execute("CREATE SCHEMA raw_sap")
+    conn.execute("""CREATE TABLE raw_sap.pay (
+        pay_key VARCHAR, seq INTEGER, installments INTEGER, amount DOUBLE)""")
+    conn.execute(
+        "INSERT INTO raw_sap.pay "
+        "SELECT 'P' || i, (i % 25) + 1, (i % 12) + 1, i * 1.37 "
+        "FROM range(1, 2001) t(i)")
+    cols = _table_columns(conn, "pay")
+    keyish = _keyish_columns(conn, "pay", cols)
+    assert "pay_key" in keyish            # string key qualifies
+    assert "seq" not in keyish            # small-int sequence: below floor
+    assert "installments" not in keyish   # small-int: below floor
+    assert "amount" not in keyish         # float measure: never
+    conn.close()

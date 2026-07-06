@@ -1,6 +1,6 @@
 # Data Vault: naming_conventions
 
-_Last generated: 2026-07-06 19:11:41_
+_Last generated: 2026-07-06 19:29:00_
 
 Keywords: `naming, convention, prefix, dv standard, dv naming`
 
@@ -24,7 +24,7 @@ Keywords: `naming, convention, prefix, dv standard, dv naming`
 
 _(none)_
 
-## Open Issues (7)
+## Open Issues (6)
 
 - **#29** [open/medium] Create S2T directives cover 4 dynamic sources but not ontology layer — LLM can pick production-model names and create duplicates — The Create S2T A/B test showed the new path on BG001 generated a model named fact_purchase_orders, which already exists in dbt/models/marts/fact_purchase_orders.sql. The bundle ontology layer contained the existing_models list — LLM had access to it — but picked a colliding name.…
 - **#50** [open/low] sap_data_dictionary backfill produced zero inferred rows - LLM self-confidence uncalibrated — The catalog backfill produced 269 generated rows, all claimed description_source in {sap_standard, column_name_convention, source_column_roles} with needs_review=0. Zero rows flagged as 'inferred'. LLM self-confidence is uncalibrated - not a calibrated coverage-gap signal. Stage …
@@ -32,7 +32,6 @@ _(none)_
 - **#62** [open/medium] Re-run S2T flow — deferred from Stage D.2 — Stage D.2 originally specified a Re-run S2T button for approved+non-empty terms. Dropped because re-running collides with deployed .sql files and existing s2t_mapping rows — `create_s2t_with_implementation` has no archival semantics. Safe re-run requires (a) renaming existing `db…
 - **#66** [open/low] s2t_mapping undocumented in schema.yml — schema.yml has no entry for s2t_mapping. The 14-column shape (id, business_term_id, business_term_name, source_table, source_field, source_description, target_model, target_column, transformation_logic_plain, transformation_logic_sql, join_description, filter_description, notes, …
 - **#120** [open/low] Wire orphan-relation cleanup into end_of_task.py so deleted models auto-drop — When a dbt model file is deleted (e.g., KI-101 deleted fact_active_deployed_cpe.sql on 2026-05-04), the materialized table in DuckDB persists as an orphan because dbt does NOT auto-drop relations for deleted model files. The orphan stays until someone explicitly DROPs it. Today's…
-- **#137** [open/medium] Join-key discovery: value-overlap probing (completes #132) — The #132 fix added suffix-token name matching, which found the zip-prefix joins but cannot see semantically joinable keys with unrelated names (cust_id vs customer_ref). The designed completion is value-overlap probing: for type-compatible column pairs, sample values and measure …
 
 ## DO NOT (Anti-patterns)
 

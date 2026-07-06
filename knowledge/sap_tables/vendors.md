@@ -1,6 +1,6 @@
 # SAP Tables: vendors
 
-_Last generated: 2026-07-06 19:11:41_
+_Last generated: 2026-07-06 19:29:00_
 
 Keywords: `lfa1, lfb1, lfm1, vendor master, supplier, lifnr, dobavljač, vendor_eval, vendor_score, ZHT_VENDOR_SCORES, ZHT_VENDOR_SPEND`
 

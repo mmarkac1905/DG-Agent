@@ -1,6 +1,6 @@
 # Infrastructure: pipeline
 
-_Last generated: 2026-07-06 19:11:41_
+_Last generated: 2026-07-06 19:29:00_
 
 Keywords: `pipeline, etl, ingestion, refresh, scheduler`
 
@@ -46,7 +46,7 @@ Keywords: `pipeline, etl, ingestion, refresh, scheduler`
 
 _(none)_
 
-## Open Issues (9)
+## Open Issues (8)
 
 - **#22** [open/low] scan_dbt_models outputs are non-deterministic across runs even without dbt model changes — Discovered 2026-04-19 during governance-gate fix step 4. scripts/scan_dbt_models.py produces non-deterministic output in two scanner seeds: (1) dbt_model_catalog.csv includes a last_updated timestamp column written at scan time, so every run rotates its sha256 even when no dbt so…
 - **#25** [open/medium] raw_sap.* tables lack ingestion_date column - blocks age-based staleness UI (decision #72) — Decision #72 introduces age-based staleness using MAX(ingestion_date). Currently no raw_sap table has this column - data generator produces records without ingestion timestamps. Three paths forward: (a) modify seed generator to add ingestion_date to every raw_sap.* table; (b) add…
@@ -56,7 +56,6 @@ _(none)_
 - **#82** [open/medium] Four critical seeds lack column_types in schema.yml — behavioral dependency on DuckDB read_csv_auto inference — Four critical seeds used by the term-analysis pipeline + operational flows lack explicit `config.column_types` in dbt/seeds/schema.yml: domain_analysis_results, business_glossary, s2t_mapping, known_issues. After the #81 Option A rewrite (commit 2b8788c), sync_parquet_and_invalid…
 - **#120** [open/low] Wire orphan-relation cleanup into end_of_task.py so deleted models auto-drop — When a dbt model file is deleted (e.g., KI-101 deleted fact_active_deployed_cpe.sql on 2026-05-04), the materialized table in DuckDB persists as an orphan because dbt does NOT auto-drop relations for deleted model files. The orphan stays until someone explicitly DROPs it. Today's…
 - **#125** [open/medium] Stage A scope-history iter_num collides (propose+revise both iter 1) -> confirm can select wrong iteration — append_iteration_to_history writes only business_glossary.csv, but _propose_or_revise derives iter_num from the DB term row (scope_derivation_history_json), which stays {} until a dbt seed runs. So a revise after a propose (no reseed between) reads empty history and is numbered i…
-- **#137** [open/medium] Join-key discovery: value-overlap probing (completes #132) — The #132 fix added suffix-token name matching, which found the zip-prefix joins but cannot see semantically joinable keys with unrelated names (cust_id vs customer_ref). The designed completion is value-overlap probing: for type-compatible column pairs, sample values and measure …
 
 ## DO NOT (Anti-patterns)
 

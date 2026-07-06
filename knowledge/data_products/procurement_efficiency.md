@@ -1,6 +1,6 @@
 # Data Product: procurement_efficiency
 
-_Last generated: 2026-07-06 19:11:41_
+_Last generated: 2026-07-06 19:29:00_
 
 Keywords: `procurement, purchase order, lead time, po , ekko, ekpo, eban, purchase_req, narudžbenica, narudžben`
 

@@ -1,6 +1,6 @@
 # SAP Tables: accounting
 
-_Last generated: 2026-07-06 19:11:41_
+_Last generated: 2026-07-06 19:29:00_
 
 Keywords: `bkpf, bseg, accounting, posting, knjiženje, fi document`
 

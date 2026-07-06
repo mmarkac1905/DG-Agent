@@ -1,6 +1,6 @@
 # Domain: goods_receipt
 
-_Last generated: 2026-07-06 19:11:41_
+_Last generated: 2026-07-06 19:29:00_
 
 Keywords: `goods receipt, primka, gr posting, migo, movement type 101, warehouse receipt`
 

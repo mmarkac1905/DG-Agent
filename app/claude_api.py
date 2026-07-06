@@ -1303,25 +1303,46 @@ Return ONLY valid JSON matching the schema in the system prompt."""
         result["_bridge_coverage_gate_status"] = bc_status
 
         # ─── Direction F.3 — post-generation cardinality validator ───
-        try:
-            from _s2t_cardinality_validator import validate_s2t_sql
-            import duckdb as _duckdb
-            _val_conn = _duckdb.connect(
-                str(Path(__file__).resolve().parent.parent
-                    / "cpe_analytics.duckdb")
-            )
+        # known_issue #136 (closed): the gate FAILS CLOSED. A validator
+        # that breaks must not silently disable the protection it
+        # provides — one retry for transient errors (e.g. DB lock
+        # contention), then refuse with a structured error the analyst
+        # can act on.
+        validation = None
+        _f3_last_exc: Optional[Exception] = None
+        for _f3_try in (1, 2):
             try:
-                validation = validate_s2t_sql(
-                    sql=result.get("transformation_sql", ""),
-                    scope_tables=scope_tables,
-                    conn=_val_conn,
+                from _s2t_cardinality_validator import validate_s2t_sql
+                import duckdb as _duckdb
+                _val_conn = _duckdb.connect(
+                    str(Path(__file__).resolve().parent.parent
+                        / "cpe_analytics.duckdb")
                 )
-            finally:
-                _val_conn.close()
-        except Exception as _exc:  # noqa: BLE001
-            print(f"[WARN] F.3 validator raised: {_exc}; skipping enforcement")
-            validation = {"status": "passed",
-                          "reason": f"validator_error: {_exc}"}
+                try:
+                    validation = validate_s2t_sql(
+                        sql=result.get("transformation_sql", ""),
+                        scope_tables=scope_tables,
+                        conn=_val_conn,
+                    )
+                finally:
+                    _val_conn.close()
+                break
+            except Exception as _exc:  # noqa: BLE001
+                _f3_last_exc = _exc
+                print(f"[WARN] F.3 validator raised (attempt {_f3_try}/2): "
+                      f"{_exc}")
+        if validation is None:
+            return {
+                "error": (
+                    "f3_validator_unavailable: the cardinality validator "
+                    f"failed twice ({_f3_last_exc}). Refusing to deploy "
+                    "unvalidated SQL (fail-closed, known_issue #136). "
+                    "Retry once the underlying error is resolved."
+                ),
+                "_refusal_kind": "f3_validator_unavailable",
+                "_attempted_sql": result.get("transformation_sql"),
+                "_f3_attempts": attempt,
+            }
         last_validation = validation
 
         if validation.get("status") == "rejected_catastrophic_join":

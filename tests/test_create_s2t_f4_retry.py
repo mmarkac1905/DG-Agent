@@ -300,3 +300,50 @@ def test_returns_error_when_llm_returns_error(mocked_db):
     assert "error" in result
     assert "anthropic API timeout" in result["error"]
     assert result.get("_f3_attempts") == 1
+
+
+def test_f3_validator_failure_fails_closed(mocked_db, monkeypatch):
+    """known_issue #136: if the F.3 validator raises persistently, the
+    generator must refuse (fail closed), not silently skip enforcement."""
+    calls: list[dict] = []
+
+    def fake_post(system_prompt, user_prompt, max_tokens=None):
+        calls.append({"user_prompt": user_prompt})
+        return _make_llm_response(_GOOD_SQL)
+
+    def always_raises(sql, scope_tables, conn=None):
+        raise RuntimeError("simulated validator crash")
+
+    monkeypatch.setattr(v, "validate_s2t_sql", always_raises)
+    with patch.object(ca, "_post_claude", side_effect=fake_post):
+        result = ca.create_s2t_with_implementation(**_kwargs())
+
+    assert "error" in result
+    assert "f3_validator_unavailable" in result["error"]
+    assert result.get("_refusal_kind") == "f3_validator_unavailable"
+
+
+def test_f3_validator_transient_failure_retries_once(mocked_db, monkeypatch):
+    """One transient validator error (e.g. DB lock) must not refuse:
+    the single retry succeeds and the pipeline proceeds."""
+    calls: list[dict] = []
+    attempts = {"n": 0}
+    real_validate = v.validate_s2t_sql
+
+    def fake_post(system_prompt, user_prompt, max_tokens=None):
+        calls.append({"user_prompt": user_prompt})
+        return _make_llm_response(_GOOD_SQL)
+
+    def flaky(sql, scope_tables, conn=None):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise RuntimeError("transient lock")
+        return {"status": "passed"}
+
+    monkeypatch.setattr(v, "validate_s2t_sql", flaky)
+    with patch.object(ca, "_post_claude", side_effect=fake_post):
+        result = ca.create_s2t_with_implementation(**_kwargs())
+
+    assert "error" not in result, f"unexpected error: {result.get('error')}"
+    assert result.get("_f3_validation_passed") is True
+    assert attempts["n"] == 2
