@@ -2384,10 +2384,25 @@ with tab_spec:
         # are preserved verbatim in the `else:` branch below.
         _term_status = str(term.get('status', '')).strip().lower()
         render_status_badge(_term_status, st)
-        render_pipeline_strip(_term_status, st)
-        st.divider()
-
+        # "Evidence exists, review pending" markers (◐): machine output is
+        # present for a stage whose governance transition hasn't been walked.
         _has_piece8 = has_piece8_s2t_rows(term_s2t)
+        _evidence_idxs = set()
+        if _term_status in ("scope_confirmed", "term_eda_pending"):
+            try:
+                _bar_ev = query(
+                    "SELECT COUNT(*) AS n FROM main_seeds.business_term_analysis_results "
+                    f"WHERE business_term_id = '{term_id}' "
+                    "AND status IN ('converged', 'promoted')"
+                )
+                if int(_bar_ev.iloc[0]["n"] or 0) > 0:
+                    _evidence_idxs.add(3)  # Term EDA
+            except Exception:
+                pass
+            if _has_piece8:
+                _evidence_idxs.add(4)  # S2T (deploy output exists)
+        render_pipeline_strip(_term_status, st, evidence_stage_idxs=_evidence_idxs)
+        st.divider()
         _action = get_s2t_action(
             status=_term_status,
             term_id=term_id,

@@ -6,7 +6,12 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import os
+
 import streamlit as st
+
+# Active raw source schema (env DG_SOURCE_SCHEMA, default raw_sap).
+_ACTIVE_SRC = os.environ.get("DG_SOURCE_SCHEMA", "raw_sap")
 import pandas as pd
 import duckdb
 
@@ -51,7 +56,7 @@ with tab_arch:
     pipeline_map = dict(zip(pipeline['layer'], pipeline['table_count']))
 
     layers = [
-        {"name": "SAP Source",  "key": "raw_sap",   "color": "#6b7280", "desc": "Raw SAP MM tables — as-is from source system"},
+        {"name": f"Source ({_ACTIVE_SRC})", "key": _ACTIVE_SRC, "color": "#6b7280", "desc": "Raw source tables — as-is from the active source system"},
         {"name": "Staging",     "key": "staging",   "color": "#60a5fa", "desc": "1:1 with source + hash keys, hashdiff, type casting. No joins, no renaming."},
         {"name": "Data Vault",  "key": "vault",     "color": "#a78bfa", "desc": "Hubs (entities) + Links (relationships) + Satellites (attributes with SCD2 history)"},
         {"name": "Marts",       "key": "marts",     "color": "#4ade80", "desc": "Kimball star schema — dimensions and facts. Business-friendly names. Pre-joined."},
@@ -61,6 +66,16 @@ with tab_arch:
 
     for i, layer in enumerate(layers):
         count = pipeline_map.get(layer['key'], '?')
+        if count == '?' and layer['key'] == _ACTIVE_SRC:
+            # The knowledge pipeline summary only tracks the SAP demo layers;
+            # count a non-default active source from the live schema instead.
+            try:
+                count = int(query(
+                    "SELECT COUNT(*) AS n FROM information_schema.tables "
+                    f"WHERE table_schema='{_ACTIVE_SRC}'"
+                ).iloc[0]["n"])
+            except Exception:
+                count = '?'
         with st.container():
             col1, col2, col3 = st.columns([1, 3, 1])
             with col1:
@@ -369,17 +384,23 @@ def _ingested_tables_with_status() -> pd.DataFrame:
     ingested_rows = query(
         "SELECT LOWER(table_name) AS table_name "
         "FROM information_schema.tables "
-        "WHERE table_schema='raw_sap' ORDER BY table_name"
+        f"WHERE table_schema='{_ACTIVE_SRC}' ORDER BY table_name"
     )
     ingested_rows['ingest_status'] = 'ingested'
 
-    z_catalog = query(
-        "SELECT LOWER(table_name) AS table_name FROM main_seeds.z_tables_catalog"
-    )
-    # anti-join: keep z-rows not already in ingested set
-    ingested_set = set(ingested_rows['table_name'])
-    z_not_ingested = z_catalog[~z_catalog['table_name'].isin(ingested_set)].copy()
-    z_not_ingested['ingest_status'] = 'documentation_only'
+    # Z-table documentation rows are SAP-domain content; only merge them
+    # when the active source IS the SAP schema, so another source's table
+    # list isn't padded with foreign documentation-only entries.
+    if _ACTIVE_SRC == "raw_sap":
+        z_catalog = query(
+            "SELECT LOWER(table_name) AS table_name FROM main_seeds.z_tables_catalog"
+        )
+        # anti-join: keep z-rows not already in ingested set
+        ingested_set = set(ingested_rows['table_name'])
+        z_not_ingested = z_catalog[~z_catalog['table_name'].isin(ingested_set)].copy()
+        z_not_ingested['ingest_status'] = 'documentation_only'
+    else:
+        z_not_ingested = ingested_rows.iloc[0:0].copy()
 
     all_tables = pd.concat([ingested_rows, z_not_ingested], ignore_index=True)
     if all_tables.empty:
@@ -390,7 +411,7 @@ def _ingested_tables_with_status() -> pd.DataFrame:
         "SELECT LOWER(table_name) AS table_name, "
         "       COUNT(*) AS col_count "
         "FROM information_schema.columns "
-        "WHERE table_schema='raw_sap' "
+        f"WHERE table_schema='{_ACTIVE_SRC}' "
         "GROUP BY LOWER(table_name)"
     )
     all_tables = all_tables.merge(col_counts, on='table_name', how='left')
@@ -405,7 +426,7 @@ def _ingested_tables_with_status() -> pd.DataFrame:
             continue
         try:
             c = conn.execute(
-                f'SELECT COUNT(*) FROM raw_sap."{r["table_name"]}"'
+                f'SELECT COUNT(*) FROM {_ACTIVE_SRC}."{r["table_name"]}"'
             ).fetchone()
             row_counts.append(int(c[0]) if c else 0)
         except Exception:  # noqa: BLE001
@@ -610,12 +631,12 @@ def _render_view_a(tables_df: pd.DataFrame) -> None:
     """View A — Ingested Tables list with status + drill-into-detail buttons."""
     st.subheader("📋 Ingested Tables")
     st.caption(
-        "All raw_sap tables + documented-only Z-tables. Click **Detail** on a "
+        f"All {_ACTIVE_SRC} tables + documented-only Z-tables. Click **Detail** on a "
         "row to drill into semantic model + schema discovery evidence."
     )
 
     if tables_df.empty:
-        st.warning("No tables found in raw_sap or z_tables_catalog.")
+        st.warning(f"No tables found in {_ACTIVE_SRC} or z_tables_catalog.")
         return
 
     # Summary metrics
@@ -705,15 +726,15 @@ def _render_view_b(table: str) -> None:
     conn = get_connection()
     try:
         row_count = conn.execute(
-            f'SELECT COUNT(*) FROM raw_sap."{table}"'
+            f'SELECT COUNT(*) FROM {_ACTIVE_SRC}."{table}"'
         ).fetchone()[0]
     except Exception:  # noqa: BLE001
         row_count = 0
     col_count = conn.execute(
         "SELECT COUNT(*) FROM information_schema.columns "
-        f"WHERE table_schema='raw_sap' AND LOWER(table_name)=LOWER('{table}')"
+        f"WHERE table_schema='{_ACTIVE_SRC}' AND LOWER(table_name)=LOWER('{table}')"
     ).fetchone()[0]
-    st.caption(f"Schema: `raw_sap` · Rows: {row_count:,} · Columns: {col_count}")
+    st.caption(f"Schema: `{_ACTIVE_SRC}` · Rows: {row_count:,} · Columns: {col_count}")
 
     # ── Action buttons ────────────────────────────────────────────
     ca, cb = st.columns(2)

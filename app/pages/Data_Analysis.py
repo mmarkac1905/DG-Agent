@@ -1319,7 +1319,8 @@ tab_scope, tab_domain, tab_guided, tab_explore, tab_report = st.tabs([
 with tab_scope:
     st.subheader("🧭 Term Scope & Prerequisites")
     st.caption(
-        "Stage A: LLM proposes the set of raw_sap tables a business term "
+        f"Stage A: LLM proposes the set of {os.environ.get('DG_SOURCE_SCHEMA', 'raw_sap')} "
+        "tables a business term "
         "needs, you revise and confirm. Confirmed scope writes to "
         "`s2t_mapping` and transitions the term to `scope_confirmed`. "
         "Prerequisites readout shows what's needed before S2T can run."

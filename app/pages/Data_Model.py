@@ -33,6 +33,18 @@ selected_layer = st.selectbox(
     key="dm_layer",
 )
 
+# The ER diagrams on this page are curated for the SAP demo source.
+# When the pipeline is pointed at another source, say so instead of
+# silently presenting SAP diagrams as if they covered it.
+import os as _os
+_active_src = _os.environ.get("DG_SOURCE_SCHEMA", "raw_sap")
+if _active_src != "raw_sap":
+    st.info(
+        f"These ER diagrams are curated for the SAP demo source. The active "
+        f"source is `{_active_src}` — its tables and generated models are "
+        f"browsable in **Data Catalog**."
+    )
+
 SCHEMA_MAP = {
     "SAP Source (raw_sap)":   "raw_sap",
     "Data Vault (main_vault)": "main_vault",

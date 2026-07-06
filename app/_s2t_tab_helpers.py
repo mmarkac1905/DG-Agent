@@ -19,6 +19,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
@@ -581,7 +582,19 @@ def render_status_badge(status: str, st) -> None:
     )
 
 
-def render_pipeline_strip(status: str, st) -> None:
+def render_pipeline_strip(status: str, st,
+                          evidence_stage_idxs: Optional[set] = None) -> None:
+    """Render the six-stage governance strip.
+
+    `evidence_stage_idxs`: stage indices (into _PIPELINE_STAGES) for which
+    machine-produced evidence already exists but the human checkpoint has
+    not been walked (e.g. a converged/promoted BAR while status is still
+    scope_confirmed). Those stages render as "◐ awaiting review" instead
+    of plain grey, so "work done, review pending" is distinguishable from
+    "nothing has happened". Green stays reserved for status transitions —
+    the human checkpoints (Rule 22).
+    """
+    evidence_stage_idxs = evidence_stage_idxs or set()
     current_idx = status_to_stage_index(status)
     is_denied = (status == "denied")
     cols = st.columns(6)
@@ -615,10 +628,21 @@ def render_pipeline_strip(status: str, st) -> None:
                     unsafe_allow_html=True,
                 )
         else:
-            col.markdown(
-                f"<div style='opacity:0.5;text-align:center'>{stage}</div>",
-                unsafe_allow_html=True,
-            )
+            if i in evidence_stage_idxs:
+                col.markdown(
+                    f"<div style='color:#e8b339;text-align:center' "
+                    f"title='Evidence exists; awaiting analyst review'>"
+                    f"◐ {stage}</div>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                col.markdown(
+                    f"<div style='opacity:0.5;text-align:center'>{stage}</div>",
+                    unsafe_allow_html=True,
+                )
+    if any(i > current_idx for i in evidence_stage_idxs):
+        st.caption("◐ = evidence produced, awaiting analyst review — the "
+                   "stage turns green only via its governance transition.")
     if status == "archived":
         st.caption("🗃️ **Archived** — pipeline halted.")
 
