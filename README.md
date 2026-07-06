@@ -7,8 +7,9 @@
 *The Streamlit app on the generated data: procurement KPIs on the left-nav Dashboard pages, the
 governance layer (glossary, S2T, catalog, lineage) under Data Governance.*
 
-**Give it a business-term definition. It learns the source system from the actual data: it profiles
-every table and measures how tables *really* join, then generates the source-to-target mapping and the
+**Give it a business-term definition. It learns the source system from profiled data, schema
+structure, and catalog metadata: it profiles every table and measures how tables *really* join,
+then generates the source-to-target mapping and the
 transformation SQL, verified and deployed.** A business metric goes from a one-line definition to a
 tested data mart with no human writing SQL. Demonstrated end-to-end on **two source systems**: a
 synthetic SAP MM system, and the public Olist e-commerce dataset, real data I did not generate, with
@@ -38,7 +39,8 @@ every step checked by deterministic gates.
 Most "data governance" tooling, and most "AI + data" demos, stop at *cataloging* metadata or *chatting
 about* data. The hard, unsolved part is **turning intent into a correct, deployable transformation**:
 which source tables, how they join, whether the data even supports the metric, and what SQL computes it.
-That requires **learning the source system from its data**, not just storing metadata about it.
+That requires **learning the source system from profiled data, schema structure, and catalog
+metadata**, not just storing metadata about it.
 
 | | Informatica / Collibra (catalog tools) | **DG AI Agent** |
 |---|---|---|

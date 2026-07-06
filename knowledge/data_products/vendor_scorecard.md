@@ -1,10 +1,10 @@
 # Data Product: vendor_scorecard
 
-_Last generated: 2026-07-06 15:06:02_
+_Last generated: 2026-07-06 19:02:51_
 
 Keywords: `vendor, supplier, lfa1, lfb1, lifnr, dobavljač, on-time delivery, otd, defect rate`
 
-## Related Decisions (22)
+## Related Decisions (23)
 
 - **#3** (2026-04-14) — abap_logic_catalog_created: ABAP documentation layer complete — covers serial validation equipment lifecycle provisioning bridge vendor scoring warranty tracking and financial depreciation. In real engagement this would be auto-populated by Claude scanning exported ABAP source.
 - **#7** (2026-04-14) — staging_layer_1to1: Staging follows purist Data Vault approach: mechanical transformation only. Business naming and logic deferred to vault layer. Dropped hk_po_vendor from stg_sap__ekpo — vault-time resolution via EKKO join.
@@ -28,6 +28,7 @@ Keywords: `vendor, supplier, lfa1, lfb1, lifnr, dobavljač, on-time delivery, ot
 - **#109** (2026-05-12) **[NEVER_REPEAT]** — no_monthly_seasonality_in_synthetic_procurement_volume: Null result expected — generate_sap_sample_data.py creates uniform demand across the calendar. DO NOT re-run this analysis on synthetic data; the answer is fixed by construction. Re-test only on real HT production data, especially if explicit seasonal campaigns (holiday promos, fiscal-year close) are introduced. Migrated from decommissioned signal_relationships #7.
 - **#112** (2026-06-25) — path3_sd_fi_infra_build: SD + FI are now first-class in the warehouse. Margin term cost side v1 = revenue - procurement cost; returns (MSEG 161/122 are DMBTR=0, unvalued) and warranty (ZHT_WARRANTY_LOG catalog-only, no data) deferred. Reference: scripts/generate_sd_billing.py, scripts/generate_fi_shadows.py, dbt/models/vault/link_sales_order_equipment.sql.
 - **#120** (2026-06-28) **[NEVER_REPEAT]** — drop_returns_leg_unvalued_in_data: Drop a margin component when the source movements carry no valuation. Like warranty earlier - synthetic data only values inbound (101) movements.
+- **#129** (2026-07-06) — cross_vendor_review_convergence_and_claim_narrowing: Headline narrowed to 'learns the source system from profiled data, schema structure, and catalog metadata' (the reviewer's own wording). Convergence across two model families ends the review loop per the pre-committed stop condition; remaining findings (#136 fail-closed, #137 value-overlap) are the top of the technical roadmap.
 
 ## Related Domain Relationships (0)
 

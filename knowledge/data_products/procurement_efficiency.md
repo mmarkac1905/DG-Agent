@@ -1,10 +1,10 @@
 # Data Product: procurement_efficiency
 
-_Last generated: 2026-07-06 15:06:02_
+_Last generated: 2026-07-06 19:02:51_
 
 Keywords: `procurement, purchase order, lead time, po , ekko, ekpo, eban, purchase_req, narudžbenica, narudžben`
 
-## Related Decisions (29)
+## Related Decisions (30)
 
 - **#1** (2026-04-13) — project_initialized: Framework ready for SAP sample data generation and Data Vault modeling
 - **#2** (2026-04-14) — sap_sample_data_generated: Sample data loaded into raw_sap schema in DuckDB. All 4 RI checks pass. Avg lead time 44.8d. Ready for staging layer.
@@ -35,6 +35,7 @@ Keywords: `procurement, purchase order, lead time, po , ekko, ekpo, eban, purcha
 - **#118** (2026-06-28) **[NEVER_REPEAT]** — cpe_margin_is_customer_centric_not_material_centric: CPE profitability is a customer/segment + retention question, not a per-material one. Amortize device capex straight-line over the 24-month giveaway period and match to deployed devices.
 - **#119** (2026-06-28) **[NEVER_REPEAT]** — deployment_date_coalesce_inbdt_then_first_bill: When deployment movements are not serial-linked, first service-bill date is the most defensible deployment proxy (aligns cost recognition with revenue). Resolves the INBDT-null analyst_decision blocker.
 - **#120** (2026-06-28) **[NEVER_REPEAT]** — drop_returns_leg_unvalued_in_data: Drop a margin component when the source movements carry no valuation. Like warranty earlier - synthetic data only values inbound (101) movements.
+- **#129** (2026-07-06) — cross_vendor_review_convergence_and_claim_narrowing: Headline narrowed to 'learns the source system from profiled data, schema structure, and catalog metadata' (the reviewer's own wording). Convergence across two model families ends the review loop per the pre-committed stop condition; remaining findings (#136 fail-closed, #137 value-overlap) are the top of the technical roadmap.
 
 ## Related Domain Relationships (0)
 

@@ -1,6 +1,6 @@
 # Infrastructure: duckdb
 
-_Last generated: 2026-07-06 15:06:02_
+_Last generated: 2026-07-06 19:02:51_
 
 Keywords: `duckdb, database, cpe_analytics.duckdb`
 
