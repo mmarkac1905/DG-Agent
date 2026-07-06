@@ -75,6 +75,30 @@ real schema *learned in C/C′*, its output is checked against ground truth by d
 and `dbt build` refuses anything that wouldn't run, so the LLM's judgment is *useful* without being
 *trusted*.
 
+### The same stages as clicks: the designed workflow in the app
+
+The stages above map to a fixed click path in the Streamlit app. Three of the clicks are **human
+checkpoints**; deployment never advances a term's status by itself (an approved flag set by code would
+be governance theatre), so a stage turns green only when its checkpoint is walked:
+
+| Step | Where in the app | Who acts |
+|---|---|---|
+| Define | Business Glossary → **New Term** | you write the term contract (status `draft`) |
+| Scope | Data Analysis → **Term Scope** → Propose, review, **Confirm** | LLM proposes, **you confirm** (`scope_confirmed`) |
+| Domain EDA | Data Analysis → **Domain Analysis** → run the analyzers the prerequisites readout lists | machine; coverage is checked automatically, nothing to sign |
+| Term EDA | Data Analysis → **Business Term Analysis** → **Run Term EDA** → read the sufficiency verdict, acknowledge any escalations → **Transition to ready_for_s2t** | machine analyzes, **you acknowledge and transition** |
+| S2T + Deploy | Business Glossary → **S2T Specification** → **Create S2T** | machine generates and deploys through the gates (F.3 joins, RULE 3 layering, `dbt build`, semantic validation) |
+| Approve | Business Glossary → **Term Detail** → **Approve** | **you** — the single formal approval, covering the term as a governed whole |
+
+The pipeline strip on the S2T Specification tab shows where a term stands: ✓ green means the
+checkpoint is walked, the highlighted stage is current, grey means nothing has happened, and ◐ amber
+means machine evidence exists but is awaiting your review. There is exactly one approval, at the end;
+EDA is never "approved", only acknowledged.
+
+![Designed workflow strip](docs/img/designed_workflow.png)
+*A term that walked the full path on the Olist source: all six stages green, S2T approved and
+deployed, lineage flow rendered from the generated models.*
+
 > **Worked example** (it lives in the repo). Define *"CPE contribution margin per service plan × tenure
 > band, per month."* The pipeline learns a 14-table scope, profiles the real data, validates the term's
 > logic, then generates a **vault-based dbt fact + a dashboard view** that deploys grain-clean and

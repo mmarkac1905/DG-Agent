@@ -1916,7 +1916,9 @@ with tab_domain:
                 if _status == "success":
                     _status_badge = "✅ success"
                 elif _status == "skipped":
-                    _status_badge = "⏭️ skipped"
+                    # A recorded "not applicable" verdict, not a failure:
+                    # counts as coverage, and re-running reproduces it.
+                    _status_badge = "⏭️ n/a (recorded — counts as covered)"
                 elif _status == "quarantined":
                     _status_badge = "⚠️ quarantined"
                 elif _status == "error":
