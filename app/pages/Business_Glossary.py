@@ -3436,7 +3436,20 @@ with tab_new:
     st.subheader("Create New Business Term")
     st.caption("Define a new business term. After creation, a data analyst will map it to source tables.")
 
-    with st.form("new_term_form"):
+    # Post-create banner: creation ends with a rerun (so the cleared form
+    # proves something happened) and the success message survives it here,
+    # above the form. User finding: the old in-form message was so easy to
+    # miss that the only signal of success was the duplicate-name error on
+    # a second click.
+    _created_msg = st.session_state.pop("new_term_created_msg", None)
+    if _created_msg:
+        st.success(_created_msg)
+        st.info(
+            "Next step: derive its scope on the Data Analysis page "
+            "(Term Scope tab), then map it in the S2T Specification tab."
+        )
+
+    with st.form("new_term_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
 
         with col1:
@@ -3476,6 +3489,13 @@ with tab_new:
         submitted = st.form_submit_button("Create Term")
 
         if submitted:
+            # Normalize to the snake_case contract instead of trusting the
+            # placeholder to be read (user finding: a display-style name
+            # landed in term_name).
+            new_term_name = re.sub(
+                r"[^a-z0-9_]", "",
+                re.sub(r"[\s\-]+", "_", str(new_term_name).strip().lower()),
+            )
             if not new_term_name or not new_display_name or not new_definition:
                 st.error("Term name, display name, and definition are required.")
             else:
@@ -3521,7 +3541,11 @@ with tab_new:
                             "and synced to the database."
                         ),
                     )
-                    st.info(
-                        "Next step: a data analyst will map this term to source data in the "
-                        "**🔧 S2T Specification** tab."
+                    # End the interaction unambiguously: stash the banner,
+                    # rerun so the (clear_on_submit) form comes back empty.
+                    st.session_state["new_term_created_msg"] = (
+                        f"✅ Term '{new_display_name}' created as {new_id} "
+                        f"(term name `{new_term_name}`, status draft) and "
+                        "synced to the database."
                     )
+                    st.rerun()
