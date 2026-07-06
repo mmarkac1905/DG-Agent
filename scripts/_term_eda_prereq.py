@@ -116,7 +116,7 @@ def check_term_eda_prereq(
 
     # 2. Scope resolution.
     scope_rows = conn.execute(
-        "SELECT DISTINCT source_table FROM main_seeds.s2t_mapping "
+        "SELECT DISTINCT LOWER(source_table) FROM main_seeds.s2t_mapping "
         "WHERE business_term_id = ? ORDER BY 1",
         [term_id],
     ).fetchall()

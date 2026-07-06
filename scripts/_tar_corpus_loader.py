@@ -56,7 +56,7 @@ def load_candidate_prior_tars(
     current_scope = {
         r[0].lower()
         for r in conn.execute(
-            "SELECT DISTINCT source_table FROM main_seeds.s2t_mapping "
+            "SELECT DISTINCT LOWER(source_table) FROM main_seeds.s2t_mapping "
             "WHERE business_term_id = ?",
             [current_term_id],
         ).fetchall()
@@ -141,7 +141,7 @@ def load_candidate_prior_tars(
         # reveal more context than just the overlap).
         try:
             origin_scope_rows = conn.execute(
-                "SELECT DISTINCT source_table FROM main_seeds.s2t_mapping "
+                "SELECT DISTINCT LOWER(source_table) FROM main_seeds.s2t_mapping "
                 "WHERE business_term_id = ? ORDER BY 1",
                 [term_id],
             ).fetchall()

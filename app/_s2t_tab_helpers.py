@@ -339,8 +339,8 @@ def _get_scope_tables(term_id: str) -> list[str]:
     Returns [] if neither yields rows."""
     conn = get_connection()
     rows = conn.execute(
-        "SELECT DISTINCT source_table FROM main_seeds.s2t_mapping "
-        "WHERE business_term_id = ? ORDER BY source_table",
+        "SELECT DISTINCT LOWER(source_table) FROM main_seeds.s2t_mapping "
+        "WHERE business_term_id = ? ORDER BY 1",
         [term_id],
     ).fetchall()
     if rows:

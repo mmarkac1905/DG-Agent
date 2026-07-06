@@ -1427,12 +1427,16 @@ def check_prerequisites(term_id: str,
     try:
         term = _load_term(conn, term_id)
         status = term["status"]
+        # Case-insensitive DISTINCT: s2t_mapping carries both SAP-style
+        # uppercase and Stage-A lowercase source_table values; a plain
+        # DISTINCT double-counts scope tables (ORDERS vs orders) and the
+        # uppercase ghosts then read as "EDA not covered".
         scope = conn.execute(
-            "SELECT DISTINCT source_table FROM main_seeds.s2t_mapping "
-            "WHERE business_term_id = ? ORDER BY source_table",
+            "SELECT DISTINCT LOWER(source_table) FROM main_seeds.s2t_mapping "
+            "WHERE business_term_id = ? ORDER BY 1",
             [term_id],
         ).fetchall()
-        scope_tables = [r[0].lower() for r in scope]
+        scope_tables = [r[0] for r in scope]
 
         dar_counts: dict[str, int] = {}
         for t in scope_tables:
