@@ -1,6 +1,6 @@
 # Business Term: Average Vendor Lead Time
 
-_Last generated: 2026-07-06 13:11:09_
+_Last generated: 2026-07-06 15:06:02_
 
 ## Definition
 
@@ -36,7 +36,7 @@ Average calendar days between purchase order creation and goods receipt posting,
 2. This column carries the vendor account number directly from SAP field EKKO.LIFNR without any modification through the data pipeline.
    - *Join:* Header table — join to hub_vendor
    - *Filter:* All vendors
-3. The column captures the earliest goods receipt date from all goods receipt documents for a purchase order, converted from SAP's internal date format.
+3. Carries the GR posting date as recorded in MKPF.BUDAT, flowing through staging, vault, and mart layers unchanged to represent the date of the first goods receipt against a purchase order.
    - *Join:* Header of material document
    - *Filter:* Only GR documents
 4. This column calculates the number of days between the purchase order date and the first goods receipt date for each purchase order, representing the actual vendor lead time.
@@ -48,11 +48,6 @@ Average calendar days between purchase order creation and goods receipt posting,
 **fact_purchase_orders.po_date:**
 ```sql
 CAST(BEDAT AS DATE)
-```
-
-**fact_purchase_orders.first_gr_date:**
-```sql
-MIN(grh.posting_date)
 ```
 
 **fact_purchase_orders.lead_time_days:**

@@ -1,6 +1,6 @@
 # SAP Tables: goods_receipts
 
-_Last generated: 2026-07-06 13:11:09_
+_Last generated: 2026-07-06 15:06:02_
 
 Keywords: `mkpf, mseg, goods receipt, primka, material document, movement type, bwart, serial_check, auto_equi, quantity_tolerance, batch_gr, ZMM_CPE_SERIAL, ZMM_AUTO_EQUI, ZMM_GR_QUANTITY`
 

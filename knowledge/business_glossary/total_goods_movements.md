@@ -1,6 +1,6 @@
 # Business Term: Total Goods Movements
 
-_Last generated: 2026-07-06 13:11:09_
+_Last generated: 2026-07-06 15:06:02_
 
 ## Definition
 

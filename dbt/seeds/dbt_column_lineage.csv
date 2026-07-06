@@ -8,13 +8,7 @@ CL0006,knowledge_blocker_state,knowledge,blocker_short_title,bf.blocker_short_ti
 CL0007,knowledge_blocker_state,knowledge,blocker_type,bf.blocker_type,blockers_filed,blocker_type,direct,,,
 CL0008,knowledge_blocker_state,knowledge,resolves_in,bf.resolves_in,blockers_filed,resolves_in,direct,,,
 CL0009,knowledge_blocker_state,knowledge,tables_json,bf.tables_json,blockers_filed,tables_json,direct,,,
-CL0010,knowledge_blocker_state,knowledge,blocker_json,"json_extract(
-            ci.iter_json,
-            '$.llm_response.blockers[' || bgs.i || ']'
-        )",ci,iter_json,derived,"json_extract(
-            ci.iter_json,
-            '$.llm_response.blockers[' || bgs.i || ']'
-        )",Single blocker detail from AI response list,
+CL0010,knowledge_blocker_state,knowledge,blocker_json,bf.blocker_json,blockers_filed,blocker_json,direct,,,
 CL0011,knowledge_blocker_state,knowledge,resolution_status,r.resolution_status,resolutions,resolution_status,direct,,,
 CL0012,knowledge_blocker_state,knowledge,evidence,r.evidence,resolutions,evidence,direct,,,
 CL0013,knowledge_blocker_state,knowledge,current_status,"CASE
@@ -26,7 +20,7 @@ CL0013,knowledge_blocker_state,knowledge,current_status,"CASE
             THEN 'PENDING'
         WHEN r.resolution_status IS NULL THEN 'PENDING'
         ELSE 'AMBIGUOUS'
-    END",resolutions,resolution_status,case_when,,,
+    END",,r,case_when,,,
 CL0014,knowledge_cpe_lifecycle_metrics,knowledge,material_group,m.material_group,dim_material,material_group,direct,,,
 CL0015,knowledge_cpe_lifecycle_metrics,knowledge,equipment_category,"CASE
         WHEN m.material_group = 'CPE-RTR' THEN 'Router'
@@ -35,25 +29,25 @@ CL0015,knowledge_cpe_lifecycle_metrics,knowledge,equipment_category,"CASE
         WHEN m.material_group = 'CPE-SWT' THEN 'Switch'
         WHEN m.material_group = 'CPE-MDM' THEN 'Modem'
         ELSE 'Other'
-    END",dim_material,material_group,case_when,,,
+    END",,m,case_when,,,
 CL0016,knowledge_cpe_lifecycle_metrics,knowledge,total_devices,COUNT(*),,,aggregation,,,
-CL0017,knowledge_cpe_lifecycle_metrics,knowledge,deployed,COUNT(CASE WHEN e.lifecycle_status = 'deployed' THEN 1 END),dim_equipment,lifecycle_status,case_when,,,
-CL0018,knowledge_cpe_lifecycle_metrics,knowledge,in_stock,COUNT(CASE WHEN e.lifecycle_status = 'in_stock' THEN 1 END),dim_equipment,lifecycle_status,case_when,,,
-CL0019,knowledge_cpe_lifecycle_metrics,knowledge,returned,COUNT(CASE WHEN e.lifecycle_status = 'returned' THEN 1 END),dim_equipment,lifecycle_status,case_when,,,
-CL0020,knowledge_cpe_lifecycle_metrics,knowledge,defective,COUNT(CASE WHEN e.lifecycle_status = 'defective' THEN 1 END),dim_equipment,lifecycle_status,case_when,,,
-CL0021,knowledge_cpe_lifecycle_metrics,knowledge,deployment_rate_pct,"ROUND(100.0 * COUNT(CASE WHEN e.lifecycle_status = 'deployed' THEN 1 END) / COUNT(*), 1)",100,0,case_when,,,
-CL0022,knowledge_cpe_lifecycle_metrics,knowledge,defect_rate_pct,"ROUND(100.0 * COUNT(CASE WHEN e.lifecycle_status = 'defective' THEN 1 END) / COUNT(*), 2)",100,0,case_when,,,
-CL0023,knowledge_cpe_lifecycle_metrics,knowledge,return_rate_pct,"ROUND(100.0 * COUNT(CASE WHEN e.lifecycle_status = 'returned' THEN 1 END) / COUNT(*), 2)",100,0,case_when,,,
+CL0017,knowledge_cpe_lifecycle_metrics,knowledge,deployed,COUNT(CASE WHEN e.lifecycle_status = 'deployed' THEN 1 END),,e,case_when,,,
+CL0018,knowledge_cpe_lifecycle_metrics,knowledge,in_stock,COUNT(CASE WHEN e.lifecycle_status = 'in_stock' THEN 1 END),,e,case_when,,,
+CL0019,knowledge_cpe_lifecycle_metrics,knowledge,returned,COUNT(CASE WHEN e.lifecycle_status = 'returned' THEN 1 END),,e,case_when,,,
+CL0020,knowledge_cpe_lifecycle_metrics,knowledge,defective,COUNT(CASE WHEN e.lifecycle_status = 'defective' THEN 1 END),,e,case_when,,,
+CL0021,knowledge_cpe_lifecycle_metrics,knowledge,deployment_rate_pct,"ROUND(100.0 * COUNT(CASE WHEN e.lifecycle_status = 'deployed' THEN 1 END) / COUNT(*), 1)",,e,case_when,,,
+CL0022,knowledge_cpe_lifecycle_metrics,knowledge,defect_rate_pct,"ROUND(100.0 * COUNT(CASE WHEN e.lifecycle_status = 'defective' THEN 1 END) / COUNT(*), 2)",,e,case_when,,,
+CL0023,knowledge_cpe_lifecycle_metrics,knowledge,return_rate_pct,"ROUND(100.0 * COUNT(CASE WHEN e.lifecycle_status = 'returned' THEN 1 END) / COUNT(*), 2)",,e,case_when,,,
 CL0024,knowledge_cpe_lifecycle_metrics,knowledge,defect_health,"CASE
         WHEN 100.0 * COUNT(CASE WHEN e.lifecycle_status = 'defective' THEN 1 END) / COUNT(*) > 5 THEN 'RED'
         WHEN 100.0 * COUNT(CASE WHEN e.lifecycle_status = 'defective' THEN 1 END) / COUNT(*) > 3 THEN 'YELLOW'
         ELSE 'GREEN'
-    END",100,0,case_when,,,
+    END",,e,case_when,,,
 CL0025,knowledge_cpe_lifecycle_metrics,knowledge,return_health,"CASE
         WHEN 100.0 * COUNT(CASE WHEN e.lifecycle_status = 'returned' THEN 1 END) / COUNT(*) > 10 THEN 'RED'
         WHEN 100.0 * COUNT(CASE WHEN e.lifecycle_status = 'returned' THEN 1 END) / COUNT(*) > 5 THEN 'YELLOW'
         ELSE 'GREEN'
-    END",100,0,case_when,,,
+    END",,e,case_when,,,
 CL0026,knowledge_inventory_alerts,knowledge,material_number,fi.material_number,fact_inventory,material_number,direct,,,
 CL0027,knowledge_inventory_alerts,knowledge,material_description,m.material_description,dim_material,material_description,direct,,,
 CL0028,knowledge_inventory_alerts,knowledge,equipment_category,m.equipment_category,dim_material,equipment_category,direct,,,
@@ -68,13 +62,13 @@ CL0035,knowledge_inventory_alerts,knowledge,alert_type,"CASE
         WHEN fi.blocked_stock > 0 THEN 'BLOCKED_STOCK'
         WHEN fi.unrestricted_stock > 5000 THEN 'EXCESS_STOCK'
         ELSE 'OK'
-    END",fact_inventory,unrestricted_stock,case_when,,,
+    END",,fi,case_when,,,
 CL0036,knowledge_inventory_alerts,knowledge,health_status,"CASE
         WHEN fi.unrestricted_stock = 0 AND fi.total_stock = 0 THEN 'RED'
         WHEN fi.blocked_stock > 0 THEN 'YELLOW'
         WHEN fi.unrestricted_stock > 5000 THEN 'YELLOW'
         ELSE 'GREEN'
-    END",fact_inventory,unrestricted_stock,case_when,,,
+    END",,fi,case_when,,,
 CL0037,knowledge_inventory_alerts,knowledge,alert_message,"CASE
         WHEN fi.unrestricted_stock = 0 AND fi.total_stock = 0
             THEN 'No stock available — check if reorder triggered'
@@ -83,45 +77,33 @@ CL0037,knowledge_inventory_alerts,knowledge,alert_message,"CASE
         WHEN fi.unrestricted_stock > 5000
             THEN 'Unusually high stock — check for over-ordering'
         ELSE 'Stock levels normal'
-    END",fact_inventory,unrestricted_stock,case_when,,,
+    END",,fi,case_when,,,
 CL0038,knowledge_pipeline_summary,knowledge,layer,layer,,layer,direct,,,
 CL0039,knowledge_pipeline_summary,knowledge,table_count,table_count,,table_count,direct,,,
 CL0040,knowledge_pipeline_summary,knowledge,total_objects,SUM(table_count) OVER (),,table_count,aggregation,,,
 CL0041,knowledge_procurement_health,knowledge,total_pos,COUNT(DISTINCT purchase_order_number),fact_purchase_orders,purchase_order_number,aggregation,COUNT(DISTINCT purchase_order_number),Unique Purchase Orders Counted,
 CL0042,knowledge_procurement_health,knowledge,total_po_items,pm.total_po_items,fact_purchase_orders,total_po_items,direct,,,
-CL0043,knowledge_procurement_health,knowledge,avg_lead_time_days,"ROUND(AVG(lead_time_days), 1)",fact_purchase_orders,lead_time_days,aggregation,"ROUND(AVG(lead_time_days), 1)",Average supplier lead time in days,
-CL0044,knowledge_procurement_health,knowledge,otd_rate_pct,"ROUND(AVG(CASE WHEN is_on_time THEN 1.0 ELSE 0.0 END) * 100, 1)",1,0,case_when,"ROUND(AVG(CASE WHEN is_on_time THEN 1.0 ELSE 0.0 END) * 100, 1)",On-time delivery percentage across all orders,
+CL0043,knowledge_procurement_health,knowledge,avg_lead_time_days,"ROUND(AVG(lead_time_days), 1)",fact_purchase_orders,lead_time_days,aggregation,"ROUND(AVG(lead_time_days), 1)","Average days to procure, rounded to one decimal",
+CL0044,knowledge_procurement_health,knowledge,otd_rate_pct,"ROUND(AVG(CASE WHEN is_on_time THEN 1.0 ELSE 0.0 END) * 100, 1)",fact_purchase_orders,is_on_time,case_when,"ROUND(AVG(CASE WHEN is_on_time THEN 1.0 ELSE 0.0 END) * 100, 1)",Average on-time delivery percentage rounded to one decimal,
 CL0045,knowledge_procurement_health,knowledge,avg_po_cycle_days,"ROUND(AVG(po_cycle_days), 1)",fact_purchase_orders,po_cycle_days,aggregation,"ROUND(AVG(po_cycle_days), 1)",Average days to complete a purchase order,
 CL0046,knowledge_procurement_health,knowledge,total_spend_eur,SUM(net_value),fact_purchase_orders,net_value,aggregation,SUM(net_value),Total amount spent in Euros,
-CL0047,knowledge_procurement_health,knowledge,pending_deliveries,COUNT(CASE WHEN delivery_status = 'pending' THEN 1 END),fact_purchase_orders,delivery_status,case_when,COUNT(CASE WHEN delivery_status = 'pending' THEN 1 END),Count of orders awaiting delivery,
-CL0048,knowledge_procurement_health,knowledge,partial_deliveries,COUNT(CASE WHEN delivery_status = 'partially_received' THEN 1 END),fact_purchase_orders,delivery_status,case_when,COUNT(CASE WHEN delivery_status = 'partially_received' THEN 1 END),Count of orders partially received so far,
+CL0047,knowledge_procurement_health,knowledge,pending_deliveries,COUNT(CASE WHEN delivery_status = 'pending' THEN 1 END),fact_purchase_orders,delivery_status,case_when,COUNT(CASE WHEN delivery_status = 'pending' THEN 1 END),Orders awaiting delivery not yet fulfilled,
+CL0048,knowledge_procurement_health,knowledge,partial_deliveries,COUNT(CASE WHEN delivery_status = 'partially_received' THEN 1 END),fact_purchase_orders,delivery_status,case_when,COUNT(CASE WHEN delivery_status = 'partially_received' THEN 1 END),Count of orders partially received,
 CL0049,knowledge_procurement_health,knowledge,otd_health,"CASE
         WHEN pm.otd_rate_pct >= 80 THEN 'GREEN'
         WHEN pm.otd_rate_pct >= 60 THEN 'YELLOW'
         ELSE 'RED'
-    END",1,0,case_when,"ROUND(AVG(CASE WHEN is_on_time THEN 1.0 ELSE 0.0 END) * 100, 1);CASE
-        WHEN pm.otd_rate_pct >= 80 THEN 'GREEN'
-        WHEN pm.otd_rate_pct >= 60 THEN 'YELLOW'
-        ELSE 'RED'
-    END",On-time delivery percentage across orders;Traffic light rating for delivery performance,
+    END",fact_purchase_orders,pm,case_when,,,
 CL0050,knowledge_procurement_health,knowledge,lead_time_health,"CASE
         WHEN pm.avg_lead_time_days <= 35 THEN 'GREEN'
         WHEN pm.avg_lead_time_days <= 50 THEN 'YELLOW'
         ELSE 'RED'
-    END",fact_purchase_orders,lead_time_days,case_when,"ROUND(AVG(lead_time_days), 1);CASE
-        WHEN pm.avg_lead_time_days <= 35 THEN 'GREEN'
-        WHEN pm.avg_lead_time_days <= 50 THEN 'YELLOW'
-        ELSE 'RED'
-    END",Average supplier lead time in days;Lead time performance status indicator,
+    END",fact_purchase_orders,pm,case_when,,,
 CL0051,knowledge_procurement_health,knowledge,cycle_time_health,"CASE
         WHEN pm.avg_po_cycle_days <= 5 THEN 'GREEN'
         WHEN pm.avg_po_cycle_days <= 10 THEN 'YELLOW'
         ELSE 'RED'
-    END",fact_purchase_orders,po_cycle_days,case_when,"ROUND(AVG(po_cycle_days), 1);CASE
-        WHEN pm.avg_po_cycle_days <= 5 THEN 'GREEN'
-        WHEN pm.avg_po_cycle_days <= 10 THEN 'YELLOW'
-        ELSE 'RED'
-    END",Average days to complete purchase order;Purchase order speed performance status,
+    END",fact_purchase_orders,pm,case_when,,,
 CL0052,knowledge_procurement_health,knowledge,highest_concentration_vendor,vc.vendor_name,obt_vendor_scorecard,vendor_name,direct,,,
 CL0053,knowledge_procurement_health,knowledge,highest_concentration_pct,"ROUND(MAX(vendor_spend_share) * 100, 1)",obt_vendor_scorecard,vendor_spend_share,aggregation,"ROUND(MAX(vendor_spend_share) * 100, 1)",Top vendor's share of total spend percentage,
 CL0054,knowledge_procurement_health,knowledge,has_concentration_risk,BOOL_OR(concentration_risk_flag),obt_vendor_scorecard,BOOL_OR,derived,BOOL_OR(concentration_risk_flag),Any supplier concentration risk exists,
@@ -129,46 +111,38 @@ CL0055,knowledge_procurement_health,knowledge,concentration_health,"CASE
         WHEN vc.has_concentration_risk THEN 'RED'
         WHEN vc.max_spend_share_pct > 50 THEN 'YELLOW'
         ELSE 'GREEN'
-    END",obt_vendor_scorecard,BOOL_OR,case_when,"BOOL_OR(concentration_risk_flag);CASE
-        WHEN vc.has_concentration_risk THEN 'RED'
-        WHEN vc.max_spend_share_pct > 50 THEN 'YELLOW'
-        ELSE 'GREEN'
-    END",Any vendor has concentration risk flag;Traffic light rating for spend concentration risk,
+    END",fact_purchase_orders,vc,case_when,,,
 CL0056,knowledge_procurement_health,knowledge,total_stock_units,"ROUND(SUM(total_stock), 0)",fact_inventory,total_stock,aggregation,"ROUND(SUM(total_stock), 0)",Total inventory units rounded to whole number,
-CL0057,knowledge_procurement_health,knowledge,zero_stock_locations,COUNT(CASE WHEN is_zero_stock AND total_stock = 0 THEN 1 END),fact_inventory,is_zero_stock,case_when,COUNT(CASE WHEN is_zero_stock AND total_stock = 0 THEN 1 END),Locations with no inventory on hand,
-CL0058,knowledge_procurement_health,knowledge,blocked_stock_locations,COUNT(CASE WHEN has_blocked_stock THEN 1 END),fact_inventory,has_blocked_stock,case_when,COUNT(CASE WHEN has_blocked_stock THEN 1 END),Locations with blocked stock inventory,
+CL0057,knowledge_procurement_health,knowledge,zero_stock_locations,COUNT(CASE WHEN is_zero_stock AND total_stock = 0 THEN 1 END),fact_inventory,is_zero_stock,case_when,COUNT(CASE WHEN is_zero_stock AND total_stock = 0 THEN 1 END),Locations with completely empty stock shelves,
+CL0058,knowledge_procurement_health,knowledge,blocked_stock_locations,COUNT(CASE WHEN has_blocked_stock THEN 1 END),fact_inventory,has_blocked_stock,case_when,COUNT(CASE WHEN has_blocked_stock THEN 1 END),Locations with blocked stock items,
 CL0059,knowledge_procurement_health,knowledge,inventory_health,"CASE
         WHEN ia.zero_stock_locations > 5 THEN 'RED'
         WHEN ia.zero_stock_locations > 0 THEN 'YELLOW'
         ELSE 'GREEN'
-    END",fact_inventory,is_zero_stock,case_when,"COUNT(CASE WHEN is_zero_stock AND total_stock = 0 THEN 1 END);CASE
-        WHEN ia.zero_stock_locations > 5 THEN 'RED'
-        WHEN ia.zero_stock_locations > 0 THEN 'YELLOW'
-        ELSE 'GREEN'
-    END",Count locations with no stock available;Flag inventory health red yellow or green,
+    END",fact_purchase_orders,ia,case_when,,,
 CL0060,knowledge_vendor_performance,knowledge,vendor_id,v.vendor_id,dim_vendor,vendor_id,direct,,,
 CL0061,knowledge_vendor_performance,knowledge,vendor_name,v.vendor_name,dim_vendor,vendor_name,direct,,,
 CL0062,knowledge_vendor_performance,knowledge,country_code,v.country_code,dim_vendor,country_code,direct,,,
 CL0063,knowledge_vendor_performance,knowledge,vendor_region,v.vendor_region,dim_vendor,vendor_region,direct,,,
 CL0064,knowledge_vendor_performance,knowledge,payment_terms,v.payment_terms,dim_vendor,payment_terms,direct,,,
-CL0065,knowledge_vendor_performance,knowledge,total_pos,COUNT(DISTINCT f.purchase_order_number),fact_purchase_orders,purchase_order_number,aggregation,,,
-CL0066,knowledge_vendor_performance,knowledge,total_spend_eur,SUM(f.net_value),fact_purchase_orders,net_value,aggregation,,,
-CL0067,knowledge_vendor_performance,knowledge,avg_lead_time_days,"ROUND(AVG(f.lead_time_days), 1)",fact_purchase_orders,lead_time_days,aggregation,,,
-CL0068,knowledge_vendor_performance,knowledge,otd_rate_pct,"ROUND(AVG(CASE WHEN f.is_on_time THEN 1.0 ELSE 0.0 END) * 100, 1)",fact_purchase_orders,is_on_time,case_when,,,
-CL0069,knowledge_vendor_performance,knowledge,total_ordered_qty,SUM(f.ordered_quantity),fact_purchase_orders,ordered_quantity,aggregation,,,
-CL0070,knowledge_vendor_performance,knowledge,total_received_qty,SUM(f.received_quantity),fact_purchase_orders,received_quantity,aggregation,,,
-CL0071,knowledge_vendor_performance,knowledge,fulfillment_rate_pct,"ROUND(SUM(f.received_quantity) / NULLIF(SUM(f.ordered_quantity), 0) * 100, 1)",fact_purchase_orders,received_quantity,coalesce,,,
+CL0065,knowledge_vendor_performance,knowledge,total_pos,COUNT(DISTINCT f.purchase_order_number),,f,aggregation,,,
+CL0066,knowledge_vendor_performance,knowledge,total_spend_eur,SUM(f.net_value),,f,aggregation,,,
+CL0067,knowledge_vendor_performance,knowledge,avg_lead_time_days,"ROUND(AVG(f.lead_time_days), 1)",,f,aggregation,,,
+CL0068,knowledge_vendor_performance,knowledge,otd_rate_pct,"ROUND(AVG(CASE WHEN f.is_on_time THEN 1.0 ELSE 0.0 END) * 100, 1)",,f,case_when,,,
+CL0069,knowledge_vendor_performance,knowledge,total_ordered_qty,SUM(f.ordered_quantity),,f,aggregation,,,
+CL0070,knowledge_vendor_performance,knowledge,total_received_qty,SUM(f.received_quantity),,f,aggregation,,,
+CL0071,knowledge_vendor_performance,knowledge,fulfillment_rate_pct,"ROUND(SUM(f.received_quantity) / NULLIF(SUM(f.ordered_quantity), 0) * 100, 1)",,f,coalesce,,,
 CL0072,knowledge_vendor_performance,knowledge,performance_grade,"CASE
         WHEN AVG(CASE WHEN f.is_on_time THEN 1.0 ELSE 0.0 END) >= 0.80 THEN 'A'
         WHEN AVG(CASE WHEN f.is_on_time THEN 1.0 ELSE 0.0 END) >= 0.60 THEN 'B'
         WHEN AVG(CASE WHEN f.is_on_time THEN 1.0 ELSE 0.0 END) >= 0.40 THEN 'C'
         ELSE 'D'
-    END",fact_purchase_orders,is_on_time,case_when,,,
+    END",,f,case_when,,,
 CL0073,knowledge_vendor_performance,knowledge,health_status,"CASE
         WHEN AVG(CASE WHEN f.is_on_time THEN 1.0 ELSE 0.0 END) >= 0.80 THEN 'GREEN'
         WHEN AVG(CASE WHEN f.is_on_time THEN 1.0 ELSE 0.0 END) >= 0.60 THEN 'YELLOW'
         ELSE 'RED'
-    END",fact_purchase_orders,is_on_time,case_when,,,
+    END",,f,case_when,,,
 CL0074,dim_customer,marts,hk_customer,h.hk_customer,hub_customer,hk_customer,direct,,,
 CL0075,dim_customer,marts,customer_id,h.customer_id,hub_customer,customer_id,direct,,,
 CL0076,dim_customer,marts,customer_name,c.customer_name,sat_customer,customer_name,direct,,,
@@ -176,7 +150,7 @@ CL0077,dim_customer,marts,country,c.country,sat_customer,country,direct,,,
 CL0078,dim_customer,marts,city,c.city,sat_customer,city,direct,,,
 CL0079,dim_customer,marts,postal_code,c.postal_code,sat_customer,postal_code,direct,,,
 CL0080,dim_customer,marts,account_group,c.account_group,sat_customer,account_group,direct,,,
-CL0081,dim_customer,marts,customer_segment,CASE WHEN c.account_group = '0002' THEN 'Business' ELSE 'Residential' END,sat_customer,account_group,case_when,,,
+CL0081,dim_customer,marts,customer_segment,CASE WHEN c.account_group = '0002' THEN 'Business' ELSE 'Residential' END,,c,case_when,,,
 CL0082,dim_customer,marts,customer_created_date,c.created_date,sat_customer,created_date,direct,,,
 CL0083,dim_customer,marts,first_seen_date,h.load_date,hub_customer,load_date,direct,,,
 CL0084,dim_customer,marts,record_source,h.record_source,hub_customer,record_source,direct,,,
@@ -221,16 +195,16 @@ CL0111,dim_equipment,marts,lifecycle_status,"CASE
         WHEN ls.status_code = 'RET' THEN 'returned'
         WHEN ls.status_code = 'DLFL' THEN 'defective'
         ELSE 'unknown'
-    END",sat_equipment_status,status_code,case_when,,,
+    END",,ls,case_when,,,
 CL0112,dim_equipment,marts,material_number,lm.material_number,link_equipment_material,material_number,direct,,,
 CL0113,dim_equipment,marts,days_since_receipt,"CASE WHEN g.created_date IS NOT NULL
         THEN CAST(CURRENT_DATE - g.created_date AS INTEGER)
         ELSE NULL
-    END",sat_equipment_general,created_date,case_when,,,
+    END",,g,case_when,,,
 CL0114,dim_equipment,marts,days_since_deployment,"CASE WHEN g.startup_date IS NOT NULL
         THEN CAST(CURRENT_DATE - g.startup_date AS INTEGER)
         ELSE NULL
-    END",sat_equipment_general,startup_date,case_when,,,
+    END",,g,case_when,,,
 CL0115,dim_equipment,marts,first_seen_date,h.load_date,hub_equipment,load_date,direct,,,
 CL0116,dim_equipment,marts,record_source,h.record_source,hub_equipment,record_source,direct,,,
 CL0117,dim_material,marts,hk_material,h.hk_material,hub_material,hk_material,direct,,,
@@ -252,7 +226,7 @@ CL0129,dim_material,marts,equipment_category,"CASE
         WHEN g.material_group = 'CPE-SWT' THEN 'Switch'
         WHEN g.material_group = 'CPE-MDM' THEN 'Modem'
         ELSE 'Other'
-    END",sat_material_general,material_group,case_when,,,
+    END",,g,case_when,,,
 CL0130,dim_material,marts,first_seen_date,h.load_date,hub_material,load_date,direct,,,
 CL0131,dim_material,marts,record_source,h.record_source,hub_material,record_source,direct,,,
 CL0132,dim_movement_type,marts,movement_type,h.movement_type,hub_movement_type,movement_type,direct,,,
@@ -263,7 +237,7 @@ CL0135,dim_movement_type,marts,direction,"CASE
         WHEN c.debit_credit_indicator = 'S' THEN 'inbound'
         WHEN c.debit_credit_indicator = 'H' THEN 'outbound'
         ELSE 'unknown'
-    END",sat_movement_type,movement_category,case_when,,,
+    END",,c,case_when,,,
 CL0136,dim_movement_type,marts,process_step,"CASE h.movement_type
         WHEN '101' THEN 'goods_receipt'
         WHEN '102' THEN 'gr_reversal'
@@ -274,19 +248,19 @@ CL0136,dim_movement_type,marts,process_step,"CASE h.movement_type
         WHEN '301' THEN 'stock_transfer'
         WHEN '561' THEN 'initial_load'
         ELSE 'other'
-    END",hub_movement_type,movement_type,case_when,,,
+    END",,h,case_when,,,
 CL0137,dim_movement_type,marts,stock_impact_sign,"CASE
         WHEN c.movement_category = 'X' THEN 0
         WHEN c.debit_credit_indicator = 'S' THEN 1
         WHEN c.debit_credit_indicator = 'H' THEN -1
         ELSE 0
-    END",sat_movement_type,movement_category,case_when,,,
+    END",,c,case_when,,,
 CL0138,dim_movement_type,marts,stock_impact_description,"CASE
         WHEN c.movement_category = 'X' THEN 'neutral'
         WHEN c.debit_credit_indicator = 'S' THEN 'increase'
         WHEN c.debit_credit_indicator = 'H' THEN 'decrease'
         ELSE 'neutral'
-    END",sat_movement_type,movement_category,case_when,,,
+    END",,c,case_when,,,
 CL0139,dim_plant,marts,hk_plant,h.hk_plant,hub_plant,hk_plant,direct,,,
 CL0140,dim_plant,marts,plant_code,h.plant_code,hub_plant,plant_code,direct,,,
 CL0141,dim_plant,marts,plant_name,w.NAME1,JINJA_EXPR,NAME1,direct,,,
@@ -306,7 +280,7 @@ CL0152,dim_service_plan,marts,plan_category,"CASE
         WHEN s.service_plan_group = 'SVC-CBL' THEN 'Cable Broadband'
         WHEN s.service_plan_group = 'SVC-BIZ' THEN 'Business Connectivity'
         ELSE 'Other'
-    END",sat_service_plan,service_plan_group,case_when,,,
+    END",,s,case_when,,,
 CL0153,dim_service_plan,marts,first_seen_date,h.load_date,hub_service_plan,load_date,direct,,,
 CL0154,dim_service_plan,marts,record_source,h.record_source,hub_service_plan,record_source,direct,,,
 CL0155,dim_storage_location,marts,plant_code,l.WERKS,JINJA_EXPR,WERKS,direct,,,
@@ -320,7 +294,7 @@ CL0160,dim_storage_location,marts,location_type,"CASE
         WHEN l.LGOBE LIKE '%Ready%' OR l.LGOBE LIKE '%Deploy%' THEN 'staging'
         WHEN l.LGOBE LIKE '%Regional%' THEN 'regional'
         ELSE 'other'
-    END",JINJA_EXPR,LGOBE,case_when,,,
+    END",,l,case_when,,,
 CL0161,dim_vendor,marts,hk_vendor,h.hk_vendor,hub_vendor,hk_vendor,direct,,,
 CL0162,dim_vendor,marts,vendor_id,h.vendor_id,hub_vendor,vendor_id,direct,,,
 CL0163,dim_vendor,marts,vendor_name,g.vendor_name,sat_vendor_general,vendor_name,direct,,,
@@ -339,39 +313,21 @@ CL0172,dim_vendor,marts,vendor_region,"CASE
         WHEN g.country_code IN ('US', 'CA', 'GB') THEN 'International (West)'
         WHEN g.country_code IN ('CN', 'JP', 'KR', 'TW') THEN 'International (Asia)'
         ELSE 'Other'
-    END",sat_vendor_general,country_code,case_when,,,
+    END",,g,case_when,,,
 CL0173,dim_vendor,marts,first_seen_date,h.load_date,hub_vendor,load_date,direct,,,
 CL0174,dim_vendor,marts,record_source,h.record_source,hub_vendor,record_source,direct,,,
-CL0175,fact_contribution_margin_by_segment,marts,billing_month,"DATE_TRUNC('month', CAST(sbd.billing_date AS DATE))",sat_billing_document,billing_date,date_calc,"DATE_TRUNC('month', CAST(sbd.billing_date AS DATE))",Month of the billing date,
-CL0176,fact_contribution_margin_by_segment,marts,service_plan,"COALESCE(service_plan, 'unknown')",sat_sales_order_item,service_plan_group,coalesce,"CASE ssi.service_plan_group
-            WHEN 'SVC-FIB' THEN 'fiber'
-            WHEN 'SVC-TV'  THEN 'TV'
-            WHEN 'SVC-CBL' THEN 'cable'
-            WHEN 'SVC-BIZ' THEN 'business'
-            ELSE 'unknown'
-        END;COALESCE(service_plan, 'unknown')",Map service group code to plan name;Default to unknown if plan missing,
-CL0177,fact_contribution_margin_by_segment,marts,tenure_band,"CASE
-            WHEN tenure_months IS NULL THEN 'unknown'
-            WHEN tenure_months <  12   THEN '0-12'
-            WHEN tenure_months <  24   THEN '12-24'
-            WHEN tenure_months <  48   THEN '24-48'
-            ELSE '48+'
-        END",sat_billing_document,billing_date,case_when,"MIN(CAST(sbd.billing_date AS DATE));DATEDIFF('month', ta.first_billing_date, b.billing_month);CASE
-            WHEN tenure_months IS NULL THEN 'unknown'
-            WHEN tenure_months <  12   THEN '0-12'
-            WHEN tenure_months <  24   THEN '12-24'
-            WHEN tenure_months <  48   THEN '24-48'
-            ELSE '48+'
-        END",Customer's earliest billing date;Months since first billing;Group customers by tenure length,
-CL0178,fact_contribution_margin_by_segment,marts,total_billed_revenue_eur,SUM(line_revenue_eur),sat_billing_document,revenue_amount,aggregation,CAST(sbd.revenue_amount AS NUMERIC);SUM(line_revenue_eur),Convert revenue amount to number;Total billed revenue in euros,
-CL0179,fact_contribution_margin_by_segment,marts,total_amortized_device_cost_eur,SUM(charged_amort_cost_eur),sat_po_item,unit_price,aggregation,"AVG(CAST(spi.unit_price AS NUMERIC)) / 24.0;CASE
+CL0175,fact_contribution_margin_by_segment,marts,billing_month,billing_month,sat_billing_document,billing_month,direct,,,
+CL0176,fact_contribution_margin_by_segment,marts,service_plan,"COALESCE(service_plan, 'unknown')",link_sales_order_equipment,service_plan,coalesce,"COALESCE(service_plan, 'unknown')",Default to unknown if plan missing,
+CL0177,fact_contribution_margin_by_segment,marts,tenure_band,tenure_band,,tenure_band,direct,,,
+CL0178,fact_contribution_margin_by_segment,marts,total_billed_revenue_eur,SUM(line_revenue_eur),sat_billing_document,line_revenue_eur,aggregation,,,
+CL0179,fact_contribution_margin_by_segment,marts,total_amortized_device_cost_eur,SUM(charged_amort_cost_eur),link_sales_order_equipment,monthly_amort_cost_eur,aggregation,"CASE
             WHEN deployment_date IS NOT NULL
              AND billing_month >= deployment_date
              AND billing_month <  (deployment_date + INTERVAL '24 months')
             THEN COALESCE(monthly_amort_cost_eur, 0)
             ELSE 0
-        END;SUM(charged_amort_cost_eur)",Monthly device cost spread over 2 years;Apply device cost only during active contract;Total amortized device cost across all segments,
-CL0180,fact_contribution_margin_by_segment,marts,contribution_margin_eur,SUM(line_revenue_eur) - SUM(charged_amort_cost_eur),sat_billing_document,revenue_amount,aggregation,CAST(sbd.revenue_amount AS NUMERIC);SUM(line_revenue_eur) - SUM(charged_amort_cost_eur),Convert revenue to standard number format;Total revenue minus total amortized costs,
+        END;SUM(charged_amort_cost_eur)",Monthly device cost within 24-month window;Total amortized device cost across all segments,
+CL0180,fact_contribution_margin_by_segment,marts,contribution_margin_eur,SUM(line_revenue_eur) - SUM(charged_amort_cost_eur),sat_billing_document,line_revenue_eur,aggregation,,,
 CL0181,fact_contribution_margin_by_segment,marts,distinct_customers,COUNT(DISTINCT customer_id),sat_billing_document,payer_id,aggregation,,,
 CL0182,fact_contribution_margin_by_segment,marts,billing_doc_count,COUNT(DISTINCT hk_billing_doc),sat_billing_document,hk_billing_doc,aggregation,,,
 CL0183,fact_equipment_lifecycle,marts,hk_equipment,sh.hk_equipment,sat_equipment_status,hk_equipment,direct,,,
@@ -388,7 +344,7 @@ CL0193,fact_equipment_lifecycle,marts,status_to_date,"LEAD(status_from_date) OVE
             PARTITION BY hk_equipment ORDER BY status_from_date
         )",sat_equipment_status,status_from_date,window_function,"LEAD(status_from_date) OVER (
             PARTITION BY hk_equipment ORDER BY status_from_date
-        )",Next status change start date,
+        )",Next status start date for same equipment,
 CL0194,fact_equipment_lifecycle,marts,status_sequence,"ROW_NUMBER() OVER (
             PARTITION BY hk_equipment ORDER BY status_from_date
         )",sat_equipment_status,hk_equipment,window_function,"ROW_NUMBER() OVER (
@@ -400,23 +356,16 @@ CL0195,fact_equipment_lifecycle,marts,lifecycle_status,"CASE
         WHEN sh.status_code = 'RET' THEN 'returned'
         WHEN sh.status_code = 'DLFL' THEN 'defective'
         ELSE 'unknown'
-    END",sat_equipment_status,status_code,case_when,,,
+    END",sat_equipment_status,sh,case_when,,,
 CL0196,fact_equipment_lifecycle,marts,days_in_status,"CASE WHEN sh.status_to_date IS NOT NULL
         THEN CAST(sh.status_to_date - sh.status_from_date AS INTEGER)
         ELSE CAST(CURRENT_DATE - sh.status_from_date AS INTEGER)
-    END",sat_equipment_status,status_from_date,case_when,"LEAD(status_from_date) OVER (
-            PARTITION BY hk_equipment ORDER BY status_from_date
-        );CASE WHEN sh.status_to_date IS NOT NULL
-        THEN CAST(sh.status_to_date - sh.status_from_date AS INTEGER)
-        ELSE CAST(CURRENT_DATE - sh.status_from_date AS INTEGER)
-    END",Next status start date per equipment;Days spent in current or past status,
-CL0197,fact_equipment_lifecycle,marts,is_current_status,sh.reverse_sequence = 1,sat_equipment_status,hk_equipment,derived,"ROW_NUMBER() OVER (
-            PARTITION BY hk_equipment ORDER BY status_from_date DESC
-        );sh.reverse_sequence = 1",Rank equipment statuses newest to oldest;Keep only the most recent status,
+    END",sat_equipment_status,sh,case_when,,,
+CL0197,fact_equipment_lifecycle,marts,is_current_status,sh.reverse_sequence = 1,sat_equipment_status,sh,derived,,,
 CL0198,fact_equipment_lifecycle,marts,days_receipt_to_deployment,"CASE WHEN sh.status_code = 'INST'
         THEN CAST(sh.status_from_date - eg.created_date AS INTEGER)
         ELSE NULL
-    END",sat_equipment_status,status_code,case_when,,,
+    END",sat_equipment_status,sh,case_when,,,
 CL0199,fact_equipment_lifecycle,marts,record_source,eg.record_source,sat_equipment_general,record_source,direct,,,
 CL0200,fact_goods_movements,marts,hk_gr_material,gri.hk_gr_material,sat_gr_item,hk_gr_material,direct,,,
 CL0201,fact_goods_movements,marts,hk_material_document,hmd.hk_material_document,hub_material_document,hk_material_document,direct,,,
@@ -450,34 +399,34 @@ CL0222,fact_goods_movements,marts,movement_category,"CASE
         WHEN gri.movement_type = '301' THEN 'plant_transfer'
         WHEN gri.movement_type = '561' THEN 'initial_stock'
         ELSE 'other'
-    END",sat_gr_item,movement_type,case_when,,,
+    END",,gri,case_when,,,
 CL0223,fact_goods_movements,marts,movement_direction,"CASE
         WHEN gri.movement_type IN ('101', '161', '202', '561') THEN 'inbound'
         WHEN gri.movement_type IN ('102', '122', '201') THEN 'outbound'
         WHEN gri.movement_type = '301' THEN 'transfer'
         ELSE 'unknown'
-    END",sat_gr_item,movement_type,case_when,,,
+    END",,gri,case_when,,,
 CL0224,fact_goods_movements,marts,signed_quantity,"CASE
         WHEN gri.movement_type IN ('101', '161', '202', '561') THEN gri.quantity
         WHEN gri.movement_type IN ('102', '122', '201') THEN -1 * gri.quantity
         ELSE 0
-    END",sat_gr_item,movement_type,case_when,,,
+    END",,gri,case_when,,,
 CL0225,fact_goods_movements,marts,has_po_reference,"CASE WHEN gri.purchase_order_number IS NOT NULL AND gri.purchase_order_number != ''
         THEN TRUE ELSE FALSE
-    END",sat_gr_item,purchase_order_number,case_when,,,
+    END",,gri,case_when,,,
 CL0226,fact_goods_movements,marts,record_source,grh.record_source,sat_gr_header,record_source,direct,,,
 CL0227,fact_goods_receipt_accuracy,marts,vendor_id,vendor_id,sat_gr_item,vendor_id,direct,,,
-CL0228,fact_goods_receipt_accuracy,marts,quarter,"DATE_TRUNC('quarter', grh.posting_date)",sat_gr_header,posting_date,date_calc,"DATE_TRUNC('quarter', grh.posting_date)",Fiscal quarter start date from receipt date,
+CL0228,fact_goods_receipt_accuracy,marts,quarter,quarter,,quarter,direct,,,
 CL0229,fact_goods_receipt_accuracy,marts,total_receipts,COUNT(*),,,aggregation,,,
-CL0230,fact_goods_receipt_accuracy,marts,accurate_receipts,SUM(is_accurate),sat_gr_item,quantity,aggregation,CASE WHEN gri.quantity = pi.ordered_quantity THEN 1 ELSE 0 END;SUM(is_accurate),Flag if received quantity matches order;Total accurately received shipments,
-CL0231,fact_goods_receipt_accuracy,marts,accuracy_percentage,"ROUND(AVG(is_accurate) * 100, 2)",sat_gr_item,quantity,aggregation,"CASE WHEN gri.quantity = pi.ordered_quantity THEN 1 ELSE 0 END;ROUND(AVG(is_accurate) * 100, 2)",Flag if received quantity matches order;Average accuracy rate as percentage,
+CL0230,fact_goods_receipt_accuracy,marts,accurate_receipts,SUM(is_accurate),,is_accurate,aggregation,,,
+CL0231,fact_goods_receipt_accuracy,marts,accuracy_percentage,"ROUND(AVG(is_accurate) * 100, 2)",,is_accurate,aggregation,,,
 CL0232,fact_goods_receipt_accuracy,marts,first_receipt_date,MIN(posting_date),sat_gr_header,posting_date,aggregation,,,
 CL0233,fact_goods_receipt_accuracy,marts,last_receipt_date,MAX(posting_date),sat_gr_header,posting_date,aggregation,,,
-CL0234,fact_goods_receipts_monthly,marts,receipt_month,"DATE_TRUNC('month', grh.posting_date)",sat_gr_header,posting_date,date_calc,,,
+CL0234,fact_goods_receipts_monthly,marts,receipt_month,"DATE_TRUNC('month', grh.posting_date)",,grh,date_calc,,,
 CL0235,fact_goods_receipts_monthly,marts,receipt_line_count,COUNT(*),,,aggregation,,,
-CL0236,fact_goods_receipts_monthly,marts,distinct_documents,COUNT(DISTINCT lgm.material_document_number),link_gr_material,material_document_number,aggregation,,,
-CL0237,fact_goods_receipts_monthly,marts,distinct_vendors,COUNT(DISTINCT gri.vendor_id),sat_gr_item,vendor_id,aggregation,,,
-CL0238,fact_goods_receipts_monthly,marts,distinct_materials,COUNT(DISTINCT lgm.material_number),link_gr_material,material_number,aggregation,,,
+CL0236,fact_goods_receipts_monthly,marts,distinct_documents,COUNT(DISTINCT lgm.material_document_number),,lgm,aggregation,,,
+CL0237,fact_goods_receipts_monthly,marts,distinct_vendors,COUNT(DISTINCT gri.vendor_id),,gri,aggregation,,,
+CL0238,fact_goods_receipts_monthly,marts,distinct_materials,COUNT(DISTINCT lgm.material_number),,lgm,aggregation,,,
 CL0239,fact_inventory,marts,hk_stock_location,sl.hk_stock_location,sat_stock_level,hk_stock_location,direct,,,
 CL0240,fact_inventory,marts,hk_material,sl.hk_material,sat_stock_level,hk_material,direct,,,
 CL0241,fact_inventory,marts,hk_plant,sl.hk_plant,sat_stock_level,hk_plant,direct,,,
@@ -487,10 +436,10 @@ CL0244,fact_inventory,marts,storage_location,sl.storage_location,sat_stock_level
 CL0245,fact_inventory,marts,unrestricted_stock,sl.unrestricted_stock,sat_stock_level,unrestricted_stock,direct,,,
 CL0246,fact_inventory,marts,quality_inspection_stock,sl.quality_inspection_stock,sat_stock_level,quality_inspection_stock,direct,,,
 CL0247,fact_inventory,marts,blocked_stock,sl.blocked_stock,sat_stock_level,blocked_stock,direct,,,
-CL0248,fact_inventory,marts,total_stock,"CAST(sl.unrestricted_stock + sl.quality_inspection_stock + sl.blocked_stock AS DECIMAL(13, 3))",sat_stock_level,unrestricted_stock,type_cast,,,
-CL0249,fact_inventory,marts,is_zero_stock,CASE WHEN sl.unrestricted_stock <= 0 THEN TRUE ELSE FALSE END,sat_stock_level,unrestricted_stock,case_when,,,
-CL0250,fact_inventory,marts,has_blocked_stock,CASE WHEN sl.blocked_stock > 0 THEN TRUE ELSE FALSE END,sat_stock_level,blocked_stock,case_when,,,
-CL0251,fact_inventory,marts,has_qi_stock,CASE WHEN sl.quality_inspection_stock > 0 THEN TRUE ELSE FALSE END,sat_stock_level,quality_inspection_stock,case_when,,,
+CL0248,fact_inventory,marts,total_stock,"CAST(sl.unrestricted_stock + sl.quality_inspection_stock + sl.blocked_stock AS DECIMAL(13, 3))",,sl,type_cast,,,
+CL0249,fact_inventory,marts,is_zero_stock,CASE WHEN sl.unrestricted_stock <= 0 THEN TRUE ELSE FALSE END,,sl,case_when,,,
+CL0250,fact_inventory,marts,has_blocked_stock,CASE WHEN sl.blocked_stock > 0 THEN TRUE ELSE FALSE END,,sl,case_when,,,
+CL0251,fact_inventory,marts,has_qi_stock,CASE WHEN sl.quality_inspection_stock > 0 THEN TRUE ELSE FALSE END,,sl,case_when,,,
 CL0252,fact_inventory,marts,record_source,sl.record_source,sat_stock_level,record_source,direct,,,
 CL0253,fact_invoices,marts,hk_invoice,hi.hk_invoice,hub_invoice,hk_invoice,direct,,,
 CL0254,fact_invoices,marts,hk_purchase_order,lip.hk_purchase_order,link_invoice_po,hk_purchase_order,direct,,,
@@ -507,15 +456,15 @@ CL0264,fact_invoices,marts,posted_by,ih.posted_by,sat_invoice_header,posted_by,d
 CL0265,fact_invoices,marts,days_po_to_invoice,"CASE WHEN ih.invoice_date IS NOT NULL AND ph.po_date IS NOT NULL
         THEN CAST(ih.invoice_date - ph.po_date AS INTEGER)
         ELSE NULL
-    END",sat_invoice_header,invoice_date,case_when,,,
+    END",,ih,case_when,,,
 CL0266,fact_invoices,marts,record_source,ih.record_source,sat_invoice_header,record_source,direct,,,
 CL0267,fact_po_invoice_match_variance,marts,vendor_id,tw.vendor_id,link_po_vendor,vendor_id,direct,,,Vendor account number (EKKO.LIFNR).
-CL0268,fact_po_invoice_match_variance,marts,month,"DATE_TRUNC('month', ph.po_date)",sat_po_header,po_date,date_calc,"DATE_TRUNC('month', ph.po_date)",Purchase Order Month Start Date,PO creation month (DATE_TRUNC of BEDAT).
+CL0268,fact_po_invoice_match_variance,marts,month,tw.month,link_po_material,month,direct,,,PO creation month (DATE_TRUNC of BEDAT).
 CL0269,fact_po_invoice_match_variance,marts,total_po_lines,COUNT(*),,,aggregation,,,Count of PO lines joined vendor x month.
-CL0270,fact_po_invoice_match_variance,marts,matched_pct,"ROUND(100.0 * SUM(tw.matched_flag) / COUNT(*), 2)",100,0,aggregation,,,Percentage of PO lines where PO/GR/invoice qty match within 5%.
-CL0271,fact_po_invoice_match_variance,marts,exception_count,"COALESCE(SUM(ex.exception_count), 0)",sat_zmm_approval,exception_count,coalesce,,,Count of ZMM_APPROVAL_LOG records for these POs.
-CL0272,fact_po_invoice_match_variance,marts,approved_exception_count,"COALESCE(SUM(ex.approved_exception_count), 0)",sat_zmm_approval,approval_status,coalesce,"SUM(CASE WHEN za.approval_status = '02' THEN 1 ELSE 0 END);COALESCE(SUM(ex.approved_exception_count), 0)","Count approved exceptions per record;Total approved exceptions, zero if none",Subset of exception_count with APPR_STATUS='02'.
-CL0273,fact_po_invoice_match_variance,marts,open_exception_count,"COALESCE(SUM(ex.exception_count - ex.approved_exception_count), 0)",sat_zmm_approval,exception_count,coalesce,,,Exceptions not yet approved (exception_count - approved_exception_count).
+CL0270,fact_po_invoice_match_variance,marts,matched_pct,"ROUND(100.0 * SUM(tw.matched_flag) / COUNT(*), 2)",,tw,aggregation,,,Percentage of PO lines where PO/GR/invoice qty match within 5%.
+CL0271,fact_po_invoice_match_variance,marts,exception_count,"COALESCE(SUM(ex.exception_count), 0)",,ex,coalesce,,,Count of ZMM_APPROVAL_LOG records for these POs.
+CL0272,fact_po_invoice_match_variance,marts,approved_exception_count,"COALESCE(SUM(ex.approved_exception_count), 0)",,ex,coalesce,,,Subset of exception_count with APPR_STATUS='02'.
+CL0273,fact_po_invoice_match_variance,marts,open_exception_count,"COALESCE(SUM(ex.exception_count - ex.approved_exception_count), 0)",,ex,coalesce,,,Exceptions not yet approved (exception_count - approved_exception_count).
 CL0274,fact_purchase_orders,marts,hk_po_material,pm.hk_po_material,link_po_material,hk_po_material,direct,,,
 CL0275,fact_purchase_orders,marts,hk_purchase_order,pm.hk_purchase_order,link_po_material,hk_purchase_order,direct,,,
 CL0276,fact_purchase_orders,marts,hk_material,pm.hk_material,link_po_material,hk_material,direct,,,
@@ -546,48 +495,35 @@ CL0300,fact_purchase_orders,marts,scheduled_quantity,ps.scheduled_quantity,sat_p
 CL0301,fact_purchase_orders,marts,schedule_gr_quantity,ps.goods_received_quantity,sat_po_schedule,goods_received_quantity,direct,,,
 CL0302,fact_purchase_orders,marts,gl_account,pa.gl_account,sat_po_account,gl_account,direct,,,
 CL0303,fact_purchase_orders,marts,cost_center,pa.cost_center,sat_po_account,cost_center,direct,,,
-CL0304,fact_purchase_orders,marts,first_gr_date,MIN(grh.posting_date),sat_gr_header,posting_date,aggregation,MIN(grh.posting_date),Earliest goods receipt date from vendor,
+CL0304,fact_purchase_orders,marts,first_gr_date,fgr.first_gr_date,link_gr_po,first_gr_date,direct,,,
 CL0305,fact_purchase_orders,marts,pr_date,prd.requisition_date,sat_pr_detail,requisition_date,direct,,,
 CL0306,fact_purchase_orders,marts,lead_time_days,"CASE WHEN fgr.first_gr_date IS NOT NULL AND ph.po_date IS NOT NULL
         THEN CAST(fgr.first_gr_date - ph.po_date AS INTEGER)
         ELSE NULL
-    END",sat_gr_header,posting_date,case_when,"MIN(grh.posting_date);CASE WHEN fgr.first_gr_date IS NOT NULL AND ph.po_date IS NOT NULL
-        THEN CAST(fgr.first_gr_date - ph.po_date AS INTEGER)
-        ELSE NULL
-    END",Earliest goods receipt date;Days from order to first delivery,
+    END",link_po_material,fgr,case_when,,,
 CL0307,fact_purchase_orders,marts,is_on_time,"CASE
         WHEN fgr.first_gr_date IS NOT NULL AND ps.scheduled_delivery_date IS NOT NULL
         THEN CASE WHEN fgr.first_gr_date <= ps.scheduled_delivery_date + INTERVAL 2 DAY
                   THEN TRUE ELSE FALSE END
         ELSE NULL
-    END",sat_gr_header,posting_date,case_when,"MIN(grh.posting_date);CASE
-        WHEN fgr.first_gr_date IS NOT NULL AND ps.scheduled_delivery_date IS NOT NULL
-        THEN CASE WHEN fgr.first_gr_date <= ps.scheduled_delivery_date + INTERVAL 2 DAY
-                  THEN TRUE ELSE FALSE END
-        ELSE NULL
-    END",Earliest goods receipt date;Delivered within scheduled window flag,
+    END",link_po_material,fgr,case_when,,,
 CL0308,fact_purchase_orders,marts,po_cycle_days,"CASE WHEN prd.requisition_date IS NOT NULL AND ph.po_date IS NOT NULL
         THEN CAST(ph.po_date - prd.requisition_date AS INTEGER)
         ELSE NULL
-    END",sat_pr_detail,requisition_date,case_when,,,
+    END",link_po_material,ph,case_when,,,
 CL0309,fact_purchase_orders,marts,delivery_status,"CASE
         WHEN fgr.first_gr_date IS NULL THEN 'pending'
         WHEN gr_totals.total_gr_quantity >= pi.ordered_quantity THEN 'fully_received'
         WHEN gr_totals.total_gr_quantity > 0 THEN 'partially_received'
         ELSE 'pending'
-    END",sat_gr_header,posting_date,case_when,"MIN(grh.posting_date);CASE
-        WHEN fgr.first_gr_date IS NULL THEN 'pending'
-        WHEN gr_totals.total_gr_quantity >= pi.ordered_quantity THEN 'fully_received'
-        WHEN gr_totals.total_gr_quantity > 0 THEN 'partially_received'
-        ELSE 'pending'
-    END",Earliest goods receipt date;Classify order delivery completion status,
-CL0310,fact_purchase_orders,marts,received_quantity,"COALESCE(gr_totals.total_gr_quantity, 0)",sat_gr_item,quantity,coalesce,"SUM(CASE WHEN movement_type = '101' THEN quantity ELSE 0 END);COALESCE(gr_totals.total_gr_quantity, 0)",Total goods received from delivery movements;Use zero if no delivery quantity found,
-CL0311,fact_purchase_orders,marts,reversed_quantity,"COALESCE(gr_totals.total_gr_reversal_quantity, 0)",sat_gr_item,quantity,coalesce,"SUM(CASE WHEN movement_type = '102' THEN quantity ELSE 0 END);COALESCE(gr_totals.total_gr_reversal_quantity, 0)",Total quantity reversed via goods receipt;Reversed quantity defaulting to zero if missing,
-CL0312,fact_purchase_orders,marts,received_value,"COALESCE(gr_totals.total_gr_quantity, 0) * pi.unit_price",sat_gr_item,quantity,coalesce,"SUM(CASE WHEN movement_type = '101' THEN quantity ELSE 0 END);COALESCE(gr_totals.total_gr_quantity, 0) * pi.unit_price",Total quantity received from goods receipts;Received goods value at unit price,
+    END",link_po_material,gr_totals,case_when,,,
+CL0310,fact_purchase_orders,marts,received_quantity,"COALESCE(gr_totals.total_gr_quantity, 0)",link_po_material,gr_totals,coalesce,,,
+CL0311,fact_purchase_orders,marts,reversed_quantity,"COALESCE(gr_totals.total_gr_reversal_quantity, 0)",link_po_material,gr_totals,coalesce,,,
+CL0312,fact_purchase_orders,marts,received_value,"COALESCE(gr_totals.total_gr_quantity, 0) * pi.unit_price",link_po_material,gr_totals,coalesce,,,
 CL0313,fact_purchase_orders,marts,record_source,ph.record_source,sat_po_header,record_source,direct,,,
 CL0314,obt_cpe_contribution_margin_by_segment,obt,billing_month,cm.billing_month,fact_contribution_margin_by_segment,billing_month,direct,,,
-CL0315,obt_cpe_contribution_margin_by_segment,obt,billing_year,EXTRACT(YEAR  FROM cm.billing_month),fact_contribution_margin_by_segment,billing_month,date_calc,,,
-CL0316,obt_cpe_contribution_margin_by_segment,obt,billing_month_num,EXTRACT(MONTH FROM cm.billing_month),fact_contribution_margin_by_segment,billing_month,date_calc,,,
+CL0315,obt_cpe_contribution_margin_by_segment,obt,billing_year,EXTRACT(YEAR  FROM cm.billing_month),fact_contribution_margin_by_segment,cm,date_calc,,,
+CL0316,obt_cpe_contribution_margin_by_segment,obt,billing_month_num,EXTRACT(MONTH FROM cm.billing_month),fact_contribution_margin_by_segment,cm,date_calc,,,
 CL0317,obt_cpe_contribution_margin_by_segment,obt,service_plan,cm.service_plan,fact_contribution_margin_by_segment,service_plan,direct,,,
 CL0318,obt_cpe_contribution_margin_by_segment,obt,tenure_band,cm.tenure_band,fact_contribution_margin_by_segment,tenure_band,direct,,,
 CL0319,obt_cpe_contribution_margin_by_segment,obt,total_billed_revenue_eur,cm.total_billed_revenue_eur,fact_contribution_margin_by_segment,total_billed_revenue_eur,direct,,,
@@ -596,14 +532,14 @@ CL0321,obt_cpe_contribution_margin_by_segment,obt,contribution_margin_eur,cm.con
 CL0322,obt_cpe_contribution_margin_by_segment,obt,is_margin_positive,"CASE
         WHEN cm.contribution_margin_eur >= 0 THEN TRUE
         ELSE FALSE
-    END",fact_contribution_margin_by_segment,contribution_margin_eur,case_when,,,
+    END",fact_contribution_margin_by_segment,cm,case_when,,,
 CL0323,obt_cpe_contribution_margin_by_segment,obt,distinct_customers,cm.distinct_customers,fact_contribution_margin_by_segment,distinct_customers,direct,,,
 CL0324,obt_cpe_contribution_margin_by_segment,obt,billing_doc_count,cm.billing_doc_count,fact_contribution_margin_by_segment,billing_doc_count,direct,,,
 CL0325,obt_cpe_contribution_margin_by_segment,obt,avg_margin_per_customer_eur,"CASE
         WHEN cm.distinct_customers > 0
         THEN cm.contribution_margin_eur / cm.distinct_customers
         ELSE NULL
-    END",fact_contribution_margin_by_segment,distinct_customers,case_when,,,
+    END",fact_contribution_margin_by_segment,cm,case_when,,,
 CL0326,obt_cpe_contribution_margin_by_segment,obt,contribution_margin_pct,"CASE
         WHEN cm.total_billed_revenue_eur > 0
         THEN ROUND(
@@ -611,7 +547,7 @@ CL0326,obt_cpe_contribution_margin_by_segment,obt,contribution_margin_pct,"CASE
             2
         )
         ELSE NULL
-    END",fact_contribution_margin_by_segment,total_billed_revenue_eur,case_when,,,
+    END",fact_contribution_margin_by_segment,cm,case_when,,,
 CL0327,obt_cpe_lifecycle,obt,equipment_number,e.equipment_number,dim_equipment,equipment_number,direct,,,Equipment master record number (EQUI.EQUNR) — identifies the individual CPE device.
 CL0328,obt_cpe_lifecycle,obt,serial_number,e.serial_number,dim_equipment,serial_number,direct,,,Vendor-issued serial number (EQUI.SERNR).
 CL0329,obt_cpe_lifecycle,obt,manufacturer,e.manufacturer,dim_equipment,manufacturer,direct,,,Equipment manufacturer (EQUI.HERST).
@@ -713,24 +649,15 @@ CL0424,obt_vendor_scorecard,obt,*,vq.*,,vq,derived,,,
 CL0425,obt_vendor_scorecard,obt,vendor_spend_share,"CASE WHEN qt.quarter_total_spend > 0
         THEN ROUND(vq.total_spend / qt.quarter_total_spend, 4)
         ELSE 0
-    END",fact_purchase_orders,net_value,case_when,"SUM(f.net_value);SUM(total_spend);CASE WHEN qt.quarter_total_spend > 0
-        THEN ROUND(vq.total_spend / qt.quarter_total_spend, 4)
-        ELSE 0
-    END",Total net value per vendor;Total spend per vendor per quarter;Vendor's share of quarterly spend,BG014: vendor's total_spend divided by quarter-wide total spend (0..1).
+    END",,vq,case_when,,,BG014: vendor's total_spend divided by quarter-wide total spend (0..1).
 CL0426,obt_vendor_scorecard,obt,concentration_risk_flag,"CASE WHEN qt.quarter_total_spend > 0
         AND (vq.total_spend / qt.quarter_total_spend) > 0.60
         THEN TRUE ELSE FALSE
-    END",fact_purchase_orders,net_value,case_when,"SUM(f.net_value);SUM(total_spend);CASE WHEN qt.quarter_total_spend > 0
-        AND (vq.total_spend / qt.quarter_total_spend) > 0.60
-        THEN TRUE ELSE FALSE
-    END",Vendor quarterly spend total;Overall quarterly spend across all vendors;Vendor exceeds 60% of quarterly spend,BG010: TRUE when vendor_spend_share > 0.60 in the quarter.
+    END",,qt,case_when,,,BG010: TRUE when vendor_spend_share > 0.60 in the quarter.
 CL0427,obt_vendor_scorecard,obt,fulfillment_rate,"CASE WHEN vq.total_ordered_qty > 0
         THEN ROUND(vq.total_received_qty / vq.total_ordered_qty, 4)
         ELSE 0
-    END",fact_purchase_orders,ordered_quantity,case_when,"SUM(f.ordered_quantity);CASE WHEN vq.total_ordered_qty > 0
-        THEN ROUND(vq.total_received_qty / vq.total_ordered_qty, 4)
-        ELSE 0
-    END",Total units ordered from vendor;Received vs ordered quantity ratio,BG015: total_received_qty / total_ordered_qty for the quarter (0..1).
+    END",,vq,case_when,,,BG015: total_received_qty / total_ordered_qty for the quarter (0..1).
 CL0428,fact_gmv_by_category_monthly,other,product_category_english,product_category_english,sat_olist_product_category,product_category_english,direct,,,
 CL0429,fact_gmv_by_category_monthly,other,order_month,"DATE_TRUNC('month', order_purchase_timestamp)",sat_olist_order_header,order_purchase_timestamp,date_calc,"DATE_TRUNC('month', order_purchase_timestamp)",Month start date of purchase,
 CL0430,fact_gmv_by_category_monthly,other,gmv_brl,SUM(price),sat_olist_order_item_prices,price,aggregation,,,
@@ -741,19 +668,25 @@ CL0434,fact_on_time_delivery_monthly,other,delivered_orders,COUNT(*),,,aggregati
 CL0435,fact_on_time_delivery_monthly,other,on_time_orders,SUM(is_on_time),sat_olist_order_header,order_delivered_customer_date,aggregation,"CASE
             WHEN order_delivered_customer_date <= order_estimated_delivery_date THEN 1
             ELSE 0
-        END;SUM(is_on_time)",Flag if order delivered by estimated date;Total on-time orders delivered,
+        END;SUM(is_on_time)",Flag if order delivered on time;Total on-time deliveries per month,
 CL0436,fact_on_time_delivery_monthly,other,on_time_delivery_rate_pct,"ROUND(
         100.0 * SUM(is_on_time) / NULLIF(COUNT(*), 0),
         4
-    )",100,0,coalesce,,,
-CL0437,fact_repeat_customer_rate,other,order_month,"DATE_TRUNC('month', o.order_purchase_timestamp)::DATE",sat_olist_order_header,order_purchase_timestamp,date_calc,"DATE_TRUNC('month', o.order_purchase_timestamp)::DATE",Month of purchase date,
+    )",sat_olist_order_header,order_delivered_customer_date,coalesce,"CASE
+            WHEN order_delivered_customer_date <= order_estimated_delivery_date THEN 1
+            ELSE 0
+        END;ROUND(
+        100.0 * SUM(is_on_time) / NULLIF(COUNT(*), 0),
+        4
+    )",Flag if order arrived on time;Calculate monthly on-time delivery percentage,
+CL0437,fact_repeat_customer_rate,other,order_month,order_month,hub_olist_order,order_month,direct,,,
 CL0438,fact_repeat_customer_rate,other,total_orders,COUNT(DISTINCT order_id),hub_olist_order,order_id,aggregation,,,
 CL0439,fact_repeat_customer_rate,other,repeat_orders,COUNT(DISTINCT CASE WHEN is_repeat_order THEN order_id END),hub_olist_order,order_id,case_when,,,
 CL0440,fact_repeat_customer_rate,other,repeat_customer_rate_pct,"ROUND(
         100.0
         * COUNT(DISTINCT CASE WHEN is_repeat_order THEN order_id END)
         / NULLIF(COUNT(DISTINCT order_id), 0)
-    , 2)",100,0,case_when,,,
+    , 2)",hub_olist_order,order_id,case_when,,,
 CL0441,obt_ecommerce_gmv_by_category,other,product_category_english,product_category_english,fact_gmv_by_category_monthly,product_category_english,direct,,,
 CL0442,obt_ecommerce_gmv_by_category,other,order_month,order_month,fact_gmv_by_category_monthly,order_month,direct,,,
 CL0443,obt_ecommerce_gmv_by_category,other,order_month_label,"STRFTIME(order_month, '%Y-%m')",fact_gmv_by_category_monthly,STRFTIME,derived,,,
@@ -773,16 +706,16 @@ CL0456,obt_ecommerce_on_time_delivery,other,quarter,d.quarter,dim_date,quarter,d
 CL0457,obt_ecommerce_on_time_delivery,other,year_quarter,d.year_quarter,dim_date,year_quarter,direct,,,
 CL0458,obt_ecommerce_on_time_delivery,other,delivered_orders,f.delivered_orders,fact_on_time_delivery_monthly,delivered_orders,direct,,,
 CL0459,obt_ecommerce_on_time_delivery,other,on_time_orders,f.on_time_orders,fact_on_time_delivery_monthly,on_time_orders,direct,,,
-CL0460,obt_ecommerce_on_time_delivery,other,late_orders,f.delivered_orders - f.on_time_orders,fact_on_time_delivery_monthly,delivered_orders,derived,,,
+CL0460,obt_ecommerce_on_time_delivery,other,late_orders,f.delivered_orders - f.on_time_orders,fact_on_time_delivery_monthly,f,derived,,,
 CL0461,obt_ecommerce_on_time_delivery,other,on_time_delivery_rate_pct,f.on_time_delivery_rate_pct,fact_on_time_delivery_monthly,on_time_delivery_rate_pct,direct,,,
 CL0462,obt_ecommerce_on_time_delivery,other,cum_on_time_orders,"SUM(f.on_time_orders) OVER (
         ORDER BY f.order_month
         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    )",fact_on_time_delivery_monthly,on_time_orders,aggregation,,,
+    )",fact_on_time_delivery_monthly,f,aggregation,,,
 CL0463,obt_ecommerce_on_time_delivery,other,cum_delivered_orders,"SUM(f.delivered_orders) OVER (
         ORDER BY f.order_month
         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    )",fact_on_time_delivery_monthly,delivered_orders,aggregation,,,
+    )",fact_on_time_delivery_monthly,f,aggregation,,,
 CL0464,obt_ecommerce_on_time_delivery,other,cum_on_time_delivery_rate_pct,"ROUND(
         100.0 * SUM(f.on_time_orders) OVER (
             ORDER BY f.order_month
@@ -794,18 +727,18 @@ CL0464,obt_ecommerce_on_time_delivery,other,cum_on_time_delivery_rate_pct,"ROUND
             ), 0
         ),
         4
-    )",100,0,coalesce,,,
+    )",fact_on_time_delivery_monthly,f,coalesce,,,
 CL0465,obt_ecommerce_repeat_customer,other,order_month,f.order_month,fact_repeat_customer_rate,order_month,direct,,,
-CL0466,obt_ecommerce_repeat_customer,other,year,"DATE_PART('year', f.order_month)::INT",fact_repeat_customer_rate,order_month,derived,,,
-CL0467,obt_ecommerce_repeat_customer,other,month,"DATE_PART('month', f.order_month)::INT",fact_repeat_customer_rate,order_month,derived,,,
-CL0468,obt_ecommerce_repeat_customer,other,month_name,"STRFTIME(f.order_month, '%B')",fact_repeat_customer_rate,order_month,derived,,,
-CL0469,obt_ecommerce_repeat_customer,other,year_month,"STRFTIME(f.order_month, '%Y-%m')",fact_repeat_customer_rate,order_month,derived,,,
-CL0470,obt_ecommerce_repeat_customer,other,quarter,"DATE_PART('quarter', f.order_month)::INT",fact_repeat_customer_rate,order_month,derived,,,
+CL0466,obt_ecommerce_repeat_customer,other,year,"DATE_PART('year', f.order_month)::INT",fact_repeat_customer_rate,DATE_PART,derived,,,
+CL0467,obt_ecommerce_repeat_customer,other,month,"DATE_PART('month', f.order_month)::INT",fact_repeat_customer_rate,DATE_PART,derived,,,
+CL0468,obt_ecommerce_repeat_customer,other,month_name,"STRFTIME(f.order_month, '%B')",fact_repeat_customer_rate,STRFTIME,derived,,,
+CL0469,obt_ecommerce_repeat_customer,other,year_month,"STRFTIME(f.order_month, '%Y-%m')",fact_repeat_customer_rate,STRFTIME,derived,,,
+CL0470,obt_ecommerce_repeat_customer,other,quarter,"DATE_PART('quarter', f.order_month)::INT",fact_repeat_customer_rate,DATE_PART,derived,,,
 CL0471,obt_ecommerce_repeat_customer,other,year_quarter,"STRFTIME(f.order_month, '%Y') || '-Q' ||
-        DATE_PART('quarter', f.order_month)::INT",fact_repeat_customer_rate,order_month,derived,,,
+        DATE_PART('quarter', f.order_month)::INT",fact_repeat_customer_rate,STRFTIME,derived,,,
 CL0472,obt_ecommerce_repeat_customer,other,total_orders,f.total_orders,fact_repeat_customer_rate,total_orders,direct,,,
 CL0473,obt_ecommerce_repeat_customer,other,repeat_orders,f.repeat_orders,fact_repeat_customer_rate,repeat_orders,direct,,,
-CL0474,obt_ecommerce_repeat_customer,other,first_time_orders,f.total_orders - f.repeat_orders,fact_repeat_customer_rate,total_orders,derived,,,
+CL0474,obt_ecommerce_repeat_customer,other,first_time_orders,f.total_orders - f.repeat_orders,fact_repeat_customer_rate,f,derived,,,
 CL0475,obt_ecommerce_repeat_customer,other,repeat_customer_rate_pct,f.repeat_customer_rate_pct,fact_repeat_customer_rate,repeat_customer_rate_pct,direct,,,
 CL0476,stg_olist__category_translation,other,product_category_name,product_category_name,raw_olist.category_translation,product_category_name,direct,,,
 CL0477,stg_olist__category_translation,other,product_category_name_english,product_category_name_english,raw_olist.category_translation,product_category_name_english,direct,,,
@@ -840,20 +773,20 @@ CL0505,stg_olist__products,other,product_height_cm,product_height_cm,raw_olist.p
 CL0506,stg_olist__products,other,product_width_cm,product_width_cm,raw_olist.products,product_width_cm,direct,,,
 CL0507,hub_olist_order,other,order_id,order_id,stg_olist__orders,order_id,direct,,,
 CL0508,hub_olist_order,other,load_date,load_date,stg_olist__orders,order_purchase_timestamp,direct,,,
-CL0509,hub_olist_order,other,record_source,'raw_olist.orders',raw_olist,orders,derived,'raw_olist.orders',Original orders data source identifier,
+CL0509,hub_olist_order,other,record_source,record_source,stg_olist__orders,record_source,direct,,,
 CL0510,hub_olist_product,other,product_id,product_id,stg_olist__products,product_id,direct,,,
 CL0511,hub_olist_product,other,load_date,load_date,stg_olist__products,CURRENT_TIMESTAMP,direct,,,
-CL0512,hub_olist_product,other,record_source,'raw_olist.products',raw_olist,products,derived,'raw_olist.products',Origin system where product data was captured,
+CL0512,hub_olist_product,other,record_source,record_source,stg_olist__products,record_source,direct,,,
 CL0513,link_olist_order_item,other,order_id,order_id,stg_olist__order_items,order_id,direct,,,
 CL0514,link_olist_order_item,other,order_item_id,order_item_id,stg_olist__order_items,order_item_id,direct,,,
 CL0515,link_olist_order_item,other,product_id,product_id,stg_olist__order_items,product_id,direct,,,
 CL0516,link_olist_order_item,other,seller_id,seller_id,stg_olist__order_items,seller_id,direct,,,
 CL0517,link_olist_order_item,other,load_date,load_date,stg_olist__order_items,shipping_limit_date,direct,,,
-CL0518,link_olist_order_item,other,record_source,'raw_olist.order_items',raw_olist,order_items,derived,'raw_olist.order_items',Original order items data feed,
+CL0518,link_olist_order_item,other,record_source,record_source,stg_olist__order_items,record_source,direct,,,
 CL0519,sat_olist_customer_identity,other,customer_unique_id,customer_unique_id,stg_olist__customers,customer_unique_id,direct,,,
 CL0520,sat_olist_customer_identity,other,customer_order_key,customer_order_key,stg_olist__customers,customer_id,direct,,,
-CL0521,sat_olist_customer_identity,other,load_date,NOW(),stg_olist__customers,NOW,derived,NOW(),Current date and time of record capture,
-CL0522,sat_olist_customer_identity,other,record_source,'raw_olist.customers',raw_olist,customers,derived,'raw_olist.customers',Original data source system identifier,
+CL0521,sat_olist_customer_identity,other,load_date,NOW(),stg_olist__customers,NOW,derived,NOW(),Current date and time of record loading,
+CL0522,sat_olist_customer_identity,other,record_source,record_source,stg_olist__customers,record_source,direct,,,
 CL0523,sat_olist_order_header,other,order_status,order_status,stg_olist__orders,order_status,direct,,,
 CL0524,sat_olist_order_header,other,order_purchase_timestamp,order_purchase_timestamp,stg_olist__orders,order_purchase_timestamp,direct,,,
 CL0525,sat_olist_order_header,other,order_approved_at,order_approved_at,stg_olist__orders,order_approved_at,direct,,,
@@ -861,17 +794,17 @@ CL0526,sat_olist_order_header,other,order_delivered_carrier_date,order_delivered
 CL0527,sat_olist_order_header,other,order_delivered_customer_date,order_delivered_customer_date,stg_olist__orders,order_delivered_customer_date,direct,,,
 CL0528,sat_olist_order_header,other,order_estimated_delivery_date,order_estimated_delivery_date,stg_olist__orders,order_estimated_delivery_date,direct,,,
 CL0529,sat_olist_order_header,other,load_date,order_purchase_timestamp,stg_olist__orders,order_purchase_timestamp,direct,,,
-CL0530,sat_olist_order_header,other,record_source,'raw_olist.orders',raw_olist,orders,constant,,,
+CL0530,sat_olist_order_header,other,record_source,'raw_olist.orders',,,constant,,,
 CL0531,sat_olist_order_item_prices,other,price,price,stg_olist__order_items,price,direct,,,
 CL0532,sat_olist_order_item_prices,other,freight_value,freight_value,stg_olist__order_items,freight_value,direct,,,
 CL0533,sat_olist_order_item_prices,other,load_date,shipping_limit_date,stg_olist__order_items,shipping_limit_date,direct,,,
-CL0534,sat_olist_order_item_prices,other,record_source,'raw_olist.order_items',raw_olist,order_items,constant,,,
+CL0534,sat_olist_order_item_prices,other,record_source,'raw_olist.order_items',,,constant,,,
 CL0535,sat_olist_product_category,other,product_category_name_pt,product_category_name_pt,stg_olist__products,product_category_name,direct,,,
-CL0536,sat_olist_product_category,other,product_category_english,"COALESCE(ct.product_category_name_english, 'uncategorized')",stg_olist__category_translation,product_category_name_english,coalesce,"COALESCE(ct.product_category_name_english, 'uncategorized')","Product category name, defaulting to uncategorized",
+CL0536,sat_olist_product_category,other,product_category_english,"COALESCE(ct.product_category_name_english, 'uncategorized')",stg_olist__products,ct,coalesce,"COALESCE(ct.product_category_name_english, 'uncategorized')",Default to uncategorized if category name missing,
 CL0537,sat_olist_product_category,other,product_weight_g,product_weight_g,stg_olist__products,product_weight_g,direct,,,
 CL0538,sat_olist_product_category,other,product_photos_qty,product_photos_qty,stg_olist__products,product_photos_qty,direct,,,
 CL0539,sat_olist_product_category,other,load_date,CURRENT_TIMESTAMP,,CURRENT_TIMESTAMP,direct,,,
-CL0540,sat_olist_product_category,other,record_source,'raw_olist.products+category_translation',raw_olist,products,constant,,,
+CL0540,sat_olist_product_category,other,record_source,'raw_olist.products+category_translation',,,constant,,,
 CL0541,stg_sap__bkpf,staging,BUKRS,BUKRS,raw_sap.bkpf,BUKRS,direct,,,
 CL0542,stg_sap__bkpf,staging,BELNR,BELNR,raw_sap.bkpf,BELNR,direct,,,
 CL0543,stg_sap__bkpf,staging,GJAHR,GJAHR,raw_sap.bkpf,GJAHR,direct,,,

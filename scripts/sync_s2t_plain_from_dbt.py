@@ -97,11 +97,11 @@ SYSTEM_PROMPT = (
 
 PASSTHROUGH_SYSTEM_PROMPT = (
     "You are a senior data analyst writing business-facing documentation. "
-    "The target column below is a direct pass-through from an SAP source "
+    "The target column below is a direct pass-through from a raw source "
     "field — no transformation runs anywhere in the pipeline. Write ONE "
     "short sentence explaining what the column carries, phrased as a "
     "pass-through ('carries...', 'flows through unchanged from...', "
-    "'direct copy of...'). Mention the SAP field name once. No SQL, no "
+    "'direct copy of...'). Mention the source field name once. No SQL, no "
     "code, no preamble, no quotes. Return only the sentence."
 )
 
@@ -115,11 +115,11 @@ SQL expression:
 One-sentence plain-English description:"""
 
 PASSTHROUGH_USER_TEMPLATE = """Business term: {term}
-SAP source:    {source_table}.{source_field} — {source_description}
+Raw source:    {source_table}.{source_field} — {source_description}
 Target column: {target_model}.{target_column}
 
 This column has no transformation — it is a direct pass-through of the
-SAP source field through staging, vault, and mart layers unchanged.
+raw source field through staging, vault, and mart layers unchanged.
 
 One-sentence plain-English description:"""
 
@@ -173,7 +173,7 @@ def generate_passthrough_description(api_key, *, source_table, source_field,
                                      target_column, business_term, timeout=30):
     """Generate a plain-English description for a pass-through column.
     These have empty transformation_logic_sql because the sync cleared
-    them — the column carries its SAP source value unchanged."""
+    them — the column carries its raw source value unchanged."""
     return _post_claude(
         api_key,
         PASSTHROUGH_SYSTEM_PROMPT,

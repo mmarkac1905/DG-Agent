@@ -1,6 +1,6 @@
 # Business Term: Repeat Customer Rate
 
-_Last generated: 2026-07-06 13:11:09_
+_Last generated: 2026-07-06 15:06:02_
 
 ## Definition
 
@@ -34,11 +34,11 @@ Share of orders placed by a repeat customer, per month of order purchase. A repe
 3. Counts the total number of unique orders placed, used as the basis for calculating the repeat customer rate.
    - *Join:* Primary table; one row per order. Joined to customers via customer_id (per_record_key, avg 1.00x per DAR-00959)
    - *Filter:* Exclude canceled orders (order_status NOT IN ('canceled','unavailable')). See warning on analyst filter decision blocker.
-4. Truncates the order purchase timestamp to the first day of its calendar month, providing a standardized month-level date for grouping repeat customer metrics.
+4. The order month is taken directly from the order purchase timestamp field as recorded in the orders data.
    - *Join:* Column on orders; no additional join needed
    - *Filter:* Zero nulls confirmed (DAR-00931: null_pct=0.0, spans 2016-09-04 to 2018-10-17). No COALESCE needed.
-5. fact_repeat_customer_rate.repeat_customer_rate_pct carries the repeat customer rate percentage as a direct copy of the SAP source field 100.0, flowing through staging, vault, and mart layers without modification.
-6. This column carries the raw order identifier flowing through unchanged from the SAP source field ORDER\_ID, used to count repeat orders when calculating the repeat customer rate.
+5. The percentage of all distinct orders that were placed by repeat customers, calculated by dividing the count of repeat orders by the total count of orders and multiplying by 100, rounded to two decimal places.
+6. Counts the number of distinct orders that are flagged as repeat orders (i.e., placed by a customer who has ordered more than once).
 
 ### SQL (from dbt models)
 
@@ -49,7 +49,21 @@ COUNT(DISTINCT order_id)
 
 **fact_repeat_customer_rate.order_month:**
 ```sql
-DATE_TRUNC('month', o.order_purchase_timestamp)::DATE
+order_month
+```
+
+**fact_repeat_customer_rate.repeat_customer_rate_pct:**
+```sql
+ROUND(
+        100.0
+        * COUNT(DISTINCT CASE WHEN is_repeat_order THEN order_id END)
+        / NULLIF(COUNT(DISTINCT order_id), 0)
+    , 2)
+```
+
+**fact_repeat_customer_rate.repeat_orders:**
+```sql
+COUNT(DISTINCT CASE WHEN is_repeat_order THEN order_id END)
 ```
 
 ### Target Models

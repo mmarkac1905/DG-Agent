@@ -1,6 +1,6 @@
 # Business Term: Monthly GMV by Product Category
 
-_Last generated: 2026-07-06 13:11:09_
+_Last generated: 2026-07-06 15:06:02_
 
 ## Definition
 
@@ -44,8 +44,8 @@ Gross merchandise value: sum of item price (excluding freight) for orders that a
 7. The English product category name sourced from the category translation reference table.
    - *Join:* Resolved via products LEFT JOIN category_translation on product_category_name. The join key in category_translation has 0 nulls and 73 distinct values (DAR-00993). All 73 Portuguese keys match at 1.0 ratio (DAR-00958).
    - *Filter:* No filter — COALESCE handles the NULL case for uncategorized products.
-8. Without a known SAP source field name or description available, this column carries the count of items contributing to monthly GMV by category, flowing through staging, vault, and mart layers unchanged from the undocumented SAP source field.
-9. Carries the order identifier directly from LINK_OLIST_ORDER_ITEM.ORDER_ID through staging, vault, and mart layers unchanged to represent the count of orders contributing to monthly GMV by category.
+8. Counts the total number of line items included in the monthly GMV aggregation for each category.
+9. Counts the number of unique orders included in each monthly category record.
 
 ### SQL (from dbt models)
 
@@ -62,6 +62,16 @@ SUM(price)
 **fact_gmv_by_category_monthly.product_category_english:**
 ```sql
 product_category_english
+```
+
+**fact_gmv_by_category_monthly.item_count:**
+```sql
+COUNT(*)
+```
+
+**fact_gmv_by_category_monthly.order_count:**
+```sql
+COUNT(DISTINCT order_id)
 ```
 
 ### Target Models

@@ -1,6 +1,6 @@
 # Business Term: Olist On-Time Delivery Rate
 
-_Last generated: 2026-07-06 13:11:09_
+_Last generated: 2026-07-06 15:06:02_
 
 ## Definition
 
@@ -22,7 +22,7 @@ Share of delivered orders where the actual customer delivery date is on or befor
 | --- | --- | --- |
 | ORDERS | ORDER_ID | Single source of all required fields: order_id (grain key), order_purchase_timestamp (month bucketing), order_status (filter to 'delivered'), order_delivered_customer_date (actual delivery date, numerator condition), and order_estimated_delivery_date (promised date at purchase, comparison target). The term definition is fully self-contained within this table — no joins are required. |
 | orders (via sat_olist_order_header) | order_purchase_timestamp | Purchase timestamp; zero nulls, spans 2016-09-04 to 2018-10-17 (DAR-01024). Monthly grain derived via DATE_TRUNC. |
-| 100 | 0 |  |
+| SAT_OLIST_ORDER_HEADER | ORDER_DELIVERED_CUSTOMER_DATE |  |
 | SAT_OLIST_ORDER_HEADER | ORDER_DELIVERED_CUSTOMER_DATE |  |
 
 ### Transformation (plain language)
@@ -31,15 +31,33 @@ Share of delivered orders where the actual customer delivery date is on or befor
 2. Truncates the order purchase timestamp to the first day of its calendar month, grouping orders into monthly buckets for on-time delivery analysis.
    - *Join:* Attribute column on sat_olist_order_header
    - *Filter:* Not filtered; used as GROUP BY key
-3. Carries the count of delivered orders as a direct pass-through from the SAP source field through all pipeline layers unchanged.
-4. Carries the on-time delivery rate percentage as a direct copy of the SAP source field 100.0, flowing unchanged through staging, vault, and mart layers into the monthly on-time delivery fact table.
-5. Carries the customer delivery date directly from SAP field ORDER_DELIVERED_CUSTOMER_DATE, used to determine whether each order was fulfilled on time within the monthly on-time delivery rate calculation.
+3. Counts the total number of delivered orders recorded for the month.
+4. Counts the total number of orders that were delivered to the customer on time within each monthly period.
+5. Calculates the percentage of orders delivered on time within each monthly period by dividing the count of on-time deliveries by the total number of orders, expressed as a percentage rounded to four decimal places.
 
 ### SQL (from dbt models)
 
 **fact_on_time_delivery_monthly.order_month:**
 ```sql
 DATE_TRUNC('month', order_purchase_timestamp)
+```
+
+**fact_on_time_delivery_monthly.delivered_orders:**
+```sql
+COUNT(*)
+```
+
+**fact_on_time_delivery_monthly.on_time_orders:**
+```sql
+SUM(is_on_time)
+```
+
+**fact_on_time_delivery_monthly.on_time_delivery_rate_pct:**
+```sql
+ROUND(
+        100.0 * SUM(is_on_time) / NULLIF(COUNT(*), 0),
+        4
+    )
 ```
 
 ### Target Models

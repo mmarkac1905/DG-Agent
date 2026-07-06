@@ -630,8 +630,14 @@ def _classify(m: dict) -> str:
 
     if matched_ratio < 0.1:
         return "no_signal"
-    if avg > 100 or stddev > avg:
+    # catastrophic requires actual row multiplication: a sub-1 average
+    # fanout cannot explode anything, however spiky its stddev (external
+    # review: geolocation->sellers at avg 0.16 was mislabeled catastrophic
+    # by the bare stddev>avg rule, wiping out the pair's safe_direction).
+    if avg > 100 or (stddev > avg and avg > 1.1):
         return "catastrophic_fanout"
+    if avg <= 1.1 and stddev > avg and matched_ratio <= 0.8:
+        return "no_signal"
     if 1.5 <= avg <= 100 and avg > 0 and (stddev / avg) < 1.0:
         return "header_detail"
     if 0.9 <= avg <= 1.1 and stddev < 0.5 and matched_ratio > 0.8:
@@ -643,8 +649,16 @@ def _classify(m: dict) -> str:
 
 
 def _rationale(fanout_class: str, candidate: dict, m: dict,
-               t1: str, t2: str) -> str:
+               t1: str, t2: str,
+               row_counts: Optional[dict] = None) -> str:
     keys = "+".join(candidate["key_columns_t1"])
+    # The measurement samples keys from the SMALLER table and counts the
+    # expansion in the LARGER one — name the actual exploding side instead
+    # of hardcoding t2 (external review: DAR-01002's rationale claimed the
+    # expansion was 'in sellers' when it was in geolocation).
+    expand_side = t2
+    if row_counts and len(row_counts) == 2:
+        expand_side = max(row_counts, key=lambda k: row_counts[k])
     if candidate["kind"] == "bridge":
         bridge = candidate["bridge_via"]
         if fanout_class == "catastrophic_fanout":
@@ -663,8 +677,8 @@ def _rationale(fanout_class: str, candidate: dict, m: dict,
     # direct
     if fanout_class == "catastrophic_fanout":
         return (f"{keys} shared across {m['distinct_keys_smaller']} distinct "
-                f"values; each expands to ~{m['avg_fanout']:.0f} rows in {t2}. "
-                f"Classification code, not per-record key.")
+                f"values; each expands to ~{m['avg_fanout']:.0f} rows in "
+                f"{expand_side}. Classification code, not per-record key.")
     if fanout_class == "no_signal":
         return (f"{keys} matched only {m['matched_keys']}/{m['sampled_keys']} "
                 f"sampled keys between {t1} and {t2}; integrity is structural, "
@@ -721,7 +735,7 @@ def _build_dar(t1: str, t2: str, candidate: dict, m: dict,
         "stddev_fanout": round(m["stddev_fanout"], 2),
         "fanout_class": fanout_class,
         "source_row_counts": row_counts,
-        "rationale": _rationale(fanout_class, candidate, m, t1, t2),
+        "rationale": _rationale(fanout_class, candidate, m, t1, t2, row_counts=row_counts),
         "schema_version": schema_version,
         "blockers_addressed": [],
     }

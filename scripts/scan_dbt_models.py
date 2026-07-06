@@ -419,7 +419,7 @@ def _resolve_cte_column(col_name: str, cte_name: str, cte_bodies: dict,
             continue
 
         # 1. Simple alias.col reference — trivial, no CTE expression
-        sm = re.match(r"^(\w+)\.(\w+)$", inner_expr)
+        sm = re.match(r"^([A-Za-z_]\w*)\.([A-Za-z_]\w*)$", inner_expr)
         if sm:
             return _resolve_through(sm.group(1), sm.group(2))
 
@@ -428,7 +428,7 @@ def _resolve_cte_column(col_name: str, cte_name: str, cte_bodies: dict,
             return _resolve_bare(inner_expr)
 
         # 3. Transformation — inner_expr is the real CTE expression
-        refs_in = re.findall(r"(\w+)\.(\w+)", inner_expr)
+        refs_in = re.findall(r"([A-Za-z_]\w*)\.([A-Za-z_]\w*)", inner_expr)
         if refs_in:
             return _resolve_through(refs_in[0][0], refs_in[0][1], cte_expr=inner_expr)
         bare = _extract_bare_identifier(inner_expr)
@@ -505,7 +505,7 @@ def extract_columns_from_select(sql: str, cte_aliases: dict = None, cte_bodies: 
         origin_table = ""
         origin_column = ""
 
-        simple = re.match(r"^(\w+)\.(\w+)$", expression)
+        simple = re.match(r"^([A-Za-z_]\w*)\.([A-Za-z_]\w*)$", expression)
         if simple:
             origin_table = simple.group(1)
             origin_column = simple.group(2)
@@ -514,7 +514,7 @@ def extract_columns_from_select(sql: str, cte_aliases: dict = None, cte_bodies: 
             origin_column = expression
             transformation = "direct"
         else:
-            refs = re.findall(r"(\w+)\.(\w+)", expression)
+            refs = re.findall(r"([A-Za-z_]\w*)\.([A-Za-z_]\w*)", expression)
             if refs:
                 origin_table = refs[0][0]
                 origin_column = refs[0][1]

@@ -87,7 +87,7 @@ be governance theatre), so a stage turns green only when its checkpoint is walke
 | Scope | Data Analysis → **Term Scope** → Propose, review, **Confirm** | LLM proposes, **you confirm** (`scope_confirmed`) |
 | Domain EDA | Data Analysis → **Domain Analysis** → run the analyzers the prerequisites readout lists | machine; coverage is checked automatically, nothing to sign |
 | Term EDA | Data Analysis → **Business Term Analysis** → **Run Term EDA** → read the sufficiency verdict, acknowledge any escalations → **Transition to ready_for_s2t** | machine analyzes, **you acknowledge and transition** |
-| S2T + Deploy | Business Glossary → **S2T Specification** → **Create S2T** | machine generates and deploys through the gates (F.3 joins, RULE 3 layering, `dbt build`, semantic validation) |
+| S2T + Deploy | Business Glossary → **S2T Specification** → **Create S2T**, then **Deploy models** | machine generates, then deploys through the gates (F.3 joins, RULE 3 layering, `dbt build`, semantic validation) |
 | Approve | Business Glossary → **Term Detail** → **Approve** | **you**: the single formal approval, covering the term as a governed whole |
 
 The pipeline strip on the S2T Specification tab shows where a term stands: ✓ green means the
@@ -279,7 +279,7 @@ dbt marts, for **~$5 total in LLM cost**:
 |---|---|---|
 | **Monthly GMV by category** | Scoped 4 of 9 tables, measured the joins it used empirically (direction-aware fanout evidence, cited by DAR id in the generated SQL), and proposed a full greenfield chain: 4 staging → 6 vault → mart → OBT | Deployed mart reconciles **to the cent**: 13,496,408.43 BRL across 1,282 category-months |
 | **Repeat customer rate** | The trap term: Olist's `customer_id` is unique *per order*, so the obvious key yields a **structurally guaranteed 0%** repeat rate, plausible-looking and silently 100% wrong. The pipeline correctly operationalized the person-identity constraint against the schema: it chose `customer_unique_id`, corroborated by the profiled 1:1 evidence | Deployed mart computes the correct **3.044%** (canceled-only filter per the term contract, first-order baseline over all orders) |
-| **On-time delivery rate** | The clean-room test: executed **entirely by the analyst through the UI's designed workflow** (scope confirm, domain EDA, term EDA, transition, Create S2T, approve), with no operator driving anything behind the scenes | Deployed mart reconciles exactly: **91.888%** from the mart vs 91.888% from independent hand-written SQL |
+| **On-time delivery rate** | The clean-room test: executed **by the analyst through the UI's designed workflow** (scope confirm, domain EDA, term EDA, transition, Create S2T, approve). The run's trail is marked `executed_by: analyst` throughout, distinguishing it from the earlier operator-scripted runs; the approval was walked before Create S2T, which the approval form now calls out explicitly | Deployed mart reconciles exactly: **91.888%** from the mart vs 91.888% from independent hand-written SQL |
 
 One honesty note, because precision matters more than punch: BG033's original definition
 *named* the identity constraint, so I re-ran it **blind** (definition with no hint, `BG034` in the

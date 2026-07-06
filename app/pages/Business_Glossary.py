@@ -1050,16 +1050,22 @@ def render_approval_form(term, term_id):
             f"WHERE business_term_id = '{term_id}' "
             "AND COALESCE(TRIM(CAST(target_model AS VARCHAR)), '') != ''"
         )
-        if int(_s2t_check.iloc[0]["n"] or 0) == 0:
+        _no_s2t_yet = int(_s2t_check.iloc[0]["n"] or 0) == 0
+        if _no_s2t_yet:
             st.warning(
                 "⚠️ No deployed S2T mapping exists for this term yet. "
-                "Approving now approves the definition only — the S2T "
+                "Approving now approves the definition only; the S2T "
                 "stage on the pipeline strip will remain open. You can "
                 "still create the S2T after approval (S2T Specification "
                 "tab)."
             )
+            st.checkbox(
+                "I understand I am approving the definition only (no "
+                "deployed S2T exists yet)",
+                key=f"approve_no_s2t_ack_{term_id}",
+            )
     except Exception:
-        pass
+        _no_s2t_yet = False
 
     with st.form(key=f"approval_form_{term_id}"):
         action = st.radio(
@@ -1077,6 +1083,13 @@ def render_approval_form(term, term_id):
             elif action == "Approve":
                 if not approver_name:
                     st.error("Please enter your name to approve.")
+                elif _no_s2t_yet and not st.session_state.get(
+                        f"approve_no_s2t_ack_{term_id}", False):
+                    st.error(
+                        "No deployed S2T exists for this term. Tick the "
+                        "acknowledgement checkbox above the form to approve "
+                        "the definition only."
+                    )
                 else:
                     csv_path = SEED_DIR / "business_glossary.csv"
                     rows = []

@@ -232,7 +232,7 @@ def main():
                 origin_table = (li.get("origin_table") or "").strip()
                 origin_col = (li.get("origin_column") or "").strip()
                 # Map origin_table from staging name to SAP name
-                source_table = origin_table.replace("stg_sap__", "").upper() if origin_table else ""
+                source_table = re.sub(r"^stg_\w+?__", "", origin_table).upper() if origin_table else ""
                 source_field = origin_col.upper() if origin_col else ""
                 placeholder = {
                     "id": f"S{next_id:03d}",

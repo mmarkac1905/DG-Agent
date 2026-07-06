@@ -1,6 +1,6 @@
 # SAP Tables: materials
 
-_Last generated: 2026-07-06 13:11:09_
+_Last generated: 2026-07-06 15:06:02_
 
 Keywords: `mara, makt, marc, marm, mvke, material master, material number, matnr, materijal`
 

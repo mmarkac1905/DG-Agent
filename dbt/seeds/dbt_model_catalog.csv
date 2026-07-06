@@ -6,47 +6,47 @@ M001,knowledge_blocker_state,knowledge,models\knowledge\knowledge_blocker_state.
 
 iterations_indexed AS (
     SELECT
-        t.ter",13,2026-07-06 12:51
-M002,knowledge_cpe_lifecycle_metrics,knowledge,models\knowledge\knowledge_cpe_lifecycle_metrics.sql,view,,Knowledge: CPE Lifecycle Metrics per equipment category.,,,dim_equipment; dim_material,LEFT JOIN JINJA_EXPR,,12,2026-07-06 12:51
-M003,knowledge_inventory_alerts,knowledge,models\knowledge\knowledge_inventory_alerts.sql,view,,Knowledge: Inventory Alerts — flagged locations needing attention.,,,fact_inventory; dim_material; dim_plant,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,fi.unrestricted_stock = 0 OR fi.blocked_stock > 0 OR fi.unrestricted_stock > 5000,12,2026-07-06 12:51
+        t.ter",13,2026-07-06 14:55
+M002,knowledge_cpe_lifecycle_metrics,knowledge,models\knowledge\knowledge_cpe_lifecycle_metrics.sql,view,,Knowledge: CPE Lifecycle Metrics per equipment category.,,,dim_equipment; dim_material,LEFT JOIN JINJA_EXPR,,12,2026-07-06 14:55
+M003,knowledge_inventory_alerts,knowledge,models\knowledge\knowledge_inventory_alerts.sql,view,,Knowledge: Inventory Alerts — flagged locations needing attention.,,,fact_inventory; dim_material; dim_plant,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,fi.unrestricted_stock = 0 OR fi.blocked_stock > 0 OR fi.unrestricted_stock > 5000,12,2026-07-06 14:55
 M004,knowledge_pipeline_summary,knowledge,models\knowledge\knowledge_pipeline_summary.sql,view,,Knowledge: Pipeline Summary — object counts per layer.,,,,,"table_schema = 'raw_sap'
     UNION ALL
     SELECT 'staging', COUNT(*)
-    FROM information_schema.ta",3,2026-07-06 12:51
-M005,knowledge_procurement_health,knowledge,models\knowledge\knowledge_procurement_health.sql,view,,Knowledge: Procurement Health Dashboard,,,fact_purchase_orders; obt_vendor_scorecard; fact_inventory,,,19,2026-07-06 12:51
-M006,knowledge_vendor_performance,knowledge,models\knowledge\knowledge_vendor_performance.sql,view,,Knowledge: Vendor Performance Summary — one row per vendor with grade.,,,dim_vendor; fact_purchase_orders,LEFT JOIN JINJA_EXPR,,14,2026-07-06 12:51
-M007,dim_customer,marts,models\marts\dim_customer.sql,table,,Dimension: Customer — hub_customer + latest sat_customer.,,,hub_customer; sat_customer; sat_customer,LEFT JOIN JINJA_EXPR,hk_customer = h.hk_customer),11,2026-07-06 12:51
-M008,dim_date,marts,models\marts\dim_date.sql,table,,Dimension: Date — generated calendar covering 2023-01-01 to 2027-12-31.,,,,,,14,2026-07-06 12:51
+    FROM information_schema.ta",3,2026-07-06 14:55
+M005,knowledge_procurement_health,knowledge,models\knowledge\knowledge_procurement_health.sql,view,,Knowledge: Procurement Health Dashboard,,,fact_purchase_orders; obt_vendor_scorecard; fact_inventory,,,19,2026-07-06 14:55
+M006,knowledge_vendor_performance,knowledge,models\knowledge\knowledge_vendor_performance.sql,view,,Knowledge: Vendor Performance Summary — one row per vendor with grade.,,,dim_vendor; fact_purchase_orders,LEFT JOIN JINJA_EXPR,,14,2026-07-06 14:55
+M007,dim_customer,marts,models\marts\dim_customer.sql,table,,Dimension: Customer — hub_customer + latest sat_customer.,,,hub_customer; sat_customer; sat_customer,LEFT JOIN JINJA_EXPR,hk_customer = h.hk_customer),11,2026-07-06 14:55
+M008,dim_date,marts,models\marts\dim_date.sql,table,,Dimension: Date — generated calendar covering 2023-01-01 to 2027-12-31.,,,,,,14,2026-07-06 14:55
 M009,dim_equipment,marts,models\marts\dim_equipment.sql,table,,Dimension: Equipment — current state per CPE device.,,,sat_equipment_status; hub_equipment; sat_equipment_general; sat_equipment_general; link_equipment_material,LEFT JOIN JINJA_EXPR; LEFT JOIN latest_status; LEFT JOIN JINJA_EXPR,"hk_equipment = h.hk_equipment)
 LEFT JOIN latest_status ls
     ON h.hk_equipment = ls.hk_equipment; ls.rn = 1
 LEFT JOIN JINJA_EXPR lm
-    ON h.hk_equipment = lm.hk_equipment",18,2026-07-06 12:51
+    ON h.hk_equipment = lm.hk_equipment",18,2026-07-06 14:55
 M010,dim_material,marts,models\marts\dim_material.sql,table,,Dimension: Material (CPE type) — hub_material + latest general + latest description.,,,hub_material; sat_material_general; sat_material_general; sat_material_description; sat_material_description,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,"hk_material = h.hk_material)
 LEFT JOIN JINJA_EXPR d
-    ON h.hk_material = d.hk_material; d.load_date = (SELECT MAX(load_date) FROM JINJA_EXPR WHERE hk_material = h.hk_material)",15,2026-07-06 12:51
+    ON h.hk_material = d.hk_material; d.load_date = (SELECT MAX(load_date) FROM JINJA_EXPR WHERE hk_material = h.hk_material)",15,2026-07-06 14:55
 M011,dim_movement_type,marts,models\marts\dim_movement_type.sql,table,,Dimension: Movement Type — RULE 3 compliant (vault-sourced).,,,sat_movement_type; sat_movement_type; sat_movement_type_text; sat_movement_type_text; hub_movement_type,INNER JOIN mt_cfg; LEFT JOIN text_en; LEFT JOIN text_hr,"load_date = (SELECT MAX(load_date) FROM JINJA_EXPR)
 ),
 
 mt_text AS (
     SELECT *
-    FROM JINJA_EXP",7,2026-07-06 12:51
-M012,dim_plant,marts,models\marts\dim_plant.sql,table,,Dimension: Plant — hub_plant + raw org structure reference.,,raw_sap.t001w; raw_sap.t001,hub_plant,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,9,2026-07-06 12:51
-M013,dim_service_plan,marts,models\marts\dim_service_plan.sql,table,,Dimension: Service Plan — hub_service_plan + latest sat_service_plan.,,,hub_service_plan; sat_service_plan; sat_service_plan,LEFT JOIN JINJA_EXPR,hk_service_plan = h.hk_service_plan),7,2026-07-06 12:51
-M014,dim_storage_location,marts,models\marts\dim_storage_location.sql,table,,Dimension: Storage Location — raw org structure.,,raw_sap.t001l; raw_sap.t001w,,LEFT JOIN JINJA_EXPR,,6,2026-07-06 12:51
+    FROM JINJA_EXP",7,2026-07-06 14:55
+M012,dim_plant,marts,models\marts\dim_plant.sql,table,,Dimension: Plant — hub_plant + raw org structure reference.,,raw_sap.t001w; raw_sap.t001,hub_plant,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,9,2026-07-06 14:55
+M013,dim_service_plan,marts,models\marts\dim_service_plan.sql,table,,Dimension: Service Plan — hub_service_plan + latest sat_service_plan.,,,hub_service_plan; sat_service_plan; sat_service_plan,LEFT JOIN JINJA_EXPR,hk_service_plan = h.hk_service_plan),7,2026-07-06 14:55
+M014,dim_storage_location,marts,models\marts\dim_storage_location.sql,table,,Dimension: Storage Location — raw org structure.,,raw_sap.t001l; raw_sap.t001w,,LEFT JOIN JINJA_EXPR,,6,2026-07-06 14:55
 M015,dim_vendor,marts,models\marts\dim_vendor.sql,table,,Dimension: Vendor — hub_vendor + latest sat_vendor_general + latest sat_vendor_commercial.,,,hub_vendor; sat_vendor_general; sat_vendor_general; sat_vendor_commercial; sat_vendor_commercial,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,"hk_vendor = h.hk_vendor)
 LEFT JOIN JINJA_EXPR c
-    ON h.hk_vendor = c.hk_vendor; c.load_date = (SELECT MAX(load_date) FROM JINJA_EXPR WHERE hk_vendor = h.hk_vendor)",14,2026-07-06 12:51
+    ON h.hk_vendor = c.hk_vendor; c.load_date = (SELECT MAX(load_date) FROM JINJA_EXPR WHERE hk_vendor = h.hk_vendor)",14,2026-07-06 14:55
 M016,fact_contribution_margin_by_segment,marts,models\marts\fact_contribution_margin_by_segment.sql,table,,,,,sat_billing_document; link_billing_sales_order; sat_billing_document; link_sales_order_equipment; sat_sales_order_item; sat_equipment_general; link_sales_order_equipment; link_equipment_gr; link_gr_po; link_po_material; sat_po_item,LEFT JOIN tenure_anchor; LEFT JOIN so_device; LEFT JOIN device_deploy; LEFT JOIN device_cost,"COALESCE(sbd.cancelled_flag, '') != 'X'
 ),
 
 
 tenure_anchor AS (
     SELECT
-        sbd.payer_id     ; sbd.billing_date IS NOT NULL",8,2026-07-06 12:51
+        sbd.payer_id     ; sbd.billing_date IS NOT NULL",8,2026-07-06 14:55
 M017,fact_equipment_lifecycle,marts,models\marts\fact_equipment_lifecycle.sql,table,,Fact: Equipment Lifecycle Events — grain = equipment × status change.,,,sat_equipment_status; hub_equipment; sat_equipment_general; sat_equipment_general; link_equipment_material,INNER JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,"hk_equipment = sh.hk_equipment)
-LEFT JOIN JINJA_EXPR lem ON sh.hk_equipment = lem.hk_equipment",17,2026-07-06 12:51
-M018,fact_goods_movements,marts,models\marts\fact_goods_movements.sql,table,,Fact: Goods Movements — grain = material document item.,,,link_gr_material; hub_material_document; sat_gr_header; sat_gr_item,INNER JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,27,2026-07-06 12:51
+LEFT JOIN JINJA_EXPR lem ON sh.hk_equipment = lem.hk_equipment",17,2026-07-06 14:55
+M018,fact_goods_movements,marts,models\marts\fact_goods_movements.sql,table,,Fact: Goods Movements — grain = material document item.,,,link_gr_material; hub_material_document; sat_gr_header; sat_gr_item,INNER JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,27,2026-07-06 14:55
 M019,fact_goods_receipt_accuracy,marts,models\marts\fact_goods_receipt_accuracy.sql,table,,Fact: Goods Receipt Accuracy — grain = vendor × quarter.,,,sat_gr_item; sat_gr_item; sat_gr_header; sat_gr_header; sat_po_item; sat_po_item; link_gr_material; link_po_material,INNER JOIN gr_item; INNER JOIN gr_header; INNER JOIN JINJA_EXPR; INNER JOIN po_item,"load_date = (SELECT MAX(load_date) FROM JINJA_EXPR)
 ),
 
@@ -54,56 +54,56 @@ gr_header AS (
     SELECT *
     FROM JINJA_E; gri.po_item_number = lpm.po_item_number; lgm.material_number = lpm.material_number
     JOIN po_item pi
-        ON lpm.hk_po_material = pi.hk_; gri.purchase_order_number IS NOT NULL; gri.vendor_id IS",7,2026-07-06 12:51
+        ON lpm.hk_po_material = pi.hk_; gri.purchase_order_number IS NOT NULL; gri.vendor_id IS",7,2026-07-06 14:55
 M020,fact_goods_receipts_monthly,marts,models\marts\fact_goods_receipts_monthly.sql,table,,Fact: Goods Receipts by Month — grain = posting month.,,,sat_gr_item; sat_gr_item; sat_gr_header; sat_gr_header; link_gr_material,INNER JOIN gr_item; INNER JOIN gr_header,"load_date = (SELECT MAX(load_date) FROM JINJA_EXPR)
 ),
 
 gr_header AS (
     SELECT *
-    FROM JINJA_E",5,2026-07-06 12:51
-M021,fact_inventory,marts,models\marts\fact_inventory.sql,table,,Fact: Current Inventory — grain = material × plant × storage location.,,,sat_stock_level; hub_material; hub_plant; sat_stock_level,INNER JOIN JINJA_EXPR; INNER JOIN JINJA_EXPR,sl.load_date = (SELECT MAX(load_date) FROM JINJA_EXPR),14,2026-07-06 12:51
+    FROM JINJA_E",5,2026-07-06 14:55
+M021,fact_inventory,marts,models\marts\fact_inventory.sql,table,,Fact: Current Inventory — grain = material × plant × storage location.,,,sat_stock_level; hub_material; hub_plant; sat_stock_level,INNER JOIN JINJA_EXPR; INNER JOIN JINJA_EXPR,sl.load_date = (SELECT MAX(load_date) FROM JINJA_EXPR),14,2026-07-06 14:55
 M022,fact_invoices,marts,models\marts\fact_invoices.sql,table,,Fact: Invoices — grain = invoice.,,,hub_invoice; sat_invoice_header; sat_invoice_header; link_invoice_po; sat_po_header; sat_po_header,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,"hk_invoice = hi.hk_invoice)
 LEFT JOIN JINJA_EXPR lip ON hi.hk_invoice = lip.hk_invoice
-LEFT JOIN JIN; ph.load_date = (SELECT MAX(load_date) FROM JINJA_EXPR WHERE hk_purchase_order = lip.hk_purchase_orde",14,2026-07-06 12:51
+LEFT JOIN JIN; ph.load_date = (SELECT MAX(load_date) FROM JINJA_EXPR WHERE hk_purchase_order = lip.hk_purchase_orde",14,2026-07-06 14:55
 M023,fact_po_invoice_match_variance,marts,models\marts\fact_po_invoice_match_variance.sql,table,,Fact: PO ↔ GR ↔ Invoice 3-way match variance — grain = vendor × month.,,,sat_po_header; sat_po_header; sat_po_item; sat_po_item; sat_gr_item; sat_gr_item; sat_invoice_item; sat_invoice_item; sat_zmm_approval; sat_zmm_approval; link_po_material; link_po_vendor,INNER JOIN po_header; INNER JOIN po_item; INNER JOIN JINJA_EXPR; LEFT JOIN gr_agg; LEFT JOIN invoice_agg; LEFT JOIN exceptions,"load_date = (SELECT MAX(load_date) FROM JINJA_EXPR)
 ),
 
 po_item AS (
     SELECT * FROM JINJA_EXPR
-  ; gri.quantity > 0; gri.purchase_order_number IS NOT NULL; gri.purchase_order_number != ''",7,2026-07-06 12:51
+  ; gri.quantity > 0; gri.purchase_order_number IS NOT NULL; gri.purchase_order_number != ''",7,2026-07-06 14:55
 M024,fact_purchase_orders,marts,models\marts\fact_purchase_orders.sql,table,,Fact: Purchase Orders — grain = PO item.,,,sat_po_header; sat_po_header; sat_po_item; sat_po_item; sat_po_schedule; sat_po_schedule; sat_po_account; sat_po_account; link_gr_po; sat_gr_header; sat_gr_item; link_pr_po; sat_pr_detail; link_po_vendor; link_po_material,INNER JOIN JINJA_EXPR; INNER JOIN JINJA_EXPR; LEFT JOIN po_header; LEFT JOIN po_items; LEFT JOIN po_schedule; LEFT JOIN po_account; LEFT JOIN po_vendor; LEFT JOIN first_gr; LEFT JOIN gr_totals; LEFT JOIN pr_dates,"load_date = (SELECT MAX(load_date) FROM JINJA_EXPR)
 ),
 
 po_items AS (
     SELECT * FROM JINJA_EXPR
- ",40,2026-07-06 12:51
-M025,obt_cpe_contribution_margin_by_segment,obt,models\obt\obt_cpe_contribution_margin_by_segment.sql,view,,,,,fact_contribution_margin_by_segment,,,13,2026-07-06 12:51
-M026,obt_cpe_lifecycle,obt,models\obt\obt_cpe_lifecycle.sql,view,,OBT: CPE Lifecycle — equipment with material context.,,,dim_equipment; dim_material,LEFT JOIN JINJA_EXPR,,16,2026-07-06 12:51
-M027,obt_goods_movements,obt,models\obt\obt_goods_movements.sql,view,,OBT: Goods Movements — all material movements with full context.,,,fact_goods_movements; dim_material; dim_date; dim_movement_type; dim_plant,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,25,2026-07-06 12:51
-M028,obt_inventory_health,obt,models\obt\obt_inventory_health.sql,view,,"OBT: Inventory Health — current stock with material, plant, storage location context.",,,fact_inventory; dim_material; dim_plant; dim_storage_location,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,17,2026-07-06 12:51
-M029,obt_procurement_overview,obt,models\obt\obt_procurement_overview.sql,view,,OBT: Procurement Overview — fact_purchase_orders joined with all dims.,,,fact_purchase_orders; dim_vendor; dim_material; dim_date,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,39,2026-07-06 12:51
-M030,obt_vendor_scorecard,obt,models\obt\obt_vendor_scorecard.sql,view,,OBT: Vendor Scorecard — quarterly vendor performance.,,,fact_purchase_orders; dim_vendor; dim_date,INNER JOIN JINJA_EXPR; INNER JOIN JINJA_EXPR; LEFT JOIN quarterly_totals,f.po_date IS NOT NULL,4,2026-07-06 12:51
+ ",40,2026-07-06 14:55
+M025,obt_cpe_contribution_margin_by_segment,obt,models\obt\obt_cpe_contribution_margin_by_segment.sql,view,,,,,fact_contribution_margin_by_segment,,,13,2026-07-06 14:55
+M026,obt_cpe_lifecycle,obt,models\obt\obt_cpe_lifecycle.sql,view,,OBT: CPE Lifecycle — equipment with material context.,,,dim_equipment; dim_material,LEFT JOIN JINJA_EXPR,,16,2026-07-06 14:55
+M027,obt_goods_movements,obt,models\obt\obt_goods_movements.sql,view,,OBT: Goods Movements — all material movements with full context.,,,fact_goods_movements; dim_material; dim_date; dim_movement_type; dim_plant,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,25,2026-07-06 14:55
+M028,obt_inventory_health,obt,models\obt\obt_inventory_health.sql,view,,"OBT: Inventory Health — current stock with material, plant, storage location context.",,,fact_inventory; dim_material; dim_plant; dim_storage_location,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,17,2026-07-06 14:55
+M029,obt_procurement_overview,obt,models\obt\obt_procurement_overview.sql,view,,OBT: Procurement Overview — fact_purchase_orders joined with all dims.,,,fact_purchase_orders; dim_vendor; dim_material; dim_date,LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR; LEFT JOIN JINJA_EXPR,,39,2026-07-06 14:55
+M030,obt_vendor_scorecard,obt,models\obt\obt_vendor_scorecard.sql,view,,OBT: Vendor Scorecard — quarterly vendor performance.,,,fact_purchase_orders; dim_vendor; dim_date,INNER JOIN JINJA_EXPR; INNER JOIN JINJA_EXPR; LEFT JOIN quarterly_totals,f.po_date IS NOT NULL,4,2026-07-06 14:55
 M031,fact_gmv_by_category_monthly,other,models\olist\marts\fact_gmv_by_category_monthly.sql,table,,,,,sat_olist_order_header; link_olist_order_item; sat_olist_order_item_prices; sat_olist_product_category,,"rn = 1; order_status != 'canceled'
 ),
 
 order_item_link AS (
     SELECT
         hk_olist_order_item,
-        ",5,2026-07-06 12:51
+        ",5,2026-07-06 14:55
 M032,fact_on_time_delivery_monthly,other,models\olist\marts\fact_on_time_delivery_monthly.sql,table,,,,,hub_olist_order; sat_olist_order_header,,"order_status = 'delivered'; order_delivered_customer_date IS NOT NULL
 )
 
 SELECT
     order_month,
-    COUNT(*)                   ",4,2026-07-06 12:51
+    COUNT(*)                   ",4,2026-07-06 14:55
 M033,fact_repeat_customer_rate,other,models\olist\marts\fact_repeat_customer_rate.sql,table,,,,,hub_olist_order; sat_olist_order_header; sat_olist_customer_identity,INNER JOIN JINJA_EXPR; INNER JOIN customer_identity; INNER JOIN customer_identity; INNER JOIN person_first_order,"order_status != 'canceled'
 ),
 
 customer_identity AS (
     SELECT
         hk_olist_order,
-        cus",4,2026-07-06 12:51
-M034,obt_ecommerce_gmv_by_category,other,models\olist\obt\obt_ecommerce_gmv_by_category.sql,view,,,,,fact_gmv_by_category_monthly,,,10,2026-07-06 12:51
+        cus",4,2026-07-06 14:55
+M034,obt_ecommerce_gmv_by_category,other,models\olist\obt\obt_ecommerce_gmv_by_category.sql,view,,,,,fact_gmv_by_category_monthly,,,10,2026-07-06 14:55
 M035,obt_ecommerce_on_time_delivery,other,models\olist\obt\obt_ecommerce_on_time_delivery.sql,view,,,,,fact_on_time_delivery_monthly; dim_date,,"date_day = DATE_TRUNC('month', date_day)  
 )
 
@@ -111,96 +111,96 @@ SELECT
     f.order_month,
     d.year,
     d.month,
-   ",14,2026-07-06 12:51
-M036,obt_ecommerce_repeat_customer,other,models\olist\obt\obt_ecommerce_repeat_customer.sql,view,,,,,fact_repeat_customer_rate,,,11,2026-07-06 12:51
-M037,stg_olist__category_translation,other,models\olist\staging\stg_olist__category_translation.sql,view,,,,raw_olist.category_translation,,,,2,2026-07-06 12:51
-M038,stg_olist__customers,other,models\olist\staging\stg_olist__customers.sql,view,,,,raw_olist.customers,,,,5,2026-07-06 12:51
-M039,stg_olist__order_items,other,models\olist\staging\stg_olist__order_items.sql,view,,,,raw_olist.order_items,,,,7,2026-07-06 12:51
-M040,stg_olist__orders,other,models\olist\staging\stg_olist__orders.sql,view,,,,raw_olist.orders,,,,8,2026-07-06 12:51
-M041,stg_olist__products,other,models\olist\staging\stg_olist__products.sql,view,,,,raw_olist.products,,,,9,2026-07-06 12:51
-M042,hub_olist_order,other,models\olist\vault\hub_olist_order.sql,incremental,hk_olist_order,,,,stg_olist__orders,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),3,2026-07-06 12:51
-M043,hub_olist_product,other,models\olist\vault\hub_olist_product.sql,incremental,hk_olist_product,,,,stg_olist__products,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),3,2026-07-06 12:51
-M044,link_olist_order_item,other,models\olist\vault\link_olist_order_item.sql,incremental,hk_olist_order_item,,,,stg_olist__order_items,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),6,2026-07-06 12:51
+   ",14,2026-07-06 14:55
+M036,obt_ecommerce_repeat_customer,other,models\olist\obt\obt_ecommerce_repeat_customer.sql,view,,,,,fact_repeat_customer_rate,,,11,2026-07-06 14:55
+M037,stg_olist__category_translation,other,models\olist\staging\stg_olist__category_translation.sql,view,,,,raw_olist.category_translation,,,,2,2026-07-06 14:55
+M038,stg_olist__customers,other,models\olist\staging\stg_olist__customers.sql,view,,,,raw_olist.customers,,,,5,2026-07-06 14:55
+M039,stg_olist__order_items,other,models\olist\staging\stg_olist__order_items.sql,view,,,,raw_olist.order_items,,,,7,2026-07-06 14:55
+M040,stg_olist__orders,other,models\olist\staging\stg_olist__orders.sql,view,,,,raw_olist.orders,,,,8,2026-07-06 14:55
+M041,stg_olist__products,other,models\olist\staging\stg_olist__products.sql,view,,,,raw_olist.products,,,,9,2026-07-06 14:55
+M042,hub_olist_order,other,models\olist\vault\hub_olist_order.sql,incremental,hk_olist_order,,,,stg_olist__orders,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),3,2026-07-06 14:55
+M043,hub_olist_product,other,models\olist\vault\hub_olist_product.sql,incremental,hk_olist_product,,,,stg_olist__products,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),3,2026-07-06 14:55
+M044,link_olist_order_item,other,models\olist\vault\link_olist_order_item.sql,incremental,hk_olist_order_item,,,,stg_olist__order_items,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),6,2026-07-06 14:55
 M045,sat_olist_customer_identity,other,models\olist\vault\sat_olist_customer_identity.sql,incremental,hk_olist_order,,,raw_olist.orders,stg_olist__customers,INNER JOIN JINJA_EXPR,"o.customer_id IS NOT NULL
 ),
 
 with_hk AS (
     SELECT
-        JINJA_EXPR                         AS ",4,2026-07-06 12:51
-M046,sat_olist_order_header,other,models\olist\vault\sat_olist_order_header.sql,incremental,hk_olist_order,,,,stg_olist__orders,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),8,2026-07-06 12:51
-M047,sat_olist_order_item_prices,other,models\olist\vault\sat_olist_order_item_prices.sql,incremental,hk_olist_order_item,,,,stg_olist__order_items,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),4,2026-07-06 12:51
-M048,sat_olist_product_category,other,models\olist\vault\sat_olist_product_category.sql,incremental,hk_olist_product,,,,stg_olist__products; stg_olist__category_translation,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),6,2026-07-06 12:51
-M049,stg_sap__bkpf,staging,models\staging\stg_sap__bkpf.sql,view,,Staging: BKPF — Accounting Document Header,,raw_sap.bkpf,,,,13,2026-07-06 12:51
-M050,stg_sap__bseg,staging,models\staging\stg_sap__bseg.sql,view,,Staging: BSEG — Accounting Document Line Item,,raw_sap.bseg,,,,14,2026-07-06 12:51
-M051,stg_sap__eban,staging,models\staging\stg_sap__eban.sql,view,,Staging: EBAN — Purchase Requisition,,raw_sap.eban,,,,17,2026-07-06 12:51
-M052,stg_sap__ebkn,staging,models\staging\stg_sap__ebkn.sql,view,,Staging: EBKN — Purchase Requisition Account Assignment,,raw_sap.ebkn,,,,6,2026-07-06 12:51
-M053,stg_sap__ekbe,staging,models\staging\stg_sap__ekbe.sql,view,,Staging: EKBE — Purchasing Document History,,raw_sap.ekbe,,,,14,2026-07-06 12:51
-M054,stg_sap__eket,staging,models\staging\stg_sap__eket.sql,view,,Staging: EKET — Purchasing Document Delivery Schedule,,raw_sap.eket,,,,8,2026-07-06 12:51
-M055,stg_sap__ekkn,staging,models\staging\stg_sap__ekkn.sql,view,,Staging: EKKN — Purchasing Document Account Assignment,,raw_sap.ekkn,,,,7,2026-07-06 12:51
-M056,stg_sap__ekko,staging,models\staging\stg_sap__ekko.sql,view,,Staging: EKKO — Purchasing Document Header,,raw_sap.ekko,,,,19,2026-07-06 12:51
-M057,stg_sap__ekpo,staging,models\staging\stg_sap__ekpo.sql,view,,Staging: EKPO — Purchasing Document Item,,raw_sap.ekpo,,,,18,2026-07-06 12:51
-M058,stg_sap__eqbs,staging,models\staging\stg_sap__eqbs.sql,view,,Staging: EQBS — Equipment Status History,,raw_sap.eqbs,,,,6,2026-07-06 12:51
-M059,stg_sap__equi,staging,models\staging\stg_sap__equi.sql,view,,Staging: EQUI — Equipment Master,,raw_sap.equi,,,,13,2026-07-06 12:51
-M060,stg_sap__kna1,staging,models\staging\stg_sap__kna1.sql,view,,Staging: KNA1 — Customer General Data (SD),,raw_sap.kna1,,,,11,2026-07-06 12:51
-M061,stg_sap__lfa1,staging,models\staging\stg_sap__lfa1.sql,view,,Staging: LFA1 — Vendor General Data,,raw_sap.lfa1,,,,11,2026-07-06 12:51
-M062,stg_sap__lfb1,staging,models\staging\stg_sap__lfb1.sql,view,,Staging: LFB1 — Vendor Company Code Data,,raw_sap.lfb1,,,,8,2026-07-06 12:51
-M063,stg_sap__lfm1,staging,models\staging\stg_sap__lfm1.sql,view,,Staging: LFM1 — Vendor Purchasing Organization Data,,raw_sap.lfm1,,,,8,2026-07-06 12:51
-M064,stg_sap__makt,staging,models\staging\stg_sap__makt.sql,view,,Staging: MAKT — Material Descriptions,,raw_sap.makt,,,,5,2026-07-06 12:51
-M065,stg_sap__mara,staging,models\staging\stg_sap__mara.sql,view,,Staging: MARA — Material General Data,,raw_sap.mara,,,,13,2026-07-06 12:51
-M066,stg_sap__marc,staging,models\staging\stg_sap__marc.sql,view,,Staging: MARC — Material Plant Data,,raw_sap.marc,,,,12,2026-07-06 12:51
-M067,stg_sap__mard,staging,models\staging\stg_sap__mard.sql,view,,Staging: MARD — Stock per Storage Location,,raw_sap.mard,,,,8,2026-07-06 12:51
-M068,stg_sap__marm,staging,models\staging\stg_sap__marm.sql,view,,Staging: MARM — Material Units of Measure,,raw_sap.marm,,,,6,2026-07-06 12:51
-M069,stg_sap__mkpf,staging,models\staging\stg_sap__mkpf.sql,view,,Staging: MKPF — Material Document Header,,raw_sap.mkpf,,,,9,2026-07-06 12:51
-M070,stg_sap__mseg,staging,models\staging\stg_sap__mseg.sql,view,,Staging: MSEG — Material Document Item,,raw_sap.mseg,,,,17,2026-07-06 12:51
-M071,stg_sap__objk,staging,models\staging\stg_sap__objk.sql,view,,Staging: OBJK — Object List (Serial to Equipment cross-reference),,raw_sap.objk,,,,10,2026-07-06 12:51
-M072,stg_sap__rbkp,staging,models\staging\stg_sap__rbkp.sql,view,,Staging: RBKP — Invoice Document Header,,raw_sap.rbkp,,,,12,2026-07-06 12:51
-M073,stg_sap__resb,staging,models\staging\stg_sap__resb.sql,view,,Staging: RESB — Reservation Item,,raw_sap.resb,,,,10,2026-07-06 12:51
-M074,stg_sap__rkpf,staging,models\staging\stg_sap__rkpf.sql,view,,Staging: RKPF — Reservation Header,,raw_sap.rkpf,,,,6,2026-07-06 12:51
-M075,stg_sap__rseg,staging,models\staging\stg_sap__rseg.sql,view,,Staging: RSEG — Invoice Document Item,,raw_sap.rseg,,,,11,2026-07-06 12:51
-M076,stg_sap__ser01,staging,models\staging\stg_sap__ser01.sql,view,,Staging: SER01 — Serial Number Document Header (PO reference),,raw_sap.ser01,,,,10,2026-07-06 12:51
-M077,stg_sap__ser03,staging,models\staging\stg_sap__ser03.sql,view,,Staging: SER03 — Serial Number Document Header (Material Document reference),,raw_sap.ser03,,,,10,2026-07-06 12:51
-M078,stg_sap__seri,staging,models\staging\stg_sap__seri.sql,view,,Staging: SERI — Serial Number Assignments,,raw_sap.seri,,,,9,2026-07-06 12:51
-M079,stg_sap__t001,staging,models\staging\stg_sap__t001.sql,view,,1:1 staging of T001 (Company Codes). Reference table.,,raw_sap.t001,,,,8,2026-07-06 12:51
-M080,stg_sap__t001l,staging,models\staging\stg_sap__t001l.sql,view,,1:1 staging of T001L (Storage Locations). Reference table.,,raw_sap.t001l,,,,5,2026-07-06 12:51
-M081,stg_sap__t001w,staging,models\staging\stg_sap__t001w.sql,view,,1:1 staging of T001W (Plants). Reference table.,,raw_sap.t001w,,,,7,2026-07-06 12:51
-M082,stg_sap__t023,staging,models\staging\stg_sap__t023.sql,view,,1:1 staging of T023 (Material Groups). Reference table.,,raw_sap.t023,,,,4,2026-07-06 12:51
-M083,stg_sap__t024,staging,models\staging\stg_sap__t024.sql,view,,1:1 staging of T024 (Purchasing Groups). Reference table.,,raw_sap.t024,,,,4,2026-07-06 12:51
-M084,stg_sap__t024e,staging,models\staging\stg_sap__t024e.sql,view,,1:1 staging of T024E (Purchasing Organizations). Reference table.,,raw_sap.t024e,,,,6,2026-07-06 12:51
-M085,stg_sap__t156,staging,models\staging\stg_sap__t156.sql,view,,Staging: T156 — Movement Type Configuration (SAP-native).,,raw_sap.t156,,,,6,2026-07-06 12:51
-M086,stg_sap__t156t,staging,models\staging\stg_sap__t156t.sql,view,,Staging: T156T — Movement Type Text (SAP-native).,,raw_sap.t156t,,,,6,2026-07-06 12:51
-M087,stg_sap__vbak,staging,models\staging\stg_sap__vbak.sql,view,,Staging: VBAK — Sales Document Header (SD),,raw_sap.vbak,,,,12,2026-07-06 12:51
-M088,stg_sap__vbap,staging,models\staging\stg_sap__vbap.sql,view,,Staging: VBAP — Sales Document Item (SD),,raw_sap.vbap,,,,12,2026-07-06 12:51
-M089,stg_sap__vbrk,staging,models\staging\stg_sap__vbrk.sql,view,,Staging: VBRK — Billing Document Header (SD),,raw_sap.vbrk,,,,15,2026-07-06 12:51
-M090,stg_sap__vbrp,staging,models\staging\stg_sap__vbrp.sql,view,,Staging: VBRP — Billing Document Item (SD),,raw_sap.vbrp,,,,14,2026-07-06 12:51
-M091,stg_sap__zmm_approval_log,staging,models\staging\stg_sap__zmm_approval_log.sql,view,,Staging: ZMM_APPROVAL_LOG — Custom approval-event Z-table.,,raw_sap.zmm_approval_log,,,,13,2026-07-06 12:51
-M092,stg_sap__zmm_material_business,staging,models\staging\stg_sap__zmm_material_business.sql,view,,Staging: ZMM_MATERIAL_BUSINESS — HT-domain material business enrichment.,,raw_sap.zmm_material_business,,,,6,2026-07-06 12:51
-M093,stg_sap__zmm_vendor_business,staging,models\staging\stg_sap__zmm_vendor_business.sql,view,,Staging: ZMM_VENDOR_BUSINESS — HT-domain vendor business enrichment.,,raw_sap.zmm_vendor_business,,,,7,2026-07-06 12:51
-M094,hub_accounting_document,vault,models\vault\hub_accounting_document.sql,incremental,hk_accounting_document,Hub: Accounting Document (FI journal entry — WE / RE / RV),,,stg_sap__bkpf,,,6,2026-07-06 12:51
-M095,hub_billing_document,vault,models\vault\hub_billing_document.sql,incremental,hk_billing_doc,Hub: Billing Document (monthly service invoice),,,stg_sap__vbrk,,,4,2026-07-06 12:51
-M096,hub_customer,vault,models\vault\hub_customer.sql,incremental,hk_customer,Hub: Customer,,,stg_sap__kna1,,,4,2026-07-06 12:51
-M097,hub_equipment,vault,models\vault\hub_equipment.sql,incremental,hk_equipment,Hub: Equipment (individual CPE device),,,stg_sap__equi,,,4,2026-07-06 12:51
-M098,hub_invoice,vault,models\vault\hub_invoice.sql,incremental,hk_invoice,Hub: Invoice,,,stg_sap__rbkp,,,5,2026-07-06 12:51
-M099,hub_material,vault,models\vault\hub_material.sql,incremental,hk_material,Hub: Material,,,stg_sap__mara,,,4,2026-07-06 12:51
-M100,hub_material_document,vault,models\vault\hub_material_document.sql,incremental,hk_material_document,Hub: Material Document,,,stg_sap__mkpf,,,5,2026-07-06 12:51
-M101,hub_movement_type,vault,models\vault\hub_movement_type.sql,incremental,hk_movement_type,Hub: Movement Type,,,stg_sap__t156,,,4,2026-07-06 12:51
-M102,hub_plant,vault,models\vault\hub_plant.sql,incremental,hk_plant,Hub: Plant,,,stg_sap__t001w,,,4,2026-07-06 12:51
-M103,hub_purchase_order,vault,models\vault\hub_purchase_order.sql,incremental,hk_purchase_order,Hub: Purchase Order,,,stg_sap__ekko,,,4,2026-07-06 12:51
-M104,hub_purchase_requisition,vault,models\vault\hub_purchase_requisition.sql,incremental,hk_purchase_requisition,Hub: Purchase Requisition,,,stg_sap__eban,,,4,2026-07-06 12:51
-M105,hub_sales_order,vault,models\vault\hub_sales_order.sql,incremental,hk_sales_order,Hub: Sales Order (service contract),,,stg_sap__vbak,,,4,2026-07-06 12:51
-M106,hub_service_plan,vault,models\vault\hub_service_plan.sql,incremental,hk_service_plan,Hub: Service Plan (broadband / IPTV / business subscription),,,stg_sap__vbap,,,4,2026-07-06 12:51
-M107,hub_vendor,vault,models\vault\hub_vendor.sql,incremental,hk_vendor,Hub: Vendor,,,stg_sap__lfa1,,,4,2026-07-06 12:51
-M108,hub_zmm_approval,vault,models\vault\hub_zmm_approval.sql,incremental,hk_zmm_approval,Hub: ZMM Approval (custom Z-table approval events),,,stg_sap__zmm_approval_log,,,4,2026-07-06 12:51
+        JINJA_EXPR                         AS ",4,2026-07-06 14:55
+M046,sat_olist_order_header,other,models\olist\vault\sat_olist_order_header.sql,incremental,hk_olist_order,,,,stg_olist__orders,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),8,2026-07-06 14:55
+M047,sat_olist_order_item_prices,other,models\olist\vault\sat_olist_order_item_prices.sql,incremental,hk_olist_order_item,,,,stg_olist__order_items,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),4,2026-07-06 14:55
+M048,sat_olist_product_category,other,models\olist\vault\sat_olist_product_category.sql,incremental,hk_olist_product,,,,stg_olist__products; stg_olist__category_translation,,load_date > (SELECT MAX(load_date) FROM JINJA_EXPR),6,2026-07-06 14:55
+M049,stg_sap__bkpf,staging,models\staging\stg_sap__bkpf.sql,view,,Staging: BKPF — Accounting Document Header,,raw_sap.bkpf,,,,13,2026-07-06 14:55
+M050,stg_sap__bseg,staging,models\staging\stg_sap__bseg.sql,view,,Staging: BSEG — Accounting Document Line Item,,raw_sap.bseg,,,,14,2026-07-06 14:55
+M051,stg_sap__eban,staging,models\staging\stg_sap__eban.sql,view,,Staging: EBAN — Purchase Requisition,,raw_sap.eban,,,,17,2026-07-06 14:55
+M052,stg_sap__ebkn,staging,models\staging\stg_sap__ebkn.sql,view,,Staging: EBKN — Purchase Requisition Account Assignment,,raw_sap.ebkn,,,,6,2026-07-06 14:55
+M053,stg_sap__ekbe,staging,models\staging\stg_sap__ekbe.sql,view,,Staging: EKBE — Purchasing Document History,,raw_sap.ekbe,,,,14,2026-07-06 14:55
+M054,stg_sap__eket,staging,models\staging\stg_sap__eket.sql,view,,Staging: EKET — Purchasing Document Delivery Schedule,,raw_sap.eket,,,,8,2026-07-06 14:55
+M055,stg_sap__ekkn,staging,models\staging\stg_sap__ekkn.sql,view,,Staging: EKKN — Purchasing Document Account Assignment,,raw_sap.ekkn,,,,7,2026-07-06 14:55
+M056,stg_sap__ekko,staging,models\staging\stg_sap__ekko.sql,view,,Staging: EKKO — Purchasing Document Header,,raw_sap.ekko,,,,19,2026-07-06 14:55
+M057,stg_sap__ekpo,staging,models\staging\stg_sap__ekpo.sql,view,,Staging: EKPO — Purchasing Document Item,,raw_sap.ekpo,,,,18,2026-07-06 14:55
+M058,stg_sap__eqbs,staging,models\staging\stg_sap__eqbs.sql,view,,Staging: EQBS — Equipment Status History,,raw_sap.eqbs,,,,6,2026-07-06 14:55
+M059,stg_sap__equi,staging,models\staging\stg_sap__equi.sql,view,,Staging: EQUI — Equipment Master,,raw_sap.equi,,,,13,2026-07-06 14:55
+M060,stg_sap__kna1,staging,models\staging\stg_sap__kna1.sql,view,,Staging: KNA1 — Customer General Data (SD),,raw_sap.kna1,,,,11,2026-07-06 14:55
+M061,stg_sap__lfa1,staging,models\staging\stg_sap__lfa1.sql,view,,Staging: LFA1 — Vendor General Data,,raw_sap.lfa1,,,,11,2026-07-06 14:55
+M062,stg_sap__lfb1,staging,models\staging\stg_sap__lfb1.sql,view,,Staging: LFB1 — Vendor Company Code Data,,raw_sap.lfb1,,,,8,2026-07-06 14:55
+M063,stg_sap__lfm1,staging,models\staging\stg_sap__lfm1.sql,view,,Staging: LFM1 — Vendor Purchasing Organization Data,,raw_sap.lfm1,,,,8,2026-07-06 14:55
+M064,stg_sap__makt,staging,models\staging\stg_sap__makt.sql,view,,Staging: MAKT — Material Descriptions,,raw_sap.makt,,,,5,2026-07-06 14:55
+M065,stg_sap__mara,staging,models\staging\stg_sap__mara.sql,view,,Staging: MARA — Material General Data,,raw_sap.mara,,,,13,2026-07-06 14:55
+M066,stg_sap__marc,staging,models\staging\stg_sap__marc.sql,view,,Staging: MARC — Material Plant Data,,raw_sap.marc,,,,12,2026-07-06 14:55
+M067,stg_sap__mard,staging,models\staging\stg_sap__mard.sql,view,,Staging: MARD — Stock per Storage Location,,raw_sap.mard,,,,8,2026-07-06 14:55
+M068,stg_sap__marm,staging,models\staging\stg_sap__marm.sql,view,,Staging: MARM — Material Units of Measure,,raw_sap.marm,,,,6,2026-07-06 14:55
+M069,stg_sap__mkpf,staging,models\staging\stg_sap__mkpf.sql,view,,Staging: MKPF — Material Document Header,,raw_sap.mkpf,,,,9,2026-07-06 14:55
+M070,stg_sap__mseg,staging,models\staging\stg_sap__mseg.sql,view,,Staging: MSEG — Material Document Item,,raw_sap.mseg,,,,17,2026-07-06 14:55
+M071,stg_sap__objk,staging,models\staging\stg_sap__objk.sql,view,,Staging: OBJK — Object List (Serial to Equipment cross-reference),,raw_sap.objk,,,,10,2026-07-06 14:55
+M072,stg_sap__rbkp,staging,models\staging\stg_sap__rbkp.sql,view,,Staging: RBKP — Invoice Document Header,,raw_sap.rbkp,,,,12,2026-07-06 14:55
+M073,stg_sap__resb,staging,models\staging\stg_sap__resb.sql,view,,Staging: RESB — Reservation Item,,raw_sap.resb,,,,10,2026-07-06 14:55
+M074,stg_sap__rkpf,staging,models\staging\stg_sap__rkpf.sql,view,,Staging: RKPF — Reservation Header,,raw_sap.rkpf,,,,6,2026-07-06 14:55
+M075,stg_sap__rseg,staging,models\staging\stg_sap__rseg.sql,view,,Staging: RSEG — Invoice Document Item,,raw_sap.rseg,,,,11,2026-07-06 14:55
+M076,stg_sap__ser01,staging,models\staging\stg_sap__ser01.sql,view,,Staging: SER01 — Serial Number Document Header (PO reference),,raw_sap.ser01,,,,10,2026-07-06 14:55
+M077,stg_sap__ser03,staging,models\staging\stg_sap__ser03.sql,view,,Staging: SER03 — Serial Number Document Header (Material Document reference),,raw_sap.ser03,,,,10,2026-07-06 14:55
+M078,stg_sap__seri,staging,models\staging\stg_sap__seri.sql,view,,Staging: SERI — Serial Number Assignments,,raw_sap.seri,,,,9,2026-07-06 14:55
+M079,stg_sap__t001,staging,models\staging\stg_sap__t001.sql,view,,1:1 staging of T001 (Company Codes). Reference table.,,raw_sap.t001,,,,8,2026-07-06 14:55
+M080,stg_sap__t001l,staging,models\staging\stg_sap__t001l.sql,view,,1:1 staging of T001L (Storage Locations). Reference table.,,raw_sap.t001l,,,,5,2026-07-06 14:55
+M081,stg_sap__t001w,staging,models\staging\stg_sap__t001w.sql,view,,1:1 staging of T001W (Plants). Reference table.,,raw_sap.t001w,,,,7,2026-07-06 14:55
+M082,stg_sap__t023,staging,models\staging\stg_sap__t023.sql,view,,1:1 staging of T023 (Material Groups). Reference table.,,raw_sap.t023,,,,4,2026-07-06 14:55
+M083,stg_sap__t024,staging,models\staging\stg_sap__t024.sql,view,,1:1 staging of T024 (Purchasing Groups). Reference table.,,raw_sap.t024,,,,4,2026-07-06 14:55
+M084,stg_sap__t024e,staging,models\staging\stg_sap__t024e.sql,view,,1:1 staging of T024E (Purchasing Organizations). Reference table.,,raw_sap.t024e,,,,6,2026-07-06 14:55
+M085,stg_sap__t156,staging,models\staging\stg_sap__t156.sql,view,,Staging: T156 — Movement Type Configuration (SAP-native).,,raw_sap.t156,,,,6,2026-07-06 14:55
+M086,stg_sap__t156t,staging,models\staging\stg_sap__t156t.sql,view,,Staging: T156T — Movement Type Text (SAP-native).,,raw_sap.t156t,,,,6,2026-07-06 14:55
+M087,stg_sap__vbak,staging,models\staging\stg_sap__vbak.sql,view,,Staging: VBAK — Sales Document Header (SD),,raw_sap.vbak,,,,12,2026-07-06 14:55
+M088,stg_sap__vbap,staging,models\staging\stg_sap__vbap.sql,view,,Staging: VBAP — Sales Document Item (SD),,raw_sap.vbap,,,,12,2026-07-06 14:55
+M089,stg_sap__vbrk,staging,models\staging\stg_sap__vbrk.sql,view,,Staging: VBRK — Billing Document Header (SD),,raw_sap.vbrk,,,,15,2026-07-06 14:55
+M090,stg_sap__vbrp,staging,models\staging\stg_sap__vbrp.sql,view,,Staging: VBRP — Billing Document Item (SD),,raw_sap.vbrp,,,,14,2026-07-06 14:55
+M091,stg_sap__zmm_approval_log,staging,models\staging\stg_sap__zmm_approval_log.sql,view,,Staging: ZMM_APPROVAL_LOG — Custom approval-event Z-table.,,raw_sap.zmm_approval_log,,,,13,2026-07-06 14:55
+M092,stg_sap__zmm_material_business,staging,models\staging\stg_sap__zmm_material_business.sql,view,,Staging: ZMM_MATERIAL_BUSINESS — HT-domain material business enrichment.,,raw_sap.zmm_material_business,,,,6,2026-07-06 14:55
+M093,stg_sap__zmm_vendor_business,staging,models\staging\stg_sap__zmm_vendor_business.sql,view,,Staging: ZMM_VENDOR_BUSINESS — HT-domain vendor business enrichment.,,raw_sap.zmm_vendor_business,,,,7,2026-07-06 14:55
+M094,hub_accounting_document,vault,models\vault\hub_accounting_document.sql,incremental,hk_accounting_document,Hub: Accounting Document (FI journal entry — WE / RE / RV),,,stg_sap__bkpf,,,6,2026-07-06 14:55
+M095,hub_billing_document,vault,models\vault\hub_billing_document.sql,incremental,hk_billing_doc,Hub: Billing Document (monthly service invoice),,,stg_sap__vbrk,,,4,2026-07-06 14:55
+M096,hub_customer,vault,models\vault\hub_customer.sql,incremental,hk_customer,Hub: Customer,,,stg_sap__kna1,,,4,2026-07-06 14:55
+M097,hub_equipment,vault,models\vault\hub_equipment.sql,incremental,hk_equipment,Hub: Equipment (individual CPE device),,,stg_sap__equi,,,4,2026-07-06 14:55
+M098,hub_invoice,vault,models\vault\hub_invoice.sql,incremental,hk_invoice,Hub: Invoice,,,stg_sap__rbkp,,,5,2026-07-06 14:55
+M099,hub_material,vault,models\vault\hub_material.sql,incremental,hk_material,Hub: Material,,,stg_sap__mara,,,4,2026-07-06 14:55
+M100,hub_material_document,vault,models\vault\hub_material_document.sql,incremental,hk_material_document,Hub: Material Document,,,stg_sap__mkpf,,,5,2026-07-06 14:55
+M101,hub_movement_type,vault,models\vault\hub_movement_type.sql,incremental,hk_movement_type,Hub: Movement Type,,,stg_sap__t156,,,4,2026-07-06 14:55
+M102,hub_plant,vault,models\vault\hub_plant.sql,incremental,hk_plant,Hub: Plant,,,stg_sap__t001w,,,4,2026-07-06 14:55
+M103,hub_purchase_order,vault,models\vault\hub_purchase_order.sql,incremental,hk_purchase_order,Hub: Purchase Order,,,stg_sap__ekko,,,4,2026-07-06 14:55
+M104,hub_purchase_requisition,vault,models\vault\hub_purchase_requisition.sql,incremental,hk_purchase_requisition,Hub: Purchase Requisition,,,stg_sap__eban,,,4,2026-07-06 14:55
+M105,hub_sales_order,vault,models\vault\hub_sales_order.sql,incremental,hk_sales_order,Hub: Sales Order (service contract),,,stg_sap__vbak,,,4,2026-07-06 14:55
+M106,hub_service_plan,vault,models\vault\hub_service_plan.sql,incremental,hk_service_plan,Hub: Service Plan (broadband / IPTV / business subscription),,,stg_sap__vbap,,,4,2026-07-06 14:55
+M107,hub_vendor,vault,models\vault\hub_vendor.sql,incremental,hk_vendor,Hub: Vendor,,,stg_sap__lfa1,,,4,2026-07-06 14:55
+M108,hub_zmm_approval,vault,models\vault\hub_zmm_approval.sql,incremental,hk_zmm_approval,Hub: ZMM Approval (custom Z-table approval events),,,stg_sap__zmm_approval_log,,,4,2026-07-06 14:55
 M109,link_billing_accounting,vault,models\vault\link_billing_accounting.sql,incremental,hk_billing_accounting,"FI Link 2/3: SD Billing ↔ Accounting Document (revenue side, BLART='RV')",,,stg_sap__bkpf; stg_sap__vbrk,INNER JOIN JINJA_EXPR,"b.BLART = 'RV'
 )
 
 SELECT * FROM src
-JINJA_EXPR",7,2026-07-06 12:51
-M110,link_billing_customer,vault,models\vault\link_billing_customer.sql,incremental,hk_billing_customer,Link: Billing Document ↔ Customer (who is billed — payer),,,stg_sap__vbrk,,,6,2026-07-06 12:51
+JINJA_EXPR",7,2026-07-06 14:55
+M110,link_billing_customer,vault,models\vault\link_billing_customer.sql,incremental,hk_billing_customer,Link: Billing Document ↔ Customer (who is billed — payer),,,stg_sap__vbrk,,,6,2026-07-06 14:55
 M111,link_billing_sales_order,vault,models\vault\link_billing_sales_order.sql,incremental,hk_billing_sales_order,Link: Billing Document ↔ Sales Order (bill back to the contract),,,stg_sap__vbrp,,"AUBEL IS NOT NULL; AUBEL != ''
 )
 
 SELECT * FROM src
-JINJA_EXPR",6,2026-07-06 12:51
+JINJA_EXPR",6,2026-07-06 14:55
 M112,link_equipment_gr,vault,models\vault\link_equipment_gr.sql,incremental,hk_equipment_gr,Link: Equipment ↔ Material Document (GR),,,stg_sap__seri; stg_sap__mkpf,INNER JOIN JINJA_EXPR,"s.EQUNR IS NOT NULL; s.EQUNR != ''
 )
 
@@ -208,14 +208,14 @@ SELECT
     hk_equipment_gr,
     hk_equipment,
     hk_material_document,
-    equipme",8,2026-07-06 12:51
-M113,link_equipment_material,vault,models\vault\link_equipment_material.sql,incremental,hk_equipment_material,Link: Equipment ↔ Material,,,stg_sap__equi,,,7,2026-07-06 12:51
+    equipme",8,2026-07-06 14:55
+M113,link_equipment_material,vault,models\vault\link_equipment_material.sql,incremental,hk_equipment_material,Link: Equipment ↔ Material,,,stg_sap__equi,,,7,2026-07-06 14:55
 M114,link_gr_accounting,vault,models\vault\link_gr_accounting.sql,incremental,hk_gr_accounting,"FI Link 3/3: Goods Receipt ↔ Accounting Document (inventory side, BLART='WE')",,,stg_sap__bkpf; stg_sap__mkpf,INNER JOIN JINJA_EXPR,"b.BLART = 'WE'
 )
 
 SELECT * FROM src
-JINJA_EXPR",7,2026-07-06 12:51
-M115,link_gr_material,vault,models\vault\link_gr_material.sql,incremental,hk_gr_material,Link: Goods Receipt ↔ Material,,,stg_sap__mseg,,,8,2026-07-06 12:51
+JINJA_EXPR",7,2026-07-06 14:55
+M115,link_gr_material,vault,models\vault\link_gr_material.sql,incremental,hk_gr_material,Link: Goods Receipt ↔ Material,,,stg_sap__mseg,,,8,2026-07-06 14:55
 M116,link_gr_po,vault,models\vault\link_gr_po.sql,incremental,hk_gr_po,Link: Goods Receipt (Material Document) ↔ Purchase Order,,,stg_sap__mseg,,"EBELN IS NOT NULL; EBELN != ''
 )
 
@@ -223,12 +223,12 @@ SELECT
     hk_gr_po,
     hk_material_document,
     hk_purchase_order,
-    material_do",8,2026-07-06 12:51
+    material_do",8,2026-07-06 14:55
 M117,link_invoice_accounting,vault,models\vault\link_invoice_accounting.sql,incremental,hk_invoice_accounting,"FI Link 1/3: MM Invoice ↔ Accounting Document (cost side, BLART='RE')",,,stg_sap__bkpf; stg_sap__rbkp,INNER JOIN JINJA_EXPR,"b.BLART = 'RE'
 )
 
 SELECT * FROM src
-JINJA_EXPR",7,2026-07-06 12:51
+JINJA_EXPR",7,2026-07-06 14:55
 M118,link_invoice_po,vault,models\vault\link_invoice_po.sql,incremental,hk_invoice_po,Link: Invoice ↔ Purchase Order,,,stg_sap__rbkp,,"EBELN IS NOT NULL; EBELN != ''
 )
 
@@ -237,11 +237,11 @@ SELECT
     hk_invoice,
     hk_purchase_order,
     invoice_number,
-",8,2026-07-06 12:51
-M119,link_po_item,vault,models\vault\link_po_item.sql,incremental,hk_po_item,Link: Purchase Order Item,,,stg_sap__ekpo,,hk_po_item NOT IN (SELECT hk_po_item FROM JINJA_EXPR),6,2026-07-06 12:51
-M120,link_po_material,vault,models\vault\link_po_material.sql,incremental,hk_po_material,Link: Purchase Order ↔ Material (PO line item level),,,stg_sap__ekpo,,,8,2026-07-06 12:51
-M121,link_po_plant,vault,models\vault\link_po_plant.sql,incremental,hk_po_plant,Link: Purchase Order ↔ Plant,,,stg_sap__ekpo,,,7,2026-07-06 12:51
-M122,link_po_vendor,vault,models\vault\link_po_vendor.sql,incremental,hk_po_vendor,Link: Purchase Order ↔ Vendor,,,stg_sap__ekko,,,7,2026-07-06 12:51
+",8,2026-07-06 14:55
+M119,link_po_item,vault,models\vault\link_po_item.sql,incremental,hk_po_item,Link: Purchase Order Item,,,stg_sap__ekpo,,hk_po_item NOT IN (SELECT hk_po_item FROM JINJA_EXPR),6,2026-07-06 14:55
+M120,link_po_material,vault,models\vault\link_po_material.sql,incremental,hk_po_material,Link: Purchase Order ↔ Material (PO line item level),,,stg_sap__ekpo,,,8,2026-07-06 14:55
+M121,link_po_plant,vault,models\vault\link_po_plant.sql,incremental,hk_po_plant,Link: Purchase Order ↔ Plant,,,stg_sap__ekpo,,,7,2026-07-06 14:55
+M122,link_po_vendor,vault,models\vault\link_po_vendor.sql,incremental,hk_po_vendor,Link: Purchase Order ↔ Vendor,,,stg_sap__ekko,,,7,2026-07-06 14:55
 M123,link_pr_po,vault,models\vault\link_pr_po.sql,incremental,hk_pr_po,Link: Purchase Requisition ↔ Purchase Order,,,stg_sap__ekpo,,"BANFN IS NOT NULL; BANFN != ''
 )
 
@@ -249,49 +249,49 @@ SELECT
     hk_pr_po,
     hk_purchase_requisition,
     hk_purchase_order,
-    requisit",7,2026-07-06 12:51
-M124,link_sales_order_customer,vault,models\vault\link_sales_order_customer.sql,incremental,hk_sales_order_customer,Link: Sales Order ↔ Customer (who holds the contract),,,stg_sap__vbak,,,6,2026-07-06 12:51
-M125,link_sales_order_equipment,vault,models\vault\link_sales_order_equipment.sql,incremental,hk_so_equipment,Link: Sales Order Item ↔ Equipment (the marquee tie),,,stg_sap__vbap; stg_sap__equi,INNER JOIN JINJA_EXPR,,11,2026-07-06 12:51
+    requisit",7,2026-07-06 14:55
+M124,link_sales_order_customer,vault,models\vault\link_sales_order_customer.sql,incremental,hk_sales_order_customer,Link: Sales Order ↔ Customer (who holds the contract),,,stg_sap__vbak,,,6,2026-07-06 14:55
+M125,link_sales_order_equipment,vault,models\vault\link_sales_order_equipment.sql,incremental,hk_so_equipment,Link: Sales Order Item ↔ Equipment (the marquee tie),,,stg_sap__vbap; stg_sap__equi,INNER JOIN JINJA_EXPR,,11,2026-07-06 14:55
 M126,sat_accounting_header,vault,models\vault\sat_accounting_header.sql,incremental,hk_accounting_document; load_date,Satellite: Accounting Document Header (FI journal — WE / RE / RV),,,stg_sap__bkpf,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_accounting_document = src.hk_accounting_d; t.hashdiff = src.hashdiff
-)",11,2026-07-06 12:51
+)",11,2026-07-06 14:55
 M127,sat_billing_document,vault,models\vault\sat_billing_document.sql,incremental,hk_billing_doc; load_date,Satellite: Billing Document (monthly service invoice),,,stg_sap__vbrk,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_billing_doc = src.hk_billing_doc; t.hashdiff = src.hashdiff
-)",12,2026-07-06 12:51
+)",12,2026-07-06 14:55
 M128,sat_customer,vault,models\vault\sat_customer.sql,incremental,hk_customer; load_date,Satellite: Customer,,,stg_sap__kna1,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_customer = src.hk_customer; t.hashdiff = src.hashdiff
-)",11,2026-07-06 12:51
+)",11,2026-07-06 14:55
 M129,sat_equipment_general,vault,models\vault\sat_equipment_general.sql,incremental,hk_equipment; load_date,Satellite: Equipment General (static device info),,,stg_sap__equi,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_equipment = src.hk_equipment; t.hashdiff = src.hashdiff
-)",12,2026-07-06 12:51
+)",12,2026-07-06 14:55
 M130,sat_equipment_status,vault,models\vault\sat_equipment_status.sql,incremental,hk_equipment; status_from_date,Satellite: Equipment Status History (SCD2 — lifecycle),,,stg_sap__eqbs,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_equipment = src.hk_equipment; t.status_from_date = src.status_from_date; t.hashdiff = src.hashdiff
-)",7,2026-07-06 12:51
+)",7,2026-07-06 14:55
 M131,sat_gr_header,vault,models\vault\sat_gr_header.sql,incremental,hk_material_document; load_date,Satellite: GR / Material Document Header,,,stg_sap__mkpf,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_material_document = src.hk_material_docum; t.hashdiff = src.hashdiff
-)",9,2026-07-06 12:51
+)",9,2026-07-06 14:55
 M132,sat_gr_item,vault,models\vault\sat_gr_item.sql,incremental,hk_gr_material; load_date,Satellite: Material Document Item,,,stg_sap__mseg,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_gr_material = src.hk_gr_material; t.hashdiff = src.hashdiff
-)",15,2026-07-06 12:51
+)",15,2026-07-06 14:55
 M133,sat_invoice_header,vault,models\vault\sat_invoice_header.sql,incremental,hk_invoice; load_date,Satellite: Invoice Header,,,stg_sap__rbkp,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_invoice = src.hk_invoice; t.hashdiff = src.hashdiff
-)",12,2026-07-06 12:51
+)",12,2026-07-06 14:55
 M134,sat_invoice_item,vault,models\vault\sat_invoice_item.sql,incremental,hk_invoice; invoice_line_item; load_date,Satellite: Invoice Item (RSEG line-item details),,,stg_sap__rseg,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_invoice = src.hk_invoice; t.invoice_line_item = src.invoice_line_item; t.hashdiff = src.hashdiff
-)",12,2026-07-06 12:51
+)",12,2026-07-06 14:55
 M135,sat_material_business,vault,models\vault\sat_material_business.sql,incremental,hk_material; load_date,Satellite: Material Business Enrichment (HT-domain),,,stg_sap__zmm_material_business,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_material = src.hk_material; t.hashdiff = src.hashdiff
-)",7,2026-07-06 12:51
+)",7,2026-07-06 14:55
 M136,sat_material_description,vault,models\vault\sat_material_description.sql,incremental,hk_material; load_date,Satellite: Material Descriptions (English only for MVP),,,stg_sap__makt,,"SPRAS = 'E'
 )
 
@@ -300,72 +300,72 @@ SELECT * FROM src
 WHERE NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_m; t.hashdiff = src.hashdiff
-)",6,2026-07-06 12:51
+)",6,2026-07-06 14:55
 M137,sat_material_general,vault,models\vault\sat_material_general.sql,incremental,hk_material; load_date,Satellite: Material General Data,,,stg_sap__mara,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_material = src.hk_material; t.hashdiff = src.hashdiff
-)",13,2026-07-06 12:51
+)",13,2026-07-06 14:55
 M138,sat_material_plant,vault,models\vault\sat_material_plant.sql,incremental,hk_material_plant; load_date,"Satellite: Material Plant-Level Data (MRP settings, serial profile, lead time)",,,stg_sap__marc,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_material_plant = src.hk_material_plant; t.hashdiff = src.hashdiff
-)",13,2026-07-06 12:51
+)",13,2026-07-06 14:55
 M139,sat_movement_type,vault,models\vault\sat_movement_type.sql,incremental,hk_movement_type; load_date,Satellite: Movement Type Configuration,,,stg_sap__t156,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_movement_type = src.hk_movement_type; t.hashdiff = src.hashdiff
-)",7,2026-07-06 12:51
+)",7,2026-07-06 14:55
 M140,sat_movement_type_text,vault,models\vault\sat_movement_type_text.sql,incremental,hk_movement_type; spras; load_date,Satellite: Movement Type Text (multi-language),,,stg_sap__t156t,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_movement_type = src.hk_movement_type; t.spras = src.spras; t.hashdiff = src.hashdiff
-)",8,2026-07-06 12:51
+)",8,2026-07-06 14:55
 M141,sat_po_account,vault,models\vault\sat_po_account.sql,incremental,hk_po_item; load_date,Satellite: PO Account Assignment,,,stg_sap__ekkn,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_po_item = src.hk_po_item; t.hashdiff = src.hashdiff
-)",7,2026-07-06 12:51
+)",7,2026-07-06 14:55
 M142,sat_po_header,vault,models\vault\sat_po_header.sql,incremental,hk_purchase_order; load_date,Satellite: PO Header,,,stg_sap__ekko,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_purchase_order = src.hk_purchase_order; t.hashdiff = src.hashdiff
-)",15,2026-07-06 12:51
+)",15,2026-07-06 14:55
 M143,sat_po_item,vault,models\vault\sat_po_item.sql,incremental,hk_po_material; load_date,Satellite: PO Item Details,,,stg_sap__ekpo,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_po_material = src.hk_po_material; t.hashdiff = src.hashdiff
-)",13,2026-07-06 12:51
+)",13,2026-07-06 14:55
 M144,sat_po_schedule,vault,models\vault\sat_po_schedule.sql,incremental,hk_po_item; load_date,Satellite: PO Delivery Schedule,,,stg_sap__eket,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_po_item = src.hk_po_item; t.hashdiff = src.hashdiff
-)",8,2026-07-06 12:51
+)",8,2026-07-06 14:55
 M145,sat_pr_detail,vault,models\vault\sat_pr_detail.sql,incremental,hk_purchase_requisition; load_date,Satellite: Purchase Requisition Detail,,,stg_sap__eban,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_purchase_requisition = src.hk_purchase_re; t.hashdiff = src.hashdiff
-)",17,2026-07-06 12:51
+)",17,2026-07-06 14:55
 M146,sat_sales_order,vault,models\vault\sat_sales_order.sql,incremental,hk_sales_order; load_date,Satellite: Sales Order (contract header),,,stg_sap__vbak,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_sales_order = src.hk_sales_order; t.hashdiff = src.hashdiff
-)",12,2026-07-06 12:51
+)",12,2026-07-06 14:55
 M147,sat_sales_order_item,vault,models\vault\sat_sales_order_item.sql,incremental,hk_so_equipment; load_date,Satellite: Sales Order Item (service line + device),,,stg_sap__vbap,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_so_equipment = src.hk_so_equipment; t.hashdiff = src.hashdiff
-)",11,2026-07-06 12:51
+)",11,2026-07-06 14:55
 M148,sat_service_plan,vault,models\vault\sat_service_plan.sql,incremental,hk_service_plan; load_date,Satellite: Service Plan,,,stg_sap__vbap,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_service_plan = src.hk_service_plan; t.hashdiff = src.hashdiff
-)",5,2026-07-06 12:51
+)",5,2026-07-06 14:55
 M149,sat_stock_level,vault,models\vault\sat_stock_level.sql,incremental,hk_stock_location; load_date,Satellite: Stock Levels,,,stg_sap__mard,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_stock_location = src.hk_stock_location; t.hashdiff = src.hashdiff
-)",10,2026-07-06 12:51
+)",10,2026-07-06 14:55
 M150,sat_vendor_business,vault,models\vault\sat_vendor_business.sql,incremental,hk_vendor; load_date,Satellite: Vendor Business Enrichment (HT-domain),,,stg_sap__zmm_vendor_business,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_vendor = src.hk_vendor; t.hashdiff = src.hashdiff
-)",8,2026-07-06 12:51
+)",8,2026-07-06 14:55
 M151,sat_vendor_commercial,vault,models\vault\sat_vendor_commercial.sql,incremental,hk_vendor; load_date,"Satellite: Vendor Commercial Data (payment terms, recon account)",,,stg_sap__lfb1,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_vendor = src.hk_vendor; t.hashdiff = src.hashdiff
-)",8,2026-07-06 12:51
+)",8,2026-07-06 14:55
 M152,sat_vendor_general,vault,models\vault\sat_vendor_general.sql,incremental,hk_vendor; load_date,Satellite: Vendor General Data,,,stg_sap__lfa1,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_vendor = src.hk_vendor; t.hashdiff = src.hashdiff
-)",12,2026-07-06 12:51
+)",12,2026-07-06 14:55
 M153,sat_zmm_approval,vault,models\vault\sat_zmm_approval.sql,incremental,hk_zmm_approval; load_date,Satellite: ZMM Approval Attributes,,,stg_sap__zmm_approval_log,,"NOT EXISTS (
     SELECT 1 FROM JINJA_EXPR t
     WHERE t.hk_zmm_approval = src.hk_zmm_approval; t.hashdiff = src.hashdiff
-)",14,2026-07-06 12:51
+)",14,2026-07-06 14:55
