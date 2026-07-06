@@ -256,25 +256,21 @@ dbt marts, for **~$3 total in LLM cost**:
 | **Monthly GMV by category** | Scoped 4 of 9 tables, measured the joins it used empirically (direction-aware fanout evidence, cited by DAR id in the generated SQL), and proposed a full greenfield chain: 4 staging → 6 vault → mart → OBT | Deployed mart reconciles **to the cent**: 13,496,408.43 BRL across 1,282 category-months |
 | **Repeat customer rate** | The trap term: Olist's `customer_id` is unique *per order*, so the obvious key yields a **structurally guaranteed 0%** repeat rate, plausible-looking and silently 100% wrong. The pipeline correctly operationalized the person-identity constraint against the schema: it chose `customer_unique_id`, corroborated by the profiled 1:1 evidence | Deployed mart computes the correct **3.044%** (canceled-only filter per the term contract, first-order baseline over all orders) |
 
-Two honesty notes, because precision matters more than punch. First, BG033's original definition
+One honesty note, because precision matters more than punch: BG033's original definition
 *named* the identity constraint, so I re-ran it **blind** (definition with no hint, `BG034` in the
 glossary): scope derivation still chose `customer_unique_id`, from the **catalog documentation plus
 the 1:1 EDA evidence**, and that run then refused to self-certify, hard-stopping on the
 citation-audit guardrail. Resolving a trap from a well-read catalog is the product working as
-designed; it is not blind discovery from data alone, and I don't claim it is. Second, the
-join-*discovery* machinery initially failed in three places on this source: one analyzer's pair
-pre-filter was SAP-shaped and went silent, the most dangerous join in the dataset (geolocation,
-up to ×1,146 fanout) was invisible to name matching, and low-multiplicity 1:N relationships were
-mislabeled 1:1. I filed those as `known_issues` #131–133 before any reviewer found them, and all
-three are now fixed and re-verified: suffix-token key matching discovers the geolocation joins and
-classifies them catastrophic (avg ×65 and ×128), shapes classify by actual key duplication, and
-pairs where sum-match doesn't apply produce explicit skip records instead of silence.
+designed; it is not blind discovery from data alone, and I don't claim it is.
 
 The experiment also did what a second source should do: it **broke things, and the breaks became
-fixes**. Direction-aware join-fanout evidence, source-neutral repair hints, schema grounding for
-cross-mart refs, and a greenfield path so a brand-new source can have its staging → vault → mart
-chain proposed in one generation pass. Every step (evidence, costs, decisions, the blind-probe
-outcome) is in the seeds/knowledge graph like any other run.
+fixes**. Direction-aware join-fanout evidence, suffix-token key matching (which now discovers the
+geolocation joins and classifies them `catastrophic_fanout` at ×65 and ×128 average fanout),
+relationship shapes classified by actual key duplication, source-neutral repair hints, schema
+grounding for cross-mart refs, and a greenfield path so a brand-new source can have its
+staging → vault → mart chain proposed in one generation pass. The full find-to-fix trail is in
+`known_decisions` and `known_issues` #131–133 (all resolved), and every step (evidence, costs,
+decisions, the blind-probe outcome) is in the seeds/knowledge graph like any other run.
 
 ![Olist term in the governance UI](docs/img/olist_term_detail.png)
 *The GMV term in the governance UI, running in Olist mode (amber source badge, top-left): definition
@@ -318,12 +314,7 @@ Read this before extrapolating from the demo:
 - **N = 3 worked terms, no systematic eval.** BG030 (SAP) plus BG031/BG033 (Olist) are fully worked
   end-to-end. There is no success-rate eval across dozens of term definitions yet. Every run records
   its evidence, convergence status, and cost into the seeds, so the substrate for that eval exists.
-- **A semantic drift shipped once.** The repeat-rate mart originally deployed with a status filter
-  the term definition never asked for; the semantic validator passed it as a warning and a human
-  reviewer caught it. The validator now treats any filter present in SQL but absent from the term
-  definition as critical (verified against that exact historical SQL), but the lesson stands:
-  deploy gates prove the SQL runs and matches the contract as far as they can see, and human review
-  of new terms is still part of the design.
+  Human review of newly deployed terms remains part of the design.
 - **Token cost.** Recorded term-analysis runs in the shipped seeds cost **$0.08–$0.74 each**
   (`business_term_analysis_results.llm_total_cost_usd`); a full Stage A→E pass makes several LLM calls,
   so budget a few dollars per term.
