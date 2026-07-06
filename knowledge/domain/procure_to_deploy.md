@@ -1,6 +1,6 @@
 # Domain: procure_to_deploy
 
-_Last generated: 2026-07-06 10:08:36_
+_Last generated: 2026-07-06 13:11:09_
 
 Keywords: `procure-to-deploy, procure to deploy, p2d, procurement process, end-to-end, nabava, lifecycle`
 

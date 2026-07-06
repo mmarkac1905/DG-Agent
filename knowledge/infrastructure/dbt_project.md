@@ -1,6 +1,6 @@
 # Infrastructure: dbt_project
 
-_Last generated: 2026-07-06 10:08:36_
+_Last generated: 2026-07-06 13:11:09_
 
 Keywords: `dbt, model, seed, test, macro, schema.yml, dbt_project`
 
@@ -102,7 +102,7 @@ Keywords: `dbt, model, seed, test, macro, schema.yml, dbt_project`
 
 _(none)_
 
-## Open Issues (24)
+## Open Issues (25)
 
 - **#5** [open/medium] Vendor-equipment attribution requires vault traceability — Q4 discovery showed obt_procurement_overview alone cannot attribute equipment outcomes to vendors because multiple vendors share material numbers (join fan-out). Need a fact_equipment_with_vendor model built from link_equipment_gr -> link_gr_po -> link_po_vendor. Backlog for next…
 - **#17** [open/low] UI needs restart-required banner when code changes land — User has no feedback that a newly-edited Streamlit page is not yet live in their browser — Streamlit only hot-reloads on source change if the watcher picks it up, and cache_resource-backed state can outlive reloads. During the demo rehearsal Fix A (selector archive filter) landed…
@@ -128,6 +128,7 @@ _(none)_
 - **#120** [open/low] Wire orphan-relation cleanup into end_of_task.py so deleted models auto-drop — When a dbt model file is deleted (e.g., KI-101 deleted fact_active_deployed_cpe.sql on 2026-05-04), the materialized table in DuckDB persists as an orphan because dbt does NOT auto-drop relations for deleted model files. The orphan stays until someone explicitly DROPs it. Today's…
 - **#122** [open/medium] dim_equipment uniqueness fails - link_equipment_material fan-out (1 device -> multiple materials) — link_equipment_material has 75236 rows for 45000 distinct equipment; 30236 devices (~67%) link to >1 material (e.g. CPE-00000330, an ONT, links to both CPE-ONT-003 and CPE-RTR-001). This fans dim_equipment out to 75236 rows, breaking unique_dim_equipment_equipment_number and uniq…
 - **#125** [open/medium] Stage A scope-history iter_num collides (propose+revise both iter 1) -> confirm can select wrong iteration — append_iteration_to_history writes only business_glossary.csv, but _propose_or_revise derives iter_num from the DB term row (scope_derivation_history_json), which stays {} until a dbt seed runs. So a revise after a propose (no reseed between) reads empty history and is numbered i…
+- **#135** [open/low] Deploy step d.5 semantic gate reads OBT metadata before the view materializes — During BG032's UI deploy, step d.5 logged 'metadata read failed: Catalog Error: Table obt_ecommerce_on_time_delivery does not exist' for the OBT while validating it - the gate ran a beat before dbt created the view; it degraded gracefully (warn) and dbt test subsequently passed. …
 
 ## DO NOT (Anti-patterns)
 

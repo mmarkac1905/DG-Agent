@@ -1,6 +1,6 @@
 # Business Term: Repeat Customer Rate (blind-definition test)
 
-_Last generated: 2026-07-06 10:08:36_
+_Last generated: 2026-07-06 13:11:09_
 
 ## Definition
 
@@ -27,6 +27,8 @@ Share of orders placed by a repeat customer, per month of order purchase. A repe
 
 ### Transformation (plain language)
 
+1. This column carries the repeat_customer_rate_blind value as a direct copy of the SAP field ORDERS.ORDER_PURCHASE_TIMESTAMP, flowing the order purchase timestamp grain unchanged through staging, vault, and mart layers to support month-level identification of customers placing more than one order.
+2. Carries the stable person-level identifier from SAP field CUSTOMER_UNIQUE_ID, flowing through unchanged from the CUSTOMERS table to support identification of repeat customers across multiple orders.
 
 ### SQL (from dbt models)
 

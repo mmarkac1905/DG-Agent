@@ -1041,6 +1041,26 @@ def render_approval_form(term, term_id):
     st.subheader("✅ Approval")
     st.markdown(f"**Current status:** {term['status'].upper()}")
 
+    # User finding (BG032 clean-room run): a term can be approved before
+    # its S2T exists, silently skipping the S2T stage. Approval stays
+    # allowed (legacy path), but say so out loud.
+    try:
+        _s2t_check = query(
+            "SELECT COUNT(*) AS n FROM main_seeds.s2t_mapping "
+            f"WHERE business_term_id = '{term_id}' "
+            "AND COALESCE(TRIM(CAST(target_model AS VARCHAR)), '') != ''"
+        )
+        if int(_s2t_check.iloc[0]["n"] or 0) == 0:
+            st.warning(
+                "⚠️ No deployed S2T mapping exists for this term yet. "
+                "Approving now approves the definition only — the S2T "
+                "stage on the pipeline strip will remain open. You can "
+                "still create the S2T after approval (S2T Specification "
+                "tab)."
+            )
+    except Exception:
+        pass
+
     with st.form(key=f"approval_form_{term_id}"):
         action = st.radio(
             "Action",
@@ -1226,17 +1246,22 @@ def render_ask_claude(term, term_id):
     # Freshness gate: S2T build is a write-path action — blocked on red.
     from freshness import render_freshness_banner as _ffresh_banner_s2t, is_write_blocked as _is_blocked_s2t
     _ffresh_banner_s2t("s2t")
-    _s2t_blocked = _is_blocked_s2t()
+    # Analyst ruling (2026-07-06): staleness WARNS, it does not block.
+    # A red freshness state used to disable this button; the owner ruled
+    # that the analyst decides whether to proceed on stale facts.
+    if _is_blocked_s2t():
+        st.warning(
+            "⚠️ Domain facts are stale for the active source. Generation "
+            "will inject facts that have not been re-verified against the "
+            "latest ingestion — consider running "
+            "`python scripts/refresh_domain_facts.py` first. Proceeding is "
+            "allowed and at your discretion."
+        )
 
     if st.button(
         "🤖 Create S2T with Claude",
         key=f"create_s2t_{term_id}",
         type="primary",
-        disabled=_s2t_blocked,
-        help=(
-            "Domain facts are stale. Re-run ingestion and refresh before building S2T."
-            if _s2t_blocked else None
-        ),
     ):
         # RULE 41: reject archived-term clicks before any LLM work. Streamlit
         # session state can surface a stale button press against a term that

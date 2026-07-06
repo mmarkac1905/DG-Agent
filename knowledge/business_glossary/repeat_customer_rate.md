@@ -1,6 +1,6 @@
 # Business Term: Repeat Customer Rate
 
-_Last generated: 2026-07-06 10:08:36_
+_Last generated: 2026-07-06 13:11:09_
 
 ## Definition
 
@@ -24,53 +24,32 @@ Share of orders placed by a repeat customer, per month of order purchase. A repe
 | CUSTOMERS | CUSTOMER_UNIQUE_ID | Carries customer_unique_id — the stable person-level identifier required by the definition to distinguish the same person across multiple orders; customer_id is order-scoped and cannot be used for repeat-customer detection without this table. |
 | orders | order_id | Unique identifier of the order — used as the unit of counting for numerator and denominator |
 | orders | order_purchase_timestamp | Purchase timestamp — used to derive order month and to determine order sequence per person |
-| orders | order_status | Order lifecycle status — used to filter in-scope orders for denominator and numerator |
-| customers | customer_id | Order-scoped customer key — used only to JOIN orders to customers; NOT used for repeat detection |
-| customers | customer_unique_id | Stable person identifier — the ONLY correct key for identifying repeat customers across orders. customer_id is order-scoped and MUST NOT be used for repeat detection. |
+| 100 | 0 |  |
+| HUB_OLIST_ORDER | ORDER_ID |  |
 
 ### Transformation (plain language)
 
-1. Count distinct order_id values for denominator (all orders in month); count only those where the person had a prior order for numerator
+1. Carries the original order purchase timestamp directly from the SAP field ORDER_PURCHASE_TIMESTAMP, flowing through staging, vault, and mart layers unchanged to support monthly bucketing and repeat customer rate calculations.
+2. Carries the stable person-level identifier sourced directly from SAP field CUSTOMER_UNIQUE_ID, flowing through staging, vault, and mart layers unchanged to support repeat-customer detection across multiple orders.
+3. Counts the total number of unique orders placed, used as the basis for calculating the repeat customer rate.
    - *Join:* Primary table; one row per order. Joined to customers via customer_id (per_record_key, avg 1.00x per DAR-00959)
    - *Filter:* Exclude canceled orders (order_status NOT IN ('canceled','unavailable')). See warning on analyst filter decision blocker.
-2. Truncate to YYYY-MM for monthly grain; also used in window function to detect prior orders for the same customer_unique_id
+4. Truncates the order purchase timestamp to the first day of its calendar month, providing a standardized month-level date for grouping repeat customer metrics.
    - *Join:* Column on orders; no additional join needed
    - *Filter:* Zero nulls confirmed (DAR-00931: null_pct=0.0, spans 2016-09-04 to 2018-10-17). No COALESCE needed.
-3. Exclude 'canceled' and 'unavailable' statuses from both numerator and denominator. DAR-00973 confirms: delivered=96,478, shipped=1,107, canceled=625, unavailable=609, invoiced=314, processing=301, created=5, approved=2. Zero nulls (DAR-00970).
-   - *Join:* Column on orders; no additional join
-   - *Filter:* Exclude canceled (625) and unavailable (609) — these represent orders that were never fulfilled. Delivered+shipped+invoiced+processing+created+approved are included as 'placed' orders.
-4. Join key between orders.customer_id and customers.customer_id. Per DAR-00959 this is a per_record_key join (avg 1.00x fanout, 100% matched). Per DAR-00996 zero nulls.
-   - *Join:* customers joined to orders via customer_id; per_record_key (DAR-00959). RI=100% (DAR-00908).
-   - *Filter:* Zero nulls on both sides (DAR-00996, DAR-00970); no null filter needed
-5. Use in LAG/window function to detect whether a person placed a prior order. Group by customer_unique_id and order by order_purchase_timestamp; if MIN(order_purchase_timestamp) over the person < current order's timestamp, the order is a repeat order. Zero nulls confirmed (DAR-00996).
-   - *Join:* Reached via customers table after joining orders.customer_id -> customers.customer_id
-   - *Filter:* Zero nulls (DAR-00996). All 99,441 rows have a non-null customer_unique_id.
+5. fact_repeat_customer_rate.repeat_customer_rate_pct carries the repeat customer rate percentage as a direct copy of the SAP source field 100.0, flowing through staging, vault, and mart layers without modification.
+6. This column carries the raw order identifier flowing through unchanged from the SAP source field ORDER\_ID, used to count repeat orders when calculating the repeat customer rate.
 
 ### SQL (from dbt models)
 
 **fact_repeat_customer_rate.total_orders:**
 ```sql
-COUNT(DISTINCT o.order_id)
+COUNT(DISTINCT order_id)
 ```
 
 **fact_repeat_customer_rate.order_month:**
 ```sql
-DATE_TRUNC('month', o.order_purchase_timestamp)::DATE AS order_month
-```
-
-**fact_repeat_customer_rate.order_status_filter:**
-```sql
-WHERE o.order_status NOT IN ('canceled', 'unavailable')
-```
-
-**fact_repeat_customer_rate.join_key_only:**
-```sql
-JOIN customers c ON o.customer_id = c.customer_id
-```
-
-**fact_repeat_customer_rate.is_repeat_order:**
-```sql
-MIN(o.order_purchase_timestamp) OVER (PARTITION BY c.customer_unique_id) AS first_order_ts
+DATE_TRUNC('month', o.order_purchase_timestamp)::DATE
 ```
 
 ### Target Models

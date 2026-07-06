@@ -5,13 +5,18 @@ Computes the age gap between the most recent raw-data ingestion
 auto-injectable fact (`main_seeds.domain_facts.evidence_refreshed_at`).
 
 Green (<=3 days) allows everything. Yellow (3-14 days) warns but
-allows. Red (>14 days) or no baseline blocks write-path actions
-(S2T build, Guided-Domain planning, Domain Report generation). BT
-planner always proceeds — stale context beats no context for
-read-path analyses. See RULE 31.
+allows. Red (>14 days) or no baseline WARNS on write-path actions
+(S2T build, Domain Report generation) — analyst ruling 2026-07-06:
+staleness never disables a button; the analyst decides whether to
+proceed on stale facts (decision #128 supersedes the original
+block-on-red rule). Facts are scoped to the active source schema
+(DG_SOURCE_SCHEMA): one source's fact hygiene never gates another
+source's work. BT planner always proceeds — stale context beats no
+context for read-path analyses. See RULE 31.
 """
 from __future__ import annotations
 
+import os
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -81,17 +86,35 @@ def get_last_ingestion_utc() -> Optional[datetime]:
 def get_min_evidence_refreshed_utc() -> tuple[Optional[datetime], int]:
     """(MIN(evidence_refreshed_at), count) over active + auto_inject + non-null stale.
 
+    Scoped to the ACTIVE SOURCE: a fact only gates the write path when at
+    least one of its scope_tables exists in the active raw schema
+    (DG_SOURCE_SCHEMA). Without this, one source's fact hygiene locks
+    every source's work — during the Olist onboarding, eleven stale SAP
+    facts blocked an Olist term's Create S2T.
+
     If no qualifying facts exist, returns (None, 0) — caller treats as
     "nothing to be stale".
     """
+    _src = os.environ.get("DG_SOURCE_SCHEMA", "raw_sap")
     try:
         df = query(
-            "SELECT MIN(evidence_refreshed_at) AS ts, COUNT(*) AS n "
-            "FROM main_seeds.domain_facts "
-            "WHERE status = 'active' "
-            "  AND auto_inject = TRUE "
-            "  AND stale_after_days IS NOT NULL "
-            "  AND CAST(stale_after_days AS VARCHAR) != ''"
+            "SELECT MIN(f.evidence_refreshed_at) AS ts, COUNT(*) AS n "
+            "FROM main_seeds.domain_facts f "
+            "WHERE f.status = 'active' "
+            "  AND f.auto_inject = TRUE "
+            "  AND f.stale_after_days IS NOT NULL "
+            "  AND CAST(f.stale_after_days AS VARCHAR) != '' "
+            "  AND EXISTS ("
+            "        SELECT 1 FROM information_schema.tables t "
+            f"       WHERE t.table_schema = '{_src}' "
+            "          AND list_contains("
+            "                list_transform("
+            "                  string_split(LOWER(f.scope_tables), ','),"
+            "                  x -> trim(x)"
+            "                ),"
+            "                LOWER(t.table_name)"
+            "              )"
+            "      )"
         )
     except Exception:
         return None, 0

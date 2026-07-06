@@ -1,10 +1,10 @@
 # Infrastructure: pipeline
 
-_Last generated: 2026-07-06 10:08:36_
+_Last generated: 2026-07-06 13:11:09_
 
 Keywords: `pipeline, etl, ingestion, refresh, scheduler`
 
-## Related Decisions (34)
+## Related Decisions (35)
 
 - **#11** (2026-04-14) — knowledge_models_built: Intelligence layer complete. Session startup now surfaces live system state with health assessments. Context export ready for chat sessions.
 - **#13** (2026-04-14) — governance_streamlit_pages: Fixed page 7 layer->pipeline matching (spec had substring bug that missed vault/knowledge). Added denied status color. denied status is new enum — build_knowledge_wiki.py buckets only approved/draft so denied terms invisible in wiki index (cosmetic backlog).
@@ -40,6 +40,7 @@ Keywords: `pipeline, etl, ingestion, refresh, scheduler`
 - **#115** (2026-06-27) **[NEVER_REPEAT]** — pin_current_sonnet_not_dated_model_id: Dated model ids (claude-sonnet-4-20250514) get retired and 404 the whole pipeline. Pin the rolling alias claude-sonnet-4-6; better, centralize the id in one config so a retirement is a 1-line fix.
 - **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
 - **#127** (2026-07-04) — blind_definition_probe_bg034_customer_key: Honest claim: the trap is resolved from CATALOG DOCUMENTATION + PROFILED EVIDENCE, not from the term definition - and not from data alone either (the dictionary rows carry the public dataset docs). Reading the catalog correctly is the product working as designed; claiming blind discovery would overstate it. The hard stop shows the convergence gate is stricter than the key choice.
+- **#128** (2026-07-06) — freshness_gate_source_scoped_and_warns_not_blocks: Staleness is information for the analyst, not a lock. Scoping stays interim until source_system is first-class across the knowledge graph (consolidated catalog). Approval form also warns when no deployed S2T exists (a term approved before its S2T silently skipped the stage in the clean-room run).
 
 ## Related Domain Relationships (0)
 

@@ -1,10 +1,10 @@
 # Domain: cpe_lifecycle
 
-_Last generated: 2026-07-06 10:08:36_
+_Last generated: 2026-07-06 13:11:09_
 
 Keywords: `cpe lifecycle, device lifecycle, installed, returned, defective, in-stock, deployed, provisioned`
 
-## Related Decisions (20)
+## Related Decisions (21)
 
 - **#3** (2026-04-14) — abap_logic_catalog_created: ABAP documentation layer complete — covers serial validation equipment lifecycle provisioning bridge vendor scoring warranty tracking and financial depreciation. In real engagement this would be auto-populated by Claude scanning exported ABAP source.
 - **#9** (2026-04-14) — marts_and_obt_built: Full analytical stack complete: raw -> staging -> vault -> marts -> OBT. Fixed three spec bugs: hk_po_item vs hk_po_material mismatch gr_totals hk_material_document join fact_invoices hk_vendor not in sat.
@@ -26,16 +26,18 @@ Keywords: `cpe lifecycle, device lifecycle, installed, returned, defective, in-s
 - **#118** (2026-06-28) **[NEVER_REPEAT]** — cpe_margin_is_customer_centric_not_material_centric: CPE profitability is a customer/segment + retention question, not a per-material one. Amortize device capex straight-line over the 24-month giveaway period and match to deployed devices.
 - **#121** (2026-06-28) **[NEVER_REPEAT]** — bg030_deployed_contribution_margin_mart: Customer-centric CPE contribution margin (service_plan x tenure_band x month) deployed end-to-end Stage 0->E. Always reconcile suspected magnitude bugs to source before declaring a defect.
 - **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
+- **#128** (2026-07-06) — freshness_gate_source_scoped_and_warns_not_blocks: Staleness is information for the analyst, not a lock. Scoping stays interim until source_system is first-class across the knowledge graph (consolidated catalog). Approval form also warns when no deployed S2T exists (a term approved before its S2T silently skipped the stage in the clean-room run).
 
 ## Related Domain Relationships (0)
 
 _(none)_
 
-## Open Issues (3)
+## Open Issues (4)
 
 - **#17** [open/low] UI needs restart-required banner when code changes land — User has no feedback that a newly-edited Streamlit page is not yet live in their browser — Streamlit only hot-reloads on source change if the watcher picks it up, and cache_resource-backed state can outlive reloads. During the demo rehearsal Fix A (selector archive filter) landed…
 - **#62** [open/medium] Re-run S2T flow — deferred from Stage D.2 — Stage D.2 originally specified a Re-run S2T button for approved+non-empty terms. Dropped because re-running collides with deployed .sql files and existing s2t_mapping rows — `create_s2t_with_implementation` has no archival semantics. Safe re-run requires (a) renaming existing `db…
 - **#120** [open/low] Wire orphan-relation cleanup into end_of_task.py so deleted models auto-drop — When a dbt model file is deleted (e.g., KI-101 deleted fact_active_deployed_cpe.sql on 2026-05-04), the materialized table in DuckDB persists as an orphan because dbt does NOT auto-drop relations for deleted model files. The orphan stays until someone explicitly DROPs it. Today's…
+- **#135** [open/low] Deploy step d.5 semantic gate reads OBT metadata before the view materializes — During BG032's UI deploy, step d.5 logged 'metadata read failed: Catalog Error: Table obt_ecommerce_on_time_delivery does not exist' for the OBT while validating it - the gate ran a beat before dbt created the view; it degraded gracefully (warn) and dbt test subsequently passed. …
 
 ## DO NOT (Anti-patterns)
 

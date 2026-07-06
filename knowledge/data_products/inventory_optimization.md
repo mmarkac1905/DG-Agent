@@ -1,6 +1,6 @@
 # Data Product: inventory_optimization
 
-_Last generated: 2026-07-06 10:08:36_
+_Last generated: 2026-07-06 13:11:09_
 
 Keywords: `inventory, stock, mard, reorder, safety stock, turnover, warehouse, storage location, zaliha, skladišt`
 

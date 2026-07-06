@@ -1,22 +1,22 @@
 # CPE Procurement Analytics — Knowledge Wiki
 
-_Last generated: 2026-07-06 10:08:36_
+_Last generated: 2026-07-06 13:11:09_
 
 Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand.
 
 ## System Snapshot
 
 - **Latest version (decisions seed):** `wire_dbt_compile_eot`
-- **Total decisions:** 126
+- **Total decisions:** 127
 - **Total domain relationships:** 0
-- **Total known issues:** 126 (34 open)
+- **Total known issues:** 127 (35 open)
 - **Data products tracked:** 0
 - **Data Vault entities designed:** 60 (15 hubs · 17 links · 28 satellites)
-- **Business glossary terms:** 34 (25 approved · 3 draft)
+- **Business glossary terms:** 34 (27 approved · 2 draft)
 - **ABAP custom programs:** 16 documented (2 critical · 4 high risk) · **Z-tables:** 11
 - **Data contracts:** 21 (15 daily · 6 weekly)
-- **dbt models scanned:** 135 (knowledge: 6, marts: 18, obt: 6, staging: 45, vault: 60)
-- **Column lineage tracked:** 1356 columns across all layers
+- **dbt models scanned:** 153 (knowledge: 6, marts: 18, obt: 6, other: 18, staging: 45, vault: 60)
+- **Column lineage tracked:** 1469 columns across all layers
 
 ## Data Products (Analytical Use Cases)
 
@@ -49,11 +49,12 @@ Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand
 - [PO Volume by Month](business_glossary/po_volume_by_month.md) — procurement · month
 - [PO-Invoice Three-Way Match Variance](business_glossary/po_invoice_three_way_match_variance.md) — procurement_finance · vendor x month
 - [CPE Contribution Margin by Service Plan & Tenure](business_glossary/cpe_contribution_margin_by_segment.md) — procurement_finance · service_plan x tenure_band x month
+- [Monthly GMV by Product Category](business_glossary/monthly_gmv_by_category.md) — ecommerce_sales · product_category x month
+- [Olist On-Time Delivery Rate](business_glossary/olist_on_time_delivery_rate.md) — ecommerce_sales · month
 
 ### Draft Terms (awaiting approval)
 - [Total Cost of Ownership (TCO)](business_glossary/total_cost_of_ownership.md) — cost_analysis · draft
 - [Goods Receipt Accuracy](business_glossary/goods_receipt_accuracy.md) — quality · draft
-- [Olist On-Time Delivery Rate](business_glossary/olist_on_time_delivery_rate.md) — ecommerce_sales · draft
 
 ## SAP Tables
 

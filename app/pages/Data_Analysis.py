@@ -1806,6 +1806,13 @@ with tab_domain:
                 ),
             )
 
+        # Dispatch immediately below the button so progress is visible at
+        # the click site (user finding: status used to render ~240 lines
+        # further down, making the click look dead). The analyzer grid
+        # below then renders post-run state in the same pass.
+        if _sb_selected and _sb_run_all_clicked:
+            _run_all_analyzers_for_table(_sb_selected)
+
         if _sb_selected:
             st.markdown(f"### Table: `{_sb_selected}`")
 
@@ -1959,7 +1966,37 @@ with tab_domain:
                     _row_cols[2].caption(_quarantine_caption)
                 _row_cols[3].markdown(_bl_count_cell)
                 _run_key = f"sb_run_{_label}_{_sb_selected}"
-                if _row_cols[4].button("▶ Run", key=_run_key):
+                if _atype == "grain_relationship":
+                    # Pairwise analyzer: one table makes zero pairs, so a
+                    # per-table dispatch silently does nothing (user finding,
+                    # BG032 clean-room run). Dispatch this table's pairs
+                    # against every other live source table instead.
+                    if _row_cols[4].button("▶ Run pairs", key=_run_key,
+                                           help="Pairwise analyzer: runs this "
+                                                "table against every other "
+                                                "source table."):
+                        try:
+                            _live = [
+                                r[0] for r in _conn_sb.execute(
+                                    "SELECT LOWER(table_name) FROM "
+                                    "information_schema.tables WHERE "
+                                    f"table_schema='{os.environ.get('DG_SOURCE_SCHEMA', 'raw_sap')}'"
+                                ).fetchall()
+                            ]
+                        except Exception:  # noqa: BLE001
+                            _live = []
+                        _partners = sorted(
+                            t for t in _live if t != _sb_selected.lower())
+                        _pair_list = [
+                            tuple(sorted((_sb_selected.lower(), t)))
+                            for t in _partners
+                        ]
+                        if _pair_list:
+                            _run_grain_relationship_pairs(_pair_list)
+                        else:
+                            st.info("No partner tables found in the active "
+                                    "source schema; nothing to pair.")
+                elif _row_cols[4].button("▶ Run", key=_run_key):
                     _run_analyzer_subprocess(
                         script_rel=_script,
                         analyzer_label=_label,
@@ -1998,9 +2035,8 @@ with tab_domain:
                             pass
                         render_dar_card(_dar_row_for_render, st)
 
-        # ── Stage D.1: Run All batch dispatch ──
-        if _sb_selected and _sb_run_all_clicked:
-            _run_all_analyzers_for_table(_sb_selected)
+        # (Run All dispatch moved next to its button above — progress must
+        # render at the click site.)
 
 
 # ============================================================
@@ -2377,16 +2413,18 @@ with tab_report:
         # Freshness gate: Domain Report is a write-path action — blocked on red.
         from freshness import render_freshness_banner as _ffresh_banner_dr, is_write_blocked as _is_blocked_dr
         _ffresh_banner_dr("domain_report")
-        _dr_blocked = _is_blocked_dr()
+        # Analyst ruling (2026-07-06): staleness warns, never blocks.
+        if _is_blocked_dr():
+            st.warning(
+                "⚠️ Domain facts are stale for the active source — the "
+                "report will cite facts not re-verified against the latest "
+                "ingestion. Consider `python scripts/refresh_domain_facts.py` "
+                "first. Proceeding is allowed."
+            )
         _generate_clicked = st.button(
             f"📝 {_btn_label}",
             key="gen_narrative_report",
             type=_btn_type,
-            disabled=_dr_blocked,
-            help=(
-                "Domain facts are stale. Re-run ingestion and refresh before generating."
-                if _dr_blocked else None
-            ),
         )
 
     # Show saved report content (below button, above generation spinner)

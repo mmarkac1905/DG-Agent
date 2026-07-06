@@ -23,6 +23,8 @@ After loading, continue the recipe:
     # and build the demo models with DG_ENABLE_OLIST=true
 """
 import argparse
+import csv
+import datetime
 import sys
 import urllib.request
 import zipfile
@@ -107,6 +109,41 @@ def main() -> int:
         print(f"\nERROR: suspicious row counts for: {', '.join(failures)} — "
               f"check the downloads in {CACHE}", file=sys.stderr)
         return 1
+
+    # Record the load in ingestion_log so freshness governance sees it,
+    # same as every other ingester in the repo.
+    _log = ROOT / "dbt" / "seeds" / "ingestion_log.csv"
+    try:
+        with open(_log, newline="", encoding="utf-8") as f:
+            _rows = list(csv.DictReader(f))
+            _cols = list(_rows[0].keys())
+        _now = datetime.datetime.now(datetime.timezone.utc)
+        _stamp = _now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        _day = _now.strftime("%Y%m%d")
+        _seq = 1 + sum(1 for r in _rows if r["run_id"].startswith(f"ING-{_day}"))
+        total_rows = 0
+        con = duckdb.connect(str(DB), read_only=True)
+        for t in list(FILES) + ["geolocation"]:
+            total_rows += con.execute(
+                f"SELECT COUNT(*) FROM {SCHEMA}.{t}").fetchone()[0]
+        con.close()
+        _rows.append({
+            "run_id": f"ING-{_day}-{_seq:03d}",
+            "started_at_utc": _stamp, "finished_at_utc": _stamp,
+            "source_type": "public_dataset_loader",
+            "row_count_total": str(total_rows),
+            "tables_touched": ",".join(sorted(list(FILES) + ["geolocation"])),
+            "trigger_user": "load_olist_source.py",
+            "notes": "Olist public dataset loaded into raw_olist (see README: Pointing it at another source).",
+        })
+        with open(_log, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=_cols, lineterminator="\n")
+            w.writeheader()
+            w.writerows(_rows)
+        print(f"ingestion_log: recorded ING-{_day}-{_seq:03d} "
+              f"({total_rows:,} rows). Reload with: cd dbt && dbt seed --select ingestion_log")
+    except Exception as e:  # noqa: BLE001
+        print(f"WARNING: could not record ingestion_log entry: {e}", file=sys.stderr)
 
     print(f"\nraw_olist loaded into {DB.name}. Next steps:\n"
           "  python scripts/generate_olist_data_dictionary.py\n"
