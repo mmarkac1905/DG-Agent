@@ -94,3 +94,15 @@ def test_classify_header_detail():
 
 def test_classify_low_match_is_no_signal():
     assert _classify(_m(avg=1.0, stddev=0.0, ratio=0.05)) == "no_signal"
+
+
+# ─── citation-audit keyword coverage (BG034 root cause) ────────────────
+
+def test_window_frame_keywords_not_flagged_as_columns():
+    """BG034 hard-stopped because the citation audit flagged UNBOUNDED and
+    PRECEDING (window-frame keywords) as unknown columns. Pin the full
+    window vocabulary into the audit's keyword stoplist."""
+    from run_term_injection import _SQL_KEYWORDS
+    for kw in ("unbounded", "preceding", "following", "current", "range",
+               "groups", "exclude", "ties", "window", "qualify"):
+        assert kw in _SQL_KEYWORDS, f"missing window keyword: {kw}"

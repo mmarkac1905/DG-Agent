@@ -285,10 +285,12 @@ dbt marts, for **~$5 total in LLM cost**:
 
 One honesty note, because precision matters more than punch: BG033's original definition
 *named* the identity constraint, so I re-ran it **blind** (definition with no hint, `BG034` in the
-glossary): scope derivation still chose `customer_unique_id`, from the **catalog documentation plus
-the 1:1 EDA evidence**, and that run then refused to self-certify, hard-stopping on the
-citation-audit guardrail. Resolving a trap from a well-read catalog is the product working as
-designed; it is not blind discovery from data alone, and I don't claim it is.
+glossary): the pipeline chose `customer_unique_id` from the **catalog documentation plus the 1:1
+EDA evidence** and converged with high confidence, all term conditions covered. (The first blind
+run hard-stopped on the citation audit; the trail showed the audit flagging SQL window-frame
+keywords as unknown columns, a parser false positive, fixed and pinned by test. The find-to-fix
+trail is decisions #127 and #130.) Resolving a trap from a well-read catalog is the product working
+as designed; it is not blind discovery from data alone, and I don't claim it is.
 
 The experiment also did what a second source should do: it **broke things, and the breaks became
 fixes**. Direction-aware join-fanout evidence, suffix-token key matching (which now discovers the

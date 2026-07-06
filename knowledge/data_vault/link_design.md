@@ -1,6 +1,6 @@
 # Data Vault: link_design
 
-_Last generated: 2026-07-06 19:02:51_
+_Last generated: 2026-07-06 19:11:41_
 
 Keywords: `link_, relationship, link design, many-to-many, link_po_vendor, link_po_material, link_gr_po`
 

@@ -567,6 +567,10 @@ _SQL_KEYWORDS = frozenset({
     "as", "distinct", "union", "intersect", "except", "all", "any", "some",
     "case", "when", "then", "else", "end",
     "in", "between", "like", "ilike", "exists", "over", "partition",
+    # Window-frame vocabulary (BG034 hard-stopped because UNBOUNDED and
+    # PRECEDING were flagged as unknown columns by this audit)
+    "unbounded", "preceding", "following", "current", "range", "groups",
+    "exclude", "ties", "others", "window", "qualify", "respect", "ignore",
     "asc", "desc", "nulls", "first", "last",
     "true", "false", "with", "recursive",
     # Types (when bare)

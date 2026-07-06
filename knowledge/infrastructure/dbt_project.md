@@ -1,10 +1,10 @@
 # Infrastructure: dbt_project
 
-_Last generated: 2026-07-06 19:02:51_
+_Last generated: 2026-07-06 19:11:41_
 
 Keywords: `dbt, model, seed, test, macro, schema.yml, dbt_project`
 
-## Related Decisions (92)
+## Related Decisions (93)
 
 - **#1** (2026-04-13) — project_initialized: Framework ready for SAP sample data generation and Data Vault modeling
 - **#7** (2026-04-14) — staging_layer_1to1: Staging follows purist Data Vault approach: mechanical transformation only. Business naming and logic deferred to vault layer. Dropped hk_po_vendor from stg_sap__ekpo — vault-time resolution via EKKO join.
@@ -98,6 +98,7 @@ Keywords: `dbt, model, seed, test, macro, schema.yml, dbt_project`
 - **#124** (2026-07-04) — second_source_experiment_olist_proves_agnostic_mechanism: The mechanism generalizes. Source onboarding = load schema + dictionary rows + run analyzers. Olist demo models live under dbt/models/olist behind DG_ENABLE_OLIST.
 - **#126** (2026-07-04) — greenfield_source_generation_contracts: Every generation-time contract needs a defined greenfield behavior. Grounding must cover everything the model is allowed to ref().
 - **#129** (2026-07-06) — cross_vendor_review_convergence_and_claim_narrowing: Headline narrowed to 'learns the source system from profiled data, schema structure, and catalog metadata' (the reviewer's own wording). Convergence across two model families ends the review loop per the pre-committed stop condition; remaining findings (#136 fail-closed, #137 value-overlap) are the top of the technical roadmap.
+- **#130** (2026-07-06) — bg034_blind_run_converges_after_citation_audit_parser_fix: The blind probe now demonstrates full convergence: person-key resolution from catalog documentation plus profiled evidence, self-certified through the model's own gates. Same bug genre as the lineage literal (keyword/identifier-blind token extraction); audit both remaining bare-token extractors for vocabulary gaps.
 
 ## Related Domain Relationships (0)
 

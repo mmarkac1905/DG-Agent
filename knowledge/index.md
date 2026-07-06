@@ -1,13 +1,13 @@
 # CPE Procurement Analytics — Knowledge Wiki
 
-_Last generated: 2026-07-06 19:02:51_
+_Last generated: 2026-07-06 19:11:41_
 
 Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand.
 
 ## System Snapshot
 
 - **Latest version (decisions seed):** `wire_dbt_compile_eot`
-- **Total decisions:** 128
+- **Total decisions:** 129
 - **Total domain relationships:** 0
 - **Total known issues:** 129 (37 open)
 - **Data products tracked:** 0

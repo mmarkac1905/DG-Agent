@@ -1,6 +1,6 @@
 # Business Term: Repeat Customer Rate (blind-definition test)
 
-_Last generated: 2026-07-06 19:02:51_
+_Last generated: 2026-07-06 19:11:41_
 
 ## Definition
 
@@ -51,6 +51,7 @@ Simplified path: **SAP source** → `staging` → `vault (hubs/links/sats)` → 
 
 Status: `scope_confirmed`
 
-## Related Decisions (1)
+## Related Decisions (2)
 
 - **#127** (2026-07-04) — blind_definition_probe_bg034_customer_key: Honest claim: the trap is resolved from CATALOG DOCUMENTATION + PROFILED EVIDENCE, not from the term definition - and not from data alone either (the dictionary rows carry the public dataset docs). Reading the catalog correctly is the product working as designed; claiming blind discovery would overstate it. The hard stop shows the convergence gate is stricter than the key choice.
+- **#130** (2026-07-06) — bg034_blind_run_converges_after_citation_audit_parser_fix: The blind probe now demonstrates full convergence: person-key resolution from catalog documentation plus profiled evidence, self-certified through the model's own gates. Same bug genre as the lineage literal (keyword/identifier-blind token extraction); audit both remaining bare-token extractors for vocabulary gaps.
