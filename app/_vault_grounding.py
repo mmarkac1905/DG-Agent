@@ -78,6 +78,18 @@ def vault_schema_block(conn=None) -> str:
     ]
     for t in sorted(cols):
         lines.append(f"  {t}({', '.join(cols[t])})")
+    lines += [
+        "",
+        "## HASH-KEY CONVENTION (hard rule — cross-session join integrity)",
+        "Every hash key (hk_*) in every NEW vault model MUST be computed as "
+        "{{ dbt_utils.generate_surrogate_key(['<natural_key>']) }} — never a "
+        "hand-rolled MD5/UPPER/TRIM variant. Existing hubs already use this "
+        "recipe; a different recipe hashes the same natural key to a "
+        "different value, every join between your model and the existing "
+        "vault silently returns zero rows, and the deployed mart is empty. "
+        "(This exact failure shipped once: an order-keyed satellite used "
+        "MD5(UPPER(TRIM(order_id))) against a generate_surrogate_key hub.)",
+    ]
     if mart_cols:
         lines += [
             "",

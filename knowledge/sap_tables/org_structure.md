@@ -1,6 +1,6 @@
 # SAP Tables: org_structure
 
-_Last generated: 2026-07-06 19:29:00_
+_Last generated: 2026-07-07 01:07:16_
 
 Keywords: `t001, t001w, t001l, t024, company code, plant, storage location, purchasing org`
 

@@ -18,6 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from db import query, get_connection
 from dbt_sync import sync_seed, sync_models, sync_tests
+from _data_analysis_shared import staging_prefix
 from _csv_safeguard import assert_csv_safe, assert_csv_safe_row_count
 from _term_status_utils import filter_active_terms
 from _s2t_tab_helpers import (
@@ -235,7 +236,7 @@ contracts = query("SELECT * FROM main_seeds.data_contracts ORDER BY id")
 def compute_lineage(term_s2t):
     """Resolve source → staging → vault → mart → obt → dashboard for a term."""
     source_tables_list = term_s2t['source_table'].dropna().unique().tolist()
-    staging_models = sorted({f"stg_sap__{t.lower()}" for t in source_tables_list})
+    staging_models = sorted({f"{staging_prefix()}{t.lower()}" for t in source_tables_list})
 
     vault_entities = []
     if not dv_design.empty:
@@ -659,7 +660,7 @@ def render_source_quality(conn, term_s2t):
     """Source data quality table — row count + avg completeness per source."""
     rows = []
     for tbl in term_s2t['source_table'].dropna().unique():
-        stg = f"main_staging.stg_sap__{tbl.lower()}"
+        stg = f"main_staging.{staging_prefix()}{tbl.lower()}"
         fields = term_s2t[term_s2t['source_table'] == tbl]['source_field'].dropna().tolist()
         try:
             rc = conn.execute(f"SELECT COUNT(*) FROM {stg}").fetchone()[0]
@@ -864,12 +865,12 @@ def render_full_profile(conn, term_s2t):
     """Column-level profiling for every source and target column referenced by this term."""
     st.markdown("#### Source Tables Profile")
     for tbl in term_s2t['source_table'].dropna().unique():
-        stg_table = f"main_staging.stg_sap__{tbl.lower()}"
+        stg_table = f"main_staging.{staging_prefix()}{tbl.lower()}"
         try:
             row_count = conn.execute(f"SELECT COUNT(*) FROM {stg_table}").fetchone()[0]
             cols = conn.execute(
                 f"SELECT column_name FROM information_schema.columns "
-                f"WHERE table_schema = 'main_staging' AND table_name = 'stg_sap__{tbl.lower()}'"
+                f"WHERE table_schema = 'main_staging' AND table_name = '{staging_prefix()}{tbl.lower()}'"
             ).fetchdf()
             st.markdown(f"**{stg_table}**: {row_count:,} rows, {len(cols)} columns")
 
@@ -977,7 +978,7 @@ def render_contract_compliance(term_s2t):
         all_compliant = True
         contract_rows = []
         for _, contract in relevant_contracts.iterrows():
-            stg_table = f"main_staging.stg_sap__{contract['source_table'].lower()}"
+            stg_table = f"main_staging.{staging_prefix()}{contract['source_table'].lower()}"
             fields_for_table = term_s2t[
                 term_s2t['source_table'].str.upper() == contract['source_table'].upper()
             ]['source_field'].dropna().tolist()
@@ -1816,6 +1817,40 @@ def render_ask_claude(term, term_id):
                             "analysis to help the LLM understand the source schema "
                             "better. Then retry Deploy."
                         )
+
+                # --- Step d.4: zero-row gate (deterministic) ---
+                # An empty mart builds and tests green but answers nothing.
+                # BG035 deployed 0 rows because two generation sessions used
+                # different hash-key recipes and every join missed; dbt was
+                # happy, the number was simply absent. Empty deployed models
+                # are a hard failure, before any LLM validation spends money.
+                if not failed_step and new_model_names and dbt_run_succeeded:
+                    _empty_models = []
+                    for sql_path in written_files:
+                        if not str(sql_path).endswith(".sql"):
+                            continue
+                        _mn = sql_path.stem
+                        _sn = f"main_{sql_path.parent.name}"
+                        try:
+                            _rc = conn.execute(
+                                f"SELECT COUNT(*) FROM {_sn}.{_mn}"
+                            ).fetchone()[0]
+                        except Exception:  # noqa: BLE001
+                            continue  # missing relation surfaces elsewhere
+                        _log(f"Step d.4 zero-row gate: {_sn}.{_mn} rows={_rc}")
+                        if int(_rc or 0) == 0:
+                            _empty_models.append(f"{_sn}.{_mn}")
+                    if _empty_models:
+                        failed_step = "zero-row gate"
+                        last_run_error = (
+                            "Deployed model(s) built but contain ZERO rows: "
+                            + ", ".join(_empty_models)
+                            + ". A joined-to-nothing model usually means a "
+                            "key-recipe or filter mismatch upstream — the "
+                            "SQL is wrong even though dbt succeeded. "
+                            "Deployment refused."
+                        )
+                        st.error(f"🔴 {last_run_error}")
 
                 # --- Step d.5: semantic validation gate ---
                 # SQL that compiles and runs is not proof it measures what

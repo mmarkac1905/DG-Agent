@@ -1,6 +1,6 @@
 # Infrastructure: dbt_project
 
-_Last generated: 2026-07-06 19:29:00_
+_Last generated: 2026-07-07 01:07:16_
 
 Keywords: `dbt, model, seed, test, macro, schema.yml, dbt_project`
 

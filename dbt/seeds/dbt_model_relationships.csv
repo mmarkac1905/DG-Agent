@@ -130,165 +130,175 @@ R0128,obt_procurement_overview,obt,dim_date,marts,pipeline,,reads from
 R0129,obt_vendor_scorecard,obt,fact_purchase_orders,marts,pipeline,,reads from
 R0130,obt_vendor_scorecard,obt,dim_vendor,marts,pipeline,,reads from
 R0131,obt_vendor_scorecard,obt,dim_date,marts,pipeline,,reads from
-R0132,fact_gmv_by_category_monthly,other,sat_olist_order_header,other,pipeline,,reads from
-R0133,fact_gmv_by_category_monthly,other,link_olist_order_item,other,pipeline,,reads from
-R0134,fact_gmv_by_category_monthly,other,sat_olist_order_item_prices,other,pipeline,,reads from
-R0135,fact_gmv_by_category_monthly,other,sat_olist_product_category,other,pipeline,,reads from
-R0136,fact_on_time_delivery_monthly,other,hub_olist_order,other,pipeline,,reads from
-R0137,fact_on_time_delivery_monthly,other,sat_olist_order_header,other,pipeline,,reads from
-R0138,fact_repeat_customer_rate,other,hub_olist_order,other,pipeline,,reads from
-R0139,fact_repeat_customer_rate,other,sat_olist_order_header,other,pipeline,,reads from
-R0140,fact_repeat_customer_rate,other,sat_olist_customer_identity,other,pipeline,,reads from
-R0141,obt_ecommerce_gmv_by_category,other,fact_gmv_by_category_monthly,other,pipeline,,reads from
-R0142,obt_ecommerce_on_time_delivery,other,fact_on_time_delivery_monthly,other,pipeline,,reads from
-R0143,obt_ecommerce_on_time_delivery,other,dim_date,marts,pipeline,,reads from
-R0144,obt_ecommerce_repeat_customer,other,fact_repeat_customer_rate,other,pipeline,,reads from
-R0145,stg_olist__category_translation,other,raw_olist.category_translation,raw,source,,reads from raw_olist.category_translation
-R0146,stg_olist__customers,other,raw_olist.customers,raw,source,,reads from raw_olist.customers
-R0147,stg_olist__order_items,other,raw_olist.order_items,raw,source,,reads from raw_olist.order_items
-R0148,stg_olist__orders,other,raw_olist.orders,raw,source,,reads from raw_olist.orders
-R0149,stg_olist__products,other,raw_olist.products,raw,source,,reads from raw_olist.products
-R0150,hub_olist_order,other,stg_olist__orders,other,pipeline,,reads from
-R0151,hub_olist_product,other,stg_olist__products,other,pipeline,,reads from
-R0152,link_olist_order_item,other,stg_olist__order_items,other,pipeline,,reads from
-R0153,sat_olist_customer_identity,other,stg_olist__customers,other,pipeline,,reads from
-R0154,sat_olist_customer_identity,other,raw_olist.orders,raw,source,,reads from raw_olist.orders
-R0155,sat_olist_order_header,other,stg_olist__orders,other,pipeline,,reads from
-R0156,sat_olist_order_item_prices,other,stg_olist__order_items,other,pipeline,,reads from
-R0157,sat_olist_product_category,other,stg_olist__products,other,pipeline,,reads from
-R0158,sat_olist_product_category,other,stg_olist__category_translation,other,pipeline,,reads from
-R0159,stg_sap__bkpf,staging,raw_sap.bkpf,raw,source,,reads from raw_sap.bkpf
-R0160,stg_sap__bseg,staging,raw_sap.bseg,raw,source,,reads from raw_sap.bseg
-R0161,stg_sap__eban,staging,raw_sap.eban,raw,source,,reads from raw_sap.eban
-R0162,stg_sap__ebkn,staging,raw_sap.ebkn,raw,source,,reads from raw_sap.ebkn
-R0163,stg_sap__ekbe,staging,raw_sap.ekbe,raw,source,,reads from raw_sap.ekbe
-R0164,stg_sap__eket,staging,raw_sap.eket,raw,source,,reads from raw_sap.eket
-R0165,stg_sap__ekkn,staging,raw_sap.ekkn,raw,source,,reads from raw_sap.ekkn
-R0166,stg_sap__ekko,staging,raw_sap.ekko,raw,source,,reads from raw_sap.ekko
-R0167,stg_sap__ekpo,staging,raw_sap.ekpo,raw,source,,reads from raw_sap.ekpo
-R0168,stg_sap__eqbs,staging,raw_sap.eqbs,raw,source,,reads from raw_sap.eqbs
-R0169,stg_sap__equi,staging,raw_sap.equi,raw,source,,reads from raw_sap.equi
-R0170,stg_sap__kna1,staging,raw_sap.kna1,raw,source,,reads from raw_sap.kna1
-R0171,stg_sap__lfa1,staging,raw_sap.lfa1,raw,source,,reads from raw_sap.lfa1
-R0172,stg_sap__lfb1,staging,raw_sap.lfb1,raw,source,,reads from raw_sap.lfb1
-R0173,stg_sap__lfm1,staging,raw_sap.lfm1,raw,source,,reads from raw_sap.lfm1
-R0174,stg_sap__makt,staging,raw_sap.makt,raw,source,,reads from raw_sap.makt
-R0175,stg_sap__mara,staging,raw_sap.mara,raw,source,,reads from raw_sap.mara
-R0176,stg_sap__marc,staging,raw_sap.marc,raw,source,,reads from raw_sap.marc
-R0177,stg_sap__mard,staging,raw_sap.mard,raw,source,,reads from raw_sap.mard
-R0178,stg_sap__marm,staging,raw_sap.marm,raw,source,,reads from raw_sap.marm
-R0179,stg_sap__mkpf,staging,raw_sap.mkpf,raw,source,,reads from raw_sap.mkpf
-R0180,stg_sap__mseg,staging,raw_sap.mseg,raw,source,,reads from raw_sap.mseg
-R0181,stg_sap__objk,staging,raw_sap.objk,raw,source,,reads from raw_sap.objk
-R0182,stg_sap__rbkp,staging,raw_sap.rbkp,raw,source,,reads from raw_sap.rbkp
-R0183,stg_sap__resb,staging,raw_sap.resb,raw,source,,reads from raw_sap.resb
-R0184,stg_sap__rkpf,staging,raw_sap.rkpf,raw,source,,reads from raw_sap.rkpf
-R0185,stg_sap__rseg,staging,raw_sap.rseg,raw,source,,reads from raw_sap.rseg
-R0186,stg_sap__ser01,staging,raw_sap.ser01,raw,source,,reads from raw_sap.ser01
-R0187,stg_sap__ser03,staging,raw_sap.ser03,raw,source,,reads from raw_sap.ser03
-R0188,stg_sap__seri,staging,raw_sap.seri,raw,source,,reads from raw_sap.seri
-R0189,stg_sap__t001,staging,raw_sap.t001,raw,source,,reads from raw_sap.t001
-R0190,stg_sap__t001l,staging,raw_sap.t001l,raw,source,,reads from raw_sap.t001l
-R0191,stg_sap__t001w,staging,raw_sap.t001w,raw,source,,reads from raw_sap.t001w
-R0192,stg_sap__t023,staging,raw_sap.t023,raw,source,,reads from raw_sap.t023
-R0193,stg_sap__t024,staging,raw_sap.t024,raw,source,,reads from raw_sap.t024
-R0194,stg_sap__t024e,staging,raw_sap.t024e,raw,source,,reads from raw_sap.t024e
-R0195,stg_sap__t156,staging,raw_sap.t156,raw,source,,reads from raw_sap.t156
-R0196,stg_sap__t156t,staging,raw_sap.t156t,raw,source,,reads from raw_sap.t156t
-R0197,stg_sap__vbak,staging,raw_sap.vbak,raw,source,,reads from raw_sap.vbak
-R0198,stg_sap__vbap,staging,raw_sap.vbap,raw,source,,reads from raw_sap.vbap
-R0199,stg_sap__vbrk,staging,raw_sap.vbrk,raw,source,,reads from raw_sap.vbrk
-R0200,stg_sap__vbrp,staging,raw_sap.vbrp,raw,source,,reads from raw_sap.vbrp
-R0201,stg_sap__zmm_approval_log,staging,raw_sap.zmm_approval_log,raw,source,,reads from raw_sap.zmm_approval_log
-R0202,stg_sap__zmm_material_business,staging,raw_sap.zmm_material_business,raw,source,,reads from raw_sap.zmm_material_business
-R0203,stg_sap__zmm_vendor_business,staging,raw_sap.zmm_vendor_business,raw,source,,reads from raw_sap.zmm_vendor_business
-R0204,hub_accounting_document,vault,stg_sap__bkpf,staging,pipeline,,reads from
-R0205,hub_billing_document,vault,stg_sap__vbrk,staging,pipeline,,reads from
-R0206,hub_customer,vault,stg_sap__kna1,staging,pipeline,,reads from
-R0207,hub_equipment,vault,stg_sap__equi,staging,pipeline,,reads from
-R0208,hub_invoice,vault,stg_sap__rbkp,staging,pipeline,,reads from
-R0209,hub_material,vault,stg_sap__mara,staging,pipeline,,reads from
-R0210,hub_material_document,vault,stg_sap__mkpf,staging,pipeline,,reads from
-R0211,hub_movement_type,vault,stg_sap__t156,staging,pipeline,,reads from
-R0212,hub_plant,vault,stg_sap__t001w,staging,pipeline,,reads from
-R0213,hub_purchase_order,vault,stg_sap__ekko,staging,pipeline,,reads from
-R0214,hub_purchase_requisition,vault,stg_sap__eban,staging,pipeline,,reads from
-R0215,hub_sales_order,vault,stg_sap__vbak,staging,pipeline,,reads from
-R0216,hub_service_plan,vault,stg_sap__vbap,staging,pipeline,,reads from
-R0217,hub_vendor,vault,stg_sap__lfa1,staging,pipeline,,reads from
-R0218,hub_zmm_approval,vault,stg_sap__zmm_approval_log,staging,pipeline,,reads from
-R0219,link_billing_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
-R0220,link_billing_accounting,vault,stg_sap__vbrk,staging,pipeline,,reads from
-R0221,link_billing_customer,vault,stg_sap__vbrk,staging,pipeline,,reads from
-R0222,link_billing_sales_order,vault,stg_sap__vbrp,staging,pipeline,,reads from
-R0223,link_equipment_gr,vault,stg_sap__seri,staging,pipeline,,reads from
-R0224,link_equipment_gr,vault,stg_sap__mkpf,staging,pipeline,,reads from
-R0225,link_equipment_material,vault,stg_sap__equi,staging,pipeline,,reads from
-R0226,link_gr_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
-R0227,link_gr_accounting,vault,stg_sap__mkpf,staging,pipeline,,reads from
-R0228,link_gr_material,vault,stg_sap__mseg,staging,pipeline,,reads from
-R0229,link_gr_po,vault,stg_sap__mseg,staging,pipeline,,reads from
-R0230,link_invoice_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
-R0231,link_invoice_accounting,vault,stg_sap__rbkp,staging,pipeline,,reads from
-R0232,link_invoice_po,vault,stg_sap__rbkp,staging,pipeline,,reads from
-R0233,link_po_item,vault,stg_sap__ekpo,staging,pipeline,,reads from
-R0234,link_po_material,vault,stg_sap__ekpo,staging,pipeline,,reads from
-R0235,link_po_plant,vault,stg_sap__ekpo,staging,pipeline,,reads from
-R0236,link_po_vendor,vault,stg_sap__ekko,staging,pipeline,,reads from
-R0237,link_pr_po,vault,stg_sap__ekpo,staging,pipeline,,reads from
-R0238,link_sales_order_customer,vault,stg_sap__vbak,staging,pipeline,,reads from
-R0239,link_sales_order_equipment,vault,stg_sap__vbap,staging,pipeline,,reads from
-R0240,link_sales_order_equipment,vault,stg_sap__equi,staging,pipeline,,reads from
-R0241,sat_accounting_header,vault,stg_sap__bkpf,staging,pipeline,,reads from
-R0242,sat_billing_document,vault,stg_sap__vbrk,staging,pipeline,,reads from
-R0243,sat_customer,vault,stg_sap__kna1,staging,pipeline,,reads from
-R0244,sat_equipment_general,vault,stg_sap__equi,staging,pipeline,,reads from
-R0245,sat_equipment_status,vault,stg_sap__eqbs,staging,pipeline,,reads from
-R0246,sat_gr_header,vault,stg_sap__mkpf,staging,pipeline,,reads from
-R0247,sat_gr_item,vault,stg_sap__mseg,staging,pipeline,,reads from
-R0248,sat_invoice_header,vault,stg_sap__rbkp,staging,pipeline,,reads from
-R0249,sat_invoice_item,vault,stg_sap__rseg,staging,pipeline,,reads from
-R0250,sat_material_business,vault,stg_sap__zmm_material_business,staging,pipeline,,reads from
-R0251,sat_material_description,vault,stg_sap__makt,staging,pipeline,,reads from
-R0252,sat_material_general,vault,stg_sap__mara,staging,pipeline,,reads from
-R0253,sat_material_plant,vault,stg_sap__marc,staging,pipeline,,reads from
-R0254,sat_movement_type,vault,stg_sap__t156,staging,pipeline,,reads from
-R0255,sat_movement_type_text,vault,stg_sap__t156t,staging,pipeline,,reads from
-R0256,sat_po_account,vault,stg_sap__ekkn,staging,pipeline,,reads from
-R0257,sat_po_header,vault,stg_sap__ekko,staging,pipeline,,reads from
-R0258,sat_po_item,vault,stg_sap__ekpo,staging,pipeline,,reads from
-R0259,sat_po_schedule,vault,stg_sap__eket,staging,pipeline,,reads from
-R0260,sat_pr_detail,vault,stg_sap__eban,staging,pipeline,,reads from
-R0261,sat_sales_order,vault,stg_sap__vbak,staging,pipeline,,reads from
-R0262,sat_sales_order_item,vault,stg_sap__vbap,staging,pipeline,,reads from
-R0263,sat_service_plan,vault,stg_sap__vbap,staging,pipeline,,reads from
-R0264,sat_stock_level,vault,stg_sap__mard,staging,pipeline,,reads from
-R0265,sat_vendor_business,vault,stg_sap__zmm_vendor_business,staging,pipeline,,reads from
-R0266,sat_vendor_commercial,vault,stg_sap__lfb1,staging,pipeline,,reads from
-R0267,sat_vendor_general,vault,stg_sap__lfa1,staging,pipeline,,reads from
-R0268,sat_zmm_approval,vault,stg_sap__zmm_approval_log,staging,pipeline,,reads from
-R0269,fact_equipment_lifecycle,marts,dim_material,marts,star,MATNR,joined on material
-R0270,fact_equipment_lifecycle,marts,dim_service_plan,marts,star,MATNR,joined on material
-R0271,fact_goods_movements,marts,dim_material,marts,star,MATNR,joined on material
-R0272,fact_goods_movements,marts,dim_movement_type,marts,star,BWART,joined on movement type
-R0273,fact_goods_movements,marts,dim_plant,marts,star,WERKS,joined on plant
-R0274,fact_goods_movements,marts,dim_service_plan,marts,star,MATNR,joined on material
-R0275,fact_goods_movements,marts,dim_vendor,marts,star,LIFNR,joined on vendor
-R0276,fact_goods_receipt_accuracy,marts,dim_vendor,marts,star,LIFNR,joined on vendor
-R0277,fact_goods_receipts_monthly,marts,dim_material,marts,star,MATNR,joined on material
-R0278,fact_goods_receipts_monthly,marts,dim_service_plan,marts,star,MATNR,joined on material
-R0279,fact_goods_receipts_monthly,marts,dim_vendor,marts,star,LIFNR,joined on vendor
-R0280,fact_inventory,marts,dim_material,marts,star,MATNR,joined on material
-R0281,fact_inventory,marts,dim_plant,marts,star,WERKS,joined on plant
-R0282,fact_inventory,marts,dim_service_plan,marts,star,MATNR,joined on material
-R0283,fact_invoices,marts,dim_vendor,marts,star,LIFNR,joined on vendor
-R0284,fact_po_invoice_match_variance,marts,dim_vendor,marts,star,LIFNR,joined on vendor
-R0285,fact_purchase_orders,marts,dim_material,marts,star,MATNR,joined on material
-R0286,fact_purchase_orders,marts,dim_plant,marts,star,WERKS,joined on plant
-R0287,fact_purchase_orders,marts,dim_service_plan,marts,star,MATNR,joined on material
-R0288,fact_purchase_orders,marts,dim_vendor,marts,star,LIFNR,joined on vendor
-R0289,fact_equipment_lifecycle,marts,dim_date,marts,date,status_from_date,joined on status_from_date
-R0290,fact_goods_movements,marts,dim_date,marts,date,posting_date,joined on posting_date
-R0291,fact_goods_receipt_accuracy,marts,dim_date,marts,date,first_receipt_date,joined on first_receipt_date
-R0292,fact_invoices,marts,dim_date,marts,date,posting_date,joined on posting_date
-R0293,fact_purchase_orders,marts,dim_date,marts,date,po_date,joined on po_date
+R0132,fact_cross_state_order_share,other,hub_olist_order,other,pipeline,,reads from
+R0133,fact_cross_state_order_share,other,sat_olist_order_header,other,pipeline,,reads from
+R0134,fact_cross_state_order_share,other,sat_olist_customer_location,other,pipeline,,reads from
+R0135,fact_cross_state_order_share,other,link_olist_order_item,other,pipeline,,reads from
+R0136,fact_cross_state_order_share,other,hub_olist_seller,other,pipeline,,reads from
+R0137,fact_cross_state_order_share,other,sat_olist_seller_geo,other,pipeline,,reads from
+R0138,fact_gmv_by_category_monthly,other,sat_olist_order_header,other,pipeline,,reads from
+R0139,fact_gmv_by_category_monthly,other,link_olist_order_item,other,pipeline,,reads from
+R0140,fact_gmv_by_category_monthly,other,sat_olist_order_item_prices,other,pipeline,,reads from
+R0141,fact_gmv_by_category_monthly,other,sat_olist_product_category,other,pipeline,,reads from
+R0142,fact_on_time_delivery_monthly,other,hub_olist_order,other,pipeline,,reads from
+R0143,fact_on_time_delivery_monthly,other,sat_olist_order_header,other,pipeline,,reads from
+R0144,fact_repeat_customer_rate,other,hub_olist_order,other,pipeline,,reads from
+R0145,fact_repeat_customer_rate,other,sat_olist_order_header,other,pipeline,,reads from
+R0146,fact_repeat_customer_rate,other,sat_olist_customer_identity,other,pipeline,,reads from
+R0147,obt_ecommerce_cross_state_order_share,other,fact_cross_state_order_share,other,pipeline,,reads from
+R0148,obt_ecommerce_cross_state_order_share,other,dim_date,marts,pipeline,,reads from
+R0149,obt_ecommerce_gmv_by_category,other,fact_gmv_by_category_monthly,other,pipeline,,reads from
+R0150,obt_ecommerce_on_time_delivery,other,fact_on_time_delivery_monthly,other,pipeline,,reads from
+R0151,obt_ecommerce_on_time_delivery,other,dim_date,marts,pipeline,,reads from
+R0152,obt_ecommerce_repeat_customer,other,fact_repeat_customer_rate,other,pipeline,,reads from
+R0153,stg_olist__category_translation,other,raw_olist.category_translation,raw,source,,reads from raw_olist.category_translation
+R0154,stg_olist__customers,other,raw_olist.customers,raw,source,,reads from raw_olist.customers
+R0155,stg_olist__order_items,other,raw_olist.order_items,raw,source,,reads from raw_olist.order_items
+R0156,stg_olist__orders,other,raw_olist.orders,raw,source,,reads from raw_olist.orders
+R0157,stg_olist__products,other,raw_olist.products,raw,source,,reads from raw_olist.products
+R0158,stg_olist__sellers,other,raw_olist.sellers,raw,source,,reads from raw_olist.sellers
+R0159,hub_olist_order,other,stg_olist__orders,other,pipeline,,reads from
+R0160,hub_olist_product,other,stg_olist__products,other,pipeline,,reads from
+R0161,hub_olist_seller,other,stg_olist__sellers,other,pipeline,,reads from
+R0162,link_olist_order_item,other,stg_olist__order_items,other,pipeline,,reads from
+R0163,sat_olist_customer_identity,other,stg_olist__customers,other,pipeline,,reads from
+R0164,sat_olist_customer_identity,other,raw_olist.orders,raw,source,,reads from raw_olist.orders
+R0165,sat_olist_customer_location,other,stg_olist__orders,other,pipeline,,reads from
+R0166,sat_olist_customer_location,other,stg_olist__customers,other,pipeline,,reads from
+R0167,sat_olist_order_header,other,stg_olist__orders,other,pipeline,,reads from
+R0168,sat_olist_order_item_prices,other,stg_olist__order_items,other,pipeline,,reads from
+R0169,sat_olist_product_category,other,stg_olist__products,other,pipeline,,reads from
+R0170,sat_olist_product_category,other,stg_olist__category_translation,other,pipeline,,reads from
+R0171,sat_olist_seller_geo,other,stg_olist__sellers,other,pipeline,,reads from
+R0172,stg_sap__bkpf,staging,raw_sap.bkpf,raw,source,,reads from raw_sap.bkpf
+R0173,stg_sap__bseg,staging,raw_sap.bseg,raw,source,,reads from raw_sap.bseg
+R0174,stg_sap__eban,staging,raw_sap.eban,raw,source,,reads from raw_sap.eban
+R0175,stg_sap__ebkn,staging,raw_sap.ebkn,raw,source,,reads from raw_sap.ebkn
+R0176,stg_sap__ekbe,staging,raw_sap.ekbe,raw,source,,reads from raw_sap.ekbe
+R0177,stg_sap__eket,staging,raw_sap.eket,raw,source,,reads from raw_sap.eket
+R0178,stg_sap__ekkn,staging,raw_sap.ekkn,raw,source,,reads from raw_sap.ekkn
+R0179,stg_sap__ekko,staging,raw_sap.ekko,raw,source,,reads from raw_sap.ekko
+R0180,stg_sap__ekpo,staging,raw_sap.ekpo,raw,source,,reads from raw_sap.ekpo
+R0181,stg_sap__eqbs,staging,raw_sap.eqbs,raw,source,,reads from raw_sap.eqbs
+R0182,stg_sap__equi,staging,raw_sap.equi,raw,source,,reads from raw_sap.equi
+R0183,stg_sap__kna1,staging,raw_sap.kna1,raw,source,,reads from raw_sap.kna1
+R0184,stg_sap__lfa1,staging,raw_sap.lfa1,raw,source,,reads from raw_sap.lfa1
+R0185,stg_sap__lfb1,staging,raw_sap.lfb1,raw,source,,reads from raw_sap.lfb1
+R0186,stg_sap__lfm1,staging,raw_sap.lfm1,raw,source,,reads from raw_sap.lfm1
+R0187,stg_sap__makt,staging,raw_sap.makt,raw,source,,reads from raw_sap.makt
+R0188,stg_sap__mara,staging,raw_sap.mara,raw,source,,reads from raw_sap.mara
+R0189,stg_sap__marc,staging,raw_sap.marc,raw,source,,reads from raw_sap.marc
+R0190,stg_sap__mard,staging,raw_sap.mard,raw,source,,reads from raw_sap.mard
+R0191,stg_sap__marm,staging,raw_sap.marm,raw,source,,reads from raw_sap.marm
+R0192,stg_sap__mkpf,staging,raw_sap.mkpf,raw,source,,reads from raw_sap.mkpf
+R0193,stg_sap__mseg,staging,raw_sap.mseg,raw,source,,reads from raw_sap.mseg
+R0194,stg_sap__objk,staging,raw_sap.objk,raw,source,,reads from raw_sap.objk
+R0195,stg_sap__rbkp,staging,raw_sap.rbkp,raw,source,,reads from raw_sap.rbkp
+R0196,stg_sap__resb,staging,raw_sap.resb,raw,source,,reads from raw_sap.resb
+R0197,stg_sap__rkpf,staging,raw_sap.rkpf,raw,source,,reads from raw_sap.rkpf
+R0198,stg_sap__rseg,staging,raw_sap.rseg,raw,source,,reads from raw_sap.rseg
+R0199,stg_sap__ser01,staging,raw_sap.ser01,raw,source,,reads from raw_sap.ser01
+R0200,stg_sap__ser03,staging,raw_sap.ser03,raw,source,,reads from raw_sap.ser03
+R0201,stg_sap__seri,staging,raw_sap.seri,raw,source,,reads from raw_sap.seri
+R0202,stg_sap__t001,staging,raw_sap.t001,raw,source,,reads from raw_sap.t001
+R0203,stg_sap__t001l,staging,raw_sap.t001l,raw,source,,reads from raw_sap.t001l
+R0204,stg_sap__t001w,staging,raw_sap.t001w,raw,source,,reads from raw_sap.t001w
+R0205,stg_sap__t023,staging,raw_sap.t023,raw,source,,reads from raw_sap.t023
+R0206,stg_sap__t024,staging,raw_sap.t024,raw,source,,reads from raw_sap.t024
+R0207,stg_sap__t024e,staging,raw_sap.t024e,raw,source,,reads from raw_sap.t024e
+R0208,stg_sap__t156,staging,raw_sap.t156,raw,source,,reads from raw_sap.t156
+R0209,stg_sap__t156t,staging,raw_sap.t156t,raw,source,,reads from raw_sap.t156t
+R0210,stg_sap__vbak,staging,raw_sap.vbak,raw,source,,reads from raw_sap.vbak
+R0211,stg_sap__vbap,staging,raw_sap.vbap,raw,source,,reads from raw_sap.vbap
+R0212,stg_sap__vbrk,staging,raw_sap.vbrk,raw,source,,reads from raw_sap.vbrk
+R0213,stg_sap__vbrp,staging,raw_sap.vbrp,raw,source,,reads from raw_sap.vbrp
+R0214,stg_sap__zmm_approval_log,staging,raw_sap.zmm_approval_log,raw,source,,reads from raw_sap.zmm_approval_log
+R0215,stg_sap__zmm_material_business,staging,raw_sap.zmm_material_business,raw,source,,reads from raw_sap.zmm_material_business
+R0216,stg_sap__zmm_vendor_business,staging,raw_sap.zmm_vendor_business,raw,source,,reads from raw_sap.zmm_vendor_business
+R0217,hub_accounting_document,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0218,hub_billing_document,vault,stg_sap__vbrk,staging,pipeline,,reads from
+R0219,hub_customer,vault,stg_sap__kna1,staging,pipeline,,reads from
+R0220,hub_equipment,vault,stg_sap__equi,staging,pipeline,,reads from
+R0221,hub_invoice,vault,stg_sap__rbkp,staging,pipeline,,reads from
+R0222,hub_material,vault,stg_sap__mara,staging,pipeline,,reads from
+R0223,hub_material_document,vault,stg_sap__mkpf,staging,pipeline,,reads from
+R0224,hub_movement_type,vault,stg_sap__t156,staging,pipeline,,reads from
+R0225,hub_plant,vault,stg_sap__t001w,staging,pipeline,,reads from
+R0226,hub_purchase_order,vault,stg_sap__ekko,staging,pipeline,,reads from
+R0227,hub_purchase_requisition,vault,stg_sap__eban,staging,pipeline,,reads from
+R0228,hub_sales_order,vault,stg_sap__vbak,staging,pipeline,,reads from
+R0229,hub_service_plan,vault,stg_sap__vbap,staging,pipeline,,reads from
+R0230,hub_vendor,vault,stg_sap__lfa1,staging,pipeline,,reads from
+R0231,hub_zmm_approval,vault,stg_sap__zmm_approval_log,staging,pipeline,,reads from
+R0232,link_billing_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0233,link_billing_accounting,vault,stg_sap__vbrk,staging,pipeline,,reads from
+R0234,link_billing_customer,vault,stg_sap__vbrk,staging,pipeline,,reads from
+R0235,link_billing_sales_order,vault,stg_sap__vbrp,staging,pipeline,,reads from
+R0236,link_equipment_gr,vault,stg_sap__seri,staging,pipeline,,reads from
+R0237,link_equipment_gr,vault,stg_sap__mkpf,staging,pipeline,,reads from
+R0238,link_equipment_material,vault,stg_sap__equi,staging,pipeline,,reads from
+R0239,link_gr_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0240,link_gr_accounting,vault,stg_sap__mkpf,staging,pipeline,,reads from
+R0241,link_gr_material,vault,stg_sap__mseg,staging,pipeline,,reads from
+R0242,link_gr_po,vault,stg_sap__mseg,staging,pipeline,,reads from
+R0243,link_invoice_accounting,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0244,link_invoice_accounting,vault,stg_sap__rbkp,staging,pipeline,,reads from
+R0245,link_invoice_po,vault,stg_sap__rbkp,staging,pipeline,,reads from
+R0246,link_po_item,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0247,link_po_material,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0248,link_po_plant,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0249,link_po_vendor,vault,stg_sap__ekko,staging,pipeline,,reads from
+R0250,link_pr_po,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0251,link_sales_order_customer,vault,stg_sap__vbak,staging,pipeline,,reads from
+R0252,link_sales_order_equipment,vault,stg_sap__vbap,staging,pipeline,,reads from
+R0253,link_sales_order_equipment,vault,stg_sap__equi,staging,pipeline,,reads from
+R0254,sat_accounting_header,vault,stg_sap__bkpf,staging,pipeline,,reads from
+R0255,sat_billing_document,vault,stg_sap__vbrk,staging,pipeline,,reads from
+R0256,sat_customer,vault,stg_sap__kna1,staging,pipeline,,reads from
+R0257,sat_equipment_general,vault,stg_sap__equi,staging,pipeline,,reads from
+R0258,sat_equipment_status,vault,stg_sap__eqbs,staging,pipeline,,reads from
+R0259,sat_gr_header,vault,stg_sap__mkpf,staging,pipeline,,reads from
+R0260,sat_gr_item,vault,stg_sap__mseg,staging,pipeline,,reads from
+R0261,sat_invoice_header,vault,stg_sap__rbkp,staging,pipeline,,reads from
+R0262,sat_invoice_item,vault,stg_sap__rseg,staging,pipeline,,reads from
+R0263,sat_material_business,vault,stg_sap__zmm_material_business,staging,pipeline,,reads from
+R0264,sat_material_description,vault,stg_sap__makt,staging,pipeline,,reads from
+R0265,sat_material_general,vault,stg_sap__mara,staging,pipeline,,reads from
+R0266,sat_material_plant,vault,stg_sap__marc,staging,pipeline,,reads from
+R0267,sat_movement_type,vault,stg_sap__t156,staging,pipeline,,reads from
+R0268,sat_movement_type_text,vault,stg_sap__t156t,staging,pipeline,,reads from
+R0269,sat_po_account,vault,stg_sap__ekkn,staging,pipeline,,reads from
+R0270,sat_po_header,vault,stg_sap__ekko,staging,pipeline,,reads from
+R0271,sat_po_item,vault,stg_sap__ekpo,staging,pipeline,,reads from
+R0272,sat_po_schedule,vault,stg_sap__eket,staging,pipeline,,reads from
+R0273,sat_pr_detail,vault,stg_sap__eban,staging,pipeline,,reads from
+R0274,sat_sales_order,vault,stg_sap__vbak,staging,pipeline,,reads from
+R0275,sat_sales_order_item,vault,stg_sap__vbap,staging,pipeline,,reads from
+R0276,sat_service_plan,vault,stg_sap__vbap,staging,pipeline,,reads from
+R0277,sat_stock_level,vault,stg_sap__mard,staging,pipeline,,reads from
+R0278,sat_vendor_business,vault,stg_sap__zmm_vendor_business,staging,pipeline,,reads from
+R0279,sat_vendor_commercial,vault,stg_sap__lfb1,staging,pipeline,,reads from
+R0280,sat_vendor_general,vault,stg_sap__lfa1,staging,pipeline,,reads from
+R0281,sat_zmm_approval,vault,stg_sap__zmm_approval_log,staging,pipeline,,reads from
+R0282,fact_equipment_lifecycle,marts,dim_material,marts,star,MATNR,joined on material
+R0283,fact_equipment_lifecycle,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0284,fact_goods_movements,marts,dim_material,marts,star,MATNR,joined on material
+R0285,fact_goods_movements,marts,dim_movement_type,marts,star,BWART,joined on movement type
+R0286,fact_goods_movements,marts,dim_plant,marts,star,WERKS,joined on plant
+R0287,fact_goods_movements,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0288,fact_goods_movements,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0289,fact_goods_receipt_accuracy,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0290,fact_inventory,marts,dim_material,marts,star,MATNR,joined on material
+R0291,fact_inventory,marts,dim_plant,marts,star,WERKS,joined on plant
+R0292,fact_inventory,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0293,fact_invoices,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0294,fact_po_invoice_match_variance,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0295,fact_purchase_orders,marts,dim_material,marts,star,MATNR,joined on material
+R0296,fact_purchase_orders,marts,dim_plant,marts,star,WERKS,joined on plant
+R0297,fact_purchase_orders,marts,dim_service_plan,marts,star,MATNR,joined on material
+R0298,fact_purchase_orders,marts,dim_vendor,marts,star,LIFNR,joined on vendor
+R0299,fact_equipment_lifecycle,marts,dim_date,marts,date,status_from_date,joined on status_from_date
+R0300,fact_goods_movements,marts,dim_date,marts,date,posting_date,joined on posting_date
+R0301,fact_goods_receipt_accuracy,marts,dim_date,marts,date,first_receipt_date,joined on first_receipt_date
+R0302,fact_invoices,marts,dim_date,marts,date,posting_date,joined on posting_date
+R0303,fact_purchase_orders,marts,dim_date,marts,date,po_date,joined on po_date

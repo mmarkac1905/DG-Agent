@@ -11,9 +11,23 @@ sys.path root via Streamlit page discovery, NOT a package).
 """
 from __future__ import annotations
 
+import os
 import re
 
 from db import query
+
+
+def source_schema() -> str:
+    """Active raw source schema (env-config, default SAP demo)."""
+    return (os.environ.get("DG_SOURCE_SCHEMA") or "raw_sap").strip() or "raw_sap"
+
+
+def staging_prefix() -> str:
+    """Staging model prefix for the active source (stg_<src>__)."""
+    src = source_schema()
+    if src.startswith("raw_"):
+        src = src[4:]
+    return f"stg_{src}__"
 
 
 def rewrite_sql_for_staging(sql_text: str) -> str:
@@ -25,9 +39,10 @@ def rewrite_sql_for_staging(sql_text: str) -> str:
     """
     if not sql_text:
         return sql_text
+    _src, _pfx = source_schema(), staging_prefix()
     return re.sub(
-        r'raw_sap\.(\w+)',
-        lambda m: f"main_staging.stg_sap__{m.group(1).lower()}",
+        re.escape(_src) + r'\.(\w+)',
+        lambda m: f"main_staging.{_pfx}{m.group(1).lower()}",
         sql_text,
         flags=re.IGNORECASE,
     )
@@ -47,7 +62,7 @@ def run_query_with_fallback(conn, sql_text: str):
         rewrite_sql_for_staging(sql_text),
         sql_text,
         re.sub(
-            r'raw_sap\.(\w+)',
+            re.escape(source_schema()) + r'\.(\w+)',
             lambda m: f"main_marts.{m.group(1).lower()}",
             sql_text,
             flags=re.IGNORECASE,
@@ -75,9 +90,9 @@ def load_actual_staging_schema() -> str:
     """
     try:
         df = query(
-            """
+            f"""
             SELECT
-                REPLACE(table_name, 'stg_sap__', '') AS sap_table,
+                REPLACE(table_name, '{staging_prefix()}', '') AS sap_table,
                 column_name,
                 data_type
             FROM information_schema.columns
