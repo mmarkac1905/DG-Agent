@@ -1461,22 +1461,36 @@ def check_prerequisites(term_id: str,
         domain_eda_status = {t: (n > 0) for t, n in dar_counts.items()}
         needed = sorted(t for t, ok in domain_eda_status.items() if not ok)
 
+        # Term-EDA state from the latest BAR (the readout predated the
+        # term-analysis stage and used to hardcode "not_applicable_yet").
+        try:
+            bar_row = conn.execute(
+                "SELECT status FROM main_seeds.business_term_analysis_results "
+                "WHERE business_term_id = ? "
+                "ORDER BY executed_at_utc DESC LIMIT 1",
+                [term_id],
+            ).fetchone()
+            bar_status = bar_row[0] if bar_row else None
+        except duckdb.Error:
+            bar_status = None
+        if bar_status is None:
+            term_eda_status = "not_run"
+        elif bar_status in ("converged", "promoted"):
+            term_eda_status = f"{bar_status} (awaiting transition to ready_for_s2t)"
+        else:
+            term_eda_status = bar_status
+
         if status in ("draft",):
             s2t_readiness = "blocked"
-            term_eda_status = "not_applicable_yet"
         elif status in ("scope_confirmed", "domain_eda_pending",
                         "term_eda_pending"):
             s2t_readiness = "blocked"
-            term_eda_status = "not_applicable_yet"
         elif status == "ready_for_s2t":
             s2t_readiness = "ready"
-            term_eda_status = "not_applicable_yet"
         elif status == "approved":
             s2t_readiness = "done"
-            term_eda_status = "not_applicable_yet"
         else:
             s2t_readiness = "blocked"
-            term_eda_status = "not_applicable_yet"
 
         next_steps: list[str] = []
         if status == "draft":
@@ -1493,8 +1507,26 @@ def check_prerequisites(term_id: str,
                         f"automatically."
                     )
             else:
-                next_steps.append("Domain EDA complete for all scope tables. "
-                                  "Next: term EDA (Stage C, deferred).")
+                if bar_status in ("converged", "promoted"):
+                    next_steps.append(
+                        "Domain EDA complete and term analysis has "
+                        f"{bar_status}. Next: open Data Analysis -> Business "
+                        "Term Analysis tab, select this term, acknowledge any "
+                        "escalations, and click 'Transition to "
+                        "ready_for_s2t'."
+                    )
+                elif bar_status is None:
+                    next_steps.append(
+                        "Domain EDA complete for all scope tables. Next: run "
+                        "term EDA — Data Analysis -> Business Term Analysis "
+                        "tab, select this term, click Run."
+                    )
+                else:
+                    next_steps.append(
+                        f"Domain EDA complete; latest term analysis ended "
+                        f"'{bar_status}'. Review it on the Business Term "
+                        f"Analysis tab and re-run if needed."
+                    )
         elif status == "approved":
             next_steps.append("Term is legacy-approved. No Stage A action needed.")
 
