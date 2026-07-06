@@ -3447,7 +3447,27 @@ with tab_new:
             new_grain = st.text_input("Grain", placeholder="e.g., vendor x month, material x quarter")
 
         with col2:
-            new_domain = st.selectbox("Domain", ["procurement", "quality", "inventory", "equipment", "cost_analysis"])
+            # Domains are data, not a hardcoded list: offer every domain the
+            # glossary already uses (so new sources' domains appear
+            # automatically) plus an explicit new-domain escape hatch.
+            try:
+                _known_domains = sorted(
+                    d for d in glossary["domain"].dropna().astype(str).unique()
+                    if d.strip()
+                )
+            except Exception:
+                _known_domains = ["procurement", "quality", "inventory",
+                                  "equipment", "cost_analysis"]
+            _NEW_DOMAIN_SENTINEL = "+ new domain..."
+            _domain_choice = st.selectbox(
+                "Domain", _known_domains + [_NEW_DOMAIN_SENTINEL])
+            if _domain_choice == _NEW_DOMAIN_SENTINEL:
+                new_domain = st.text_input(
+                    "New domain (snake_case)",
+                    placeholder="e.g., ecommerce_sales",
+                ).strip()
+            else:
+                new_domain = _domain_choice
             new_owner = st.text_input("Owner (department)", placeholder="e.g., Procurement Department")
             new_approved_by = st.text_input("To be approved by", placeholder="e.g., Head of Supply Chain")
             new_related = st.text_input("Related terms (semicolon-separated)", placeholder="e.g., on_time_delivery_rate;vendor_scorecard")
