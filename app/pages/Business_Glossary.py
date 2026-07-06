@@ -6,6 +6,7 @@ Two audiences, two tabs:
 Both share a single term selector via st.session_state so switching tabs
 preserves the selected term.
 """
+import os
 import streamlit as st
 import pandas as pd
 import duckdb
@@ -1544,7 +1545,19 @@ def render_ask_claude(term, term_id):
                             if not safe_name.endswith('.sql'):
                                 safe_name += '.sql'
                             sql_content = str(model.get('sql', '') or '').strip() + "\n"
-                            target_dir = dbt_root / "models" / layer
+                            # Source isolation: models generated for a
+                            # non-default source live under
+                            # dbt/models/<source>/<layer>/ (opt-in via
+                            # DG_ENABLE_<SOURCE>), so the default SAP build
+                            # and CI never compile them.
+                            _active_src = os.environ.get(
+                                "DG_SOURCE_SCHEMA", "raw_sap")
+                            if _active_src == "raw_sap":
+                                target_dir = dbt_root / "models" / layer
+                            else:
+                                _src_folder = _active_src.removeprefix("raw_")
+                                target_dir = (dbt_root / "models"
+                                              / _src_folder / layer)
                             target_dir.mkdir(parents=True, exist_ok=True)
                             filepath = target_dir / safe_name
                             with open(filepath, 'w', encoding='utf-8', newline='\n') as f:
