@@ -1112,8 +1112,7 @@ def _render_prereq_section(prereq) -> None:
         st.warning("No scope tables recorded for this term.")
 
     st.markdown("### Stage status")
-    st.write(f"- **Term EDA**: `{prereq.term_eda_status}` "
-             "(Stage C — deferred)")
+    st.write(f"- **Term EDA**: `{prereq.term_eda_status}`")
     st.write(f"- **S2T readiness**: `{prereq.s2t_readiness}`")
 
     st.markdown("### Next steps")
