@@ -88,7 +88,7 @@ be governance theatre), so a stage turns green only when its checkpoint is walke
 | Domain EDA | Data Analysis → **Domain Analysis** → run the analyzers the prerequisites readout lists | machine; coverage is checked automatically, nothing to sign |
 | Term EDA | Data Analysis → **Business Term Analysis** → **Run Term EDA** → read the sufficiency verdict, acknowledge any escalations → **Transition to ready_for_s2t** | machine analyzes, **you acknowledge and transition** |
 | S2T + Deploy | Business Glossary → **S2T Specification** → **Create S2T** | machine generates and deploys through the gates (F.3 joins, RULE 3 layering, `dbt build`, semantic validation) |
-| Approve | Business Glossary → **Term Detail** → **Approve** | **you** — the single formal approval, covering the term as a governed whole |
+| Approve | Business Glossary → **Term Detail** → **Approve** | **you**: the single formal approval, covering the term as a governed whole |
 
 The pipeline strip on the S2T Specification tab shows where a term stands: ✓ green means the
 checkpoint is walked, the highlighted stage is current, grey means nothing has happened, and ◐ amber
