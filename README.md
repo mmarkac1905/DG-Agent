@@ -262,9 +262,13 @@ glossary): scope derivation still chose `customer_unique_id`, from the **catalog
 the 1:1 EDA evidence**, and that run then refused to self-certify, hard-stopping on the
 citation-audit guardrail. Resolving a trap from a well-read catalog is the product working as
 designed; it is not blind discovery from data alone, and I don't claim it is. Second, the
-join-*discovery* machinery only proved itself on the joins these terms needed: its real failures on
-this source (a SAP-shaped pair pre-filter, a differently-named join key it never found) are
-recorded as open `known_issues` (#131–133), by me, before any reviewer found them.
+join-*discovery* machinery initially failed in three places on this source: one analyzer's pair
+pre-filter was SAP-shaped and went silent, the most dangerous join in the dataset (geolocation,
+up to ×1,146 fanout) was invisible to name matching, and low-multiplicity 1:N relationships were
+mislabeled 1:1. I filed those as `known_issues` #131–133 before any reviewer found them, and all
+three are now fixed and re-verified: suffix-token key matching discovers the geolocation joins and
+classifies them catastrophic (avg ×65 and ×128), shapes classify by actual key duplication, and
+pairs where sum-match doesn't apply produce explicit skip records instead of silence.
 
 The experiment also did what a second source should do: it **broke things, and the breaks became
 fixes**. Direction-aware join-fanout evidence, source-neutral repair hints, schema grounding for
@@ -314,6 +318,12 @@ Read this before extrapolating from the demo:
 - **N = 3 worked terms, no systematic eval.** BG030 (SAP) plus BG031/BG033 (Olist) are fully worked
   end-to-end. There is no success-rate eval across dozens of term definitions yet. Every run records
   its evidence, convergence status, and cost into the seeds, so the substrate for that eval exists.
+- **A semantic drift shipped once.** The repeat-rate mart originally deployed with a status filter
+  the term definition never asked for; the semantic validator passed it as a warning and a human
+  reviewer caught it. The validator now treats any filter present in SQL but absent from the term
+  definition as critical (verified against that exact historical SQL), but the lesson stands:
+  deploy gates prove the SQL runs and matches the contract as far as they can see, and human review
+  of new terms is still part of the design.
 - **Token cost.** Recorded term-analysis runs in the shipped seeds cost **$0.08–$0.74 each**
   (`business_term_analysis_results.llm_total_cost_usd`); a full Stage A→E pass makes several LLM calls,
   so budget a few dollars per term.

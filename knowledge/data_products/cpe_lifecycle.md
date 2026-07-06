@@ -1,6 +1,6 @@
 # Data Product: cpe_lifecycle
 
-_Last generated: 2026-07-04 02:20:08_
+_Last generated: 2026-07-06 10:08:36_
 
 Keywords: `cpe, equipment, equi, serial, device, router, ont, set-top, stb, modem, lifecycle, installed, returned, defective`
 
@@ -101,7 +101,7 @@ Keywords: `cpe, equipment, equi, serial, device, router, ont, set-top, stb, mode
 
 _(none)_
 
-## Open Issues (23)
+## Open Issues (22)
 
 - **#4** [open/low] Inventory MoS values unrealistic in sample data — Q7 discovery query showed months-of-stock ranging 650-6455 months across all materials/plants. Generator GR inflow far exceeds deployment outflow (~45K serial-tracked deployments vs ~180K received qty). MARD stock computed from net movements so it balloons. Real HT data would sho…
 - **#5** [open/medium] Vendor-equipment attribution requires vault traceability — Q4 discovery showed obt_procurement_overview alone cannot attribute equipment outcomes to vendors because multiple vendors share material numbers (join fan-out). Need a fact_equipment_with_vendor model built from link_equipment_gr -> link_gr_po -> link_po_vendor. Backlog for next…
@@ -125,7 +125,6 @@ _(none)_
 - **#120** [open/low] Wire orphan-relation cleanup into end_of_task.py so deleted models auto-drop — When a dbt model file is deleted (e.g., KI-101 deleted fact_active_deployed_cpe.sql on 2026-05-04), the materialized table in DuckDB persists as an orphan because dbt does NOT auto-drop relations for deleted model files. The orphan stays until someone explicitly DROPs it. Today's…
 - **#122** [open/medium] dim_equipment uniqueness fails - link_equipment_material fan-out (1 device -> multiple materials) — link_equipment_material has 75236 rows for 45000 distinct equipment; 30236 devices (~67%) link to >1 material (e.g. CPE-00000330, an ONT, links to both CPE-ONT-003 and CPE-RTR-001). This fans dim_equipment out to 75236 rows, breaking unique_dim_equipment_equipment_number and uniq…
 - **#128** [open/low] Synthetic data: BWART=201 deployment movements lack serial-number linkage (only 101/GR linked) — All SERI (45000) and SER03 (2155) serial records point to BWART=101 goods-receipt movements; the 27000 BWART=201 deployment movements have ZERO serial/equipment linkage. So per-device deployment date cannot be derived from the 201 movement (forced the first-bill proxy for null EQ…
-- **#131** [open/medium] grain_relationship pre-filter requires shared numeric column names (SAP-shaped) — The analyzer's pair pre-filter needs a shared numeric column NAME between two tables (SAP header/detail convention). On Olist, where numeric column names never repeat across tables, it emitted 0 pairs — the sum-match heuristic produces no evidence on sources with distinct naming.…
 
 ## DO NOT (Anti-patterns)
 

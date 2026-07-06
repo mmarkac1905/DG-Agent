@@ -1,6 +1,6 @@
 # SAP Tables: equipment
 
-_Last generated: 2026-07-04 02:20:08_
+_Last generated: 2026-07-06 10:08:36_
 
 Keywords: `equi, eqbs, seri, ser01, ser03, objk, serial, equipment, oprema, serijski, status_update, warranty, provisioning, ZMM_CPE_STATUS, ZHT_WARRANTY, ZHT_CUST_INSTALL`
 
@@ -52,7 +52,7 @@ Keywords: `equi, eqbs, seri, ser01, ser03, objk, serial, equipment, oprema, seri
 
 _(none)_
 
-## Open Issues (15)
+## Open Issues (14)
 
 - **#4** [open/low] Inventory MoS values unrealistic in sample data — Q7 discovery query showed months-of-stock ranging 650-6455 months across all materials/plants. Generator GR inflow far exceeds deployment outflow (~45K serial-tracked deployments vs ~180K received qty). MARD stock computed from net movements so it balloons. Real HT data would sho…
 - **#5** [open/medium] Vendor-equipment attribution requires vault traceability — Q4 discovery showed obt_procurement_overview alone cannot attribute equipment outcomes to vendors because multiple vendors share material numbers (join fan-out). Need a fact_equipment_with_vendor model built from link_equipment_gr -> link_gr_po -> link_po_vendor. Backlog for next…
@@ -68,7 +68,6 @@ _(none)_
 - **#95** [open/medium] LIMIT-50 generic DAR cap silently starves entire scope tables when batches run on a subset of scope — Discovered 2026-04-26 during step 4 of Theme 1 (post-C1 + post-#93 verification). For BG027's scope (equi/mseg/mkpf/objk/mard), 12 in-scope EDA DARs sit at ranks 51-62 and never reach the bundle. 11 of the 12 are mard rows; the 12th is objk performance_baseline. All 12 are status…
 - **#122** [open/medium] dim_equipment uniqueness fails - link_equipment_material fan-out (1 device -> multiple materials) — link_equipment_material has 75236 rows for 45000 distinct equipment; 30236 devices (~67%) link to >1 material (e.g. CPE-00000330, an ONT, links to both CPE-ONT-003 and CPE-RTR-001). This fans dim_equipment out to 75236 rows, breaking unique_dim_equipment_equipment_number and uniq…
 - **#128** [open/low] Synthetic data: BWART=201 deployment movements lack serial-number linkage (only 101/GR linked) — All SERI (45000) and SER03 (2155) serial records point to BWART=101 goods-receipt movements; the 27000 BWART=201 deployment movements have ZERO serial/equipment linkage. So per-device deployment date cannot be derived from the 201 movement (forced the first-bill proxy for null EQ…
-- **#131** [open/medium] grain_relationship pre-filter requires shared numeric column names (SAP-shaped) — The analyzer's pair pre-filter needs a shared numeric column NAME between two tables (SAP header/detail convention). On Olist, where numeric column names never repeat across tables, it emitted 0 pairs — the sum-match heuristic produces no evidence on sources with distinct naming.…
 
 ## DO NOT (Anti-patterns)
 

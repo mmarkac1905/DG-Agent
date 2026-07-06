@@ -1,6 +1,6 @@
 # Data Vault: naming_conventions
 
-_Last generated: 2026-07-04 02:20:08_
+_Last generated: 2026-07-06 10:08:36_
 
 Keywords: `naming, convention, prefix, dv standard, dv naming`
 
@@ -24,7 +24,7 @@ Keywords: `naming, convention, prefix, dv standard, dv naming`
 
 _(none)_
 
-## Open Issues (8)
+## Open Issues (6)
 
 - **#29** [open/medium] Create S2T directives cover 4 dynamic sources but not ontology layer — LLM can pick production-model names and create duplicates — The Create S2T A/B test showed the new path on BG001 generated a model named fact_purchase_orders, which already exists in dbt/models/marts/fact_purchase_orders.sql. The bundle ontology layer contained the existing_models list — LLM had access to it — but picked a colliding name.…
 - **#50** [open/low] sap_data_dictionary backfill produced zero inferred rows - LLM self-confidence uncalibrated — The catalog backfill produced 269 generated rows, all claimed description_source in {sap_standard, column_name_convention, source_column_roles} with needs_review=0. Zero rows flagged as 'inferred'. LLM self-confidence is uncalibrated - not a calibrated coverage-gap signal. Stage …
@@ -32,8 +32,6 @@ _(none)_
 - **#62** [open/medium] Re-run S2T flow — deferred from Stage D.2 — Stage D.2 originally specified a Re-run S2T button for approved+non-empty terms. Dropped because re-running collides with deployed .sql files and existing s2t_mapping rows — `create_s2t_with_implementation` has no archival semantics. Safe re-run requires (a) renaming existing `db…
 - **#66** [open/low] s2t_mapping undocumented in schema.yml — schema.yml has no entry for s2t_mapping. The 14-column shape (id, business_term_id, business_term_name, source_table, source_field, source_description, target_model, target_column, transformation_logic_plain, transformation_logic_sql, join_description, filter_description, notes, …
 - **#120** [open/low] Wire orphan-relation cleanup into end_of_task.py so deleted models auto-drop — When a dbt model file is deleted (e.g., KI-101 deleted fact_active_deployed_cpe.sql on 2026-05-04), the materialized table in DuckDB persists as an orphan because dbt does NOT auto-drop relations for deleted model files. The orphan stays until someone explicitly DROPs it. Today's…
-- **#131** [open/medium] grain_relationship pre-filter requires shared numeric column names (SAP-shaped) — The analyzer's pair pre-filter needs a shared numeric column NAME between two tables (SAP header/detail convention). On Olist, where numeric column names never repeat across tables, it emitted 0 pairs — the sum-match heuristic produces no evidence on sources with distinct naming.…
-- **#132** [open/high] FK/join discovery misses semantically-joinable columns with different names — Olist geolocation.geolocation_zip_code_prefix joins customers.customer_zip_code_prefix / sellers.seller_zip_code_prefix — the dataset's most dangerous fanout (up to 1,146 rows per key) — but shared-name matching and schema_discovery FK detection both miss it. No cardinality evide…
 
 ## DO NOT (Anti-patterns)
 

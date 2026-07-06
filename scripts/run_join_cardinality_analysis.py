@@ -165,6 +165,57 @@ def _shared_name_keys(t1_cols: dict[str, str],
     return (t1_up & t2_up) - _BLACKLIST
 
 
+_SUFFIX_MIN_TOKENS = 2
+_SUFFIX_MAX_CANDIDATES = 10
+
+
+def _suffix_name_keys(t1_cols: dict[str, str],
+                      t2_cols: dict[str, str]) -> list[tuple[str, str]]:
+    """Source D: differently-named columns whose trailing underscore-token
+    sequences match with at least _SUFFIX_MIN_TOKENS tokens, e.g.
+    customers.customer_zip_code_prefix <-> geolocation.geolocation_zip_code_prefix
+    (shared suffix zip_code_prefix). Closes known_issue #132: semantically
+    joinable keys that exact-name matching can never see.
+
+    Exact-name matches stay Source A's job and are excluded here. False
+    positives are cheap by design: every candidate is measured empirically
+    downstream, and a non-join lands in no_signal. Sources whose columns
+    carry no underscores (e.g. SAP's MATNR/LIFNR) produce no suffixes, so
+    this source is inert there.
+    """
+    def _suffixes(col: str) -> list[str]:
+        toks = col.upper().split("_")
+        return ["_".join(toks[i:]) for i in range(1, len(toks))
+                if len(toks) - i >= _SUFFIX_MIN_TOKENS]
+
+    t2_by_suffix: dict[str, list[str]] = {}
+    for c2 in t2_cols:
+        if c2.upper() in _BLACKLIST:
+            continue
+        for s in _suffixes(c2):
+            t2_by_suffix.setdefault(s, []).append(c2.upper())
+
+    out: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for c1 in t1_cols:
+        c1u = c1.upper()
+        if c1u in _BLACKLIST:
+            continue
+        # longest shared suffix first, so the most specific match wins
+        for s in sorted(_suffixes(c1), key=len, reverse=True):
+            for c2u in t2_by_suffix.get(s, []):
+                if c2u == c1u:
+                    continue  # exact-name: Source A territory
+                pair = (c1u, c2u)
+                if pair in seen:
+                    continue
+                seen.add(pair)
+                out.append(pair)
+                if len(out) >= _SUFFIX_MAX_CANDIDATES:
+                    return out
+    return out
+
+
 def _schema_discovery_fks(conn, table: str) -> list[dict]:
     """Read latest successful schema_discovery DAR for table; return its
     fk_candidates list. Returns [] if no DAR.
@@ -232,6 +283,14 @@ def _direct_candidates(conn, t1: str, t2: str) -> list[dict]:
         c = _ensure((col_up,), (col_up,))
         if "shared_name" not in c["source"]:
             c["source"].append("shared_name")
+
+    # Source D — suffix-name matches across differently-named columns
+    # (known_issue #132). Measured like any other candidate; bad guesses
+    # classify as no_signal.
+    for c1_up, c2_up in _suffix_name_keys(t1_cols, t2_cols):
+        c = _ensure((c1_up,), (c2_up,))
+        if "suffix_name" not in c["source"]:
+            c["source"].append("suffix_name")
 
     # Source B — schema_discovery FK hints (both directions)
     for fk in _schema_discovery_fks(conn, t1):

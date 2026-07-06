@@ -1,6 +1,6 @@
 # SAP Tables: purchase_orders
 
-_Last generated: 2026-07-04 02:20:08_
+_Last generated: 2026-07-06 10:08:36_
 
 Keywords: `ekko, ekpo, eket, ekkn, ekbe, purchase order, narudžbenica, po header, po item, dual_source, ZMM_DUAL_SOURCE, cost_center_derive`
 

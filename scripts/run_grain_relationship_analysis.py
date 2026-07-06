@@ -395,7 +395,16 @@ def analyze_pair(conn, t1: str, t2: str) -> int:
 
 
 def _candidate_pairs(conn, tables: list[str]) -> list[tuple[str, str]]:
-    """Pre-filter pairs: lex-ordered, ≥1 shared numeric column."""
+    """Pre-filter pairs: lex-ordered, joinable by a shared-name key.
+
+    known_issue #131: the old pre-filter ALSO required a shared numeric
+    column name (a SAP header/detail convention where the same measure
+    field appears in both tables). On sources whose numeric columns never
+    repeat across tables that produced zero pairs and total silence.
+    The numeric check now lives in analyze_pair, which emits an explicit
+    canonical skipped DAR ("no shared numeric columns") instead, so
+    absence of sum-match evidence is recorded, not implied.
+    """
     tables = sorted(set(t.lower() for t in tables))
     pairs: list[tuple[str, str]] = []
     col_cache: dict[str, dict[str, str]] = {}
@@ -403,12 +412,8 @@ def _candidate_pairs(conn, tables: list[str]) -> list[tuple[str, str]]:
         col_cache[t] = _table_columns(conn, t)
     for i, t1 in enumerate(tables):
         for t2 in tables[i + 1:]:
-            num1 = _numeric_column_names(col_cache[t1])
-            num2 = _numeric_column_names(col_cache[t2])
-            if num1 & num2:
-                # also need a shared join key
-                if _find_shared_join_key(col_cache[t1], col_cache[t2]):
-                    pairs.append((t1, t2))
+            if _find_shared_join_key(col_cache[t1], col_cache[t2]):
+                pairs.append((t1, t2))
     return pairs
 
 

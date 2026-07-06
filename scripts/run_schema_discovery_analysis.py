@@ -456,11 +456,26 @@ def _classify_relationship_shapes(
         from_ratio = n_from / from_dist if from_dist else 0
         to_ratio = n_to / to_dist if to_dist else 0
 
-        if from_ratio < 1.2 and to_ratio < 1.2:
+        # known_issue #133: a ratio threshold (< 1.2) hides genuine 1:N
+        # relationships with low average multiplicity (e.g. 3% of orders
+        # having multiple payment rows gives ratio 1.045 but is NOT 1:1,
+        # and a join on it multiplies those rows). Classify by whether a
+        # side actually duplicates its key. Tolerance is relative (0.1%
+        # of rows) with an absolute floor of 2 duplicate rows, so a single
+        # accidental dupe doesn't flip a genuine 1:1 while small tables
+        # still classify correctly.
+        def _has_multiplicity(n: int, dist: int) -> bool:
+            dup = n - dist
+            return dup >= 2 and dup > 0.001 * n
+
+        from_multi = _has_multiplicity(n_from, from_dist)
+        to_multi = _has_multiplicity(n_to, to_dist)
+
+        if not from_multi and not to_multi:
             shape, card = "one_to_one", "1:1"
-        elif from_ratio > to_ratio:
+        elif from_multi and not to_multi:
             shape, card = "detail_header", "N:1"
-        elif to_ratio > from_ratio:
+        elif to_multi and not from_multi:
             shape, card = "header_detail", "1:N"
         else:
             shape, card = "many_to_many", "N:M"
