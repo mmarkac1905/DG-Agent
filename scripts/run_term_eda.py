@@ -138,6 +138,22 @@ def _call_llm_cached(system_prompt: str, user_prompt: str,
     try:
         payload = json.loads(text)
     except json.JSONDecodeError as e:
+        # The model sometimes wraps the JSON in prose plus a fenced block
+        # ("Looking at the gaps...\n```json\n{...}\n```") — the startswith
+        # strip above never fires then. Extract the fenced block, or fall
+        # back to the outermost brace span, before giving up.
+        fenced = re.search(r"```(?:json)?\s*\n(.*?)```", text, re.DOTALL)
+        candidate = fenced.group(1) if fenced else None
+        if candidate is None:
+            start, end_i = text.find("{"), text.rfind("}")
+            if start != -1 and end_i > start:
+                candidate = text[start:end_i + 1]
+        if candidate is not None:
+            try:
+                payload = json.loads(candidate)
+                return {"payload": payload, "usage": body.get("usage", {})}
+            except json.JSONDecodeError:
+                pass
         raise RuntimeError(
             f"LLM response not valid JSON: {e}. Tail: {text[-400:]!r}"
         ) from e
