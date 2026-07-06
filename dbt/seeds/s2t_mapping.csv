@@ -144,3 +144,7 @@ S2T-0076,BG032,olist_on_time_delivery_rate,SAT_OLIST_ORDER_HEADER,ORDER_DELIVERE
         100.0 * SUM(is_on_time) / NULLIF(COUNT(*), 0),
         4
     )",,,Backfilled from column lineage after the numeric-literal origin fix (review round 3).,The percentage of customer orders that were delivered on or before the promised delivery date.
+S2T-0077,BG035,cross_state_order_share,ORDERS,ORDER_ID,Order header table providing order_status (to filter for delivered orders only) and order_purchase_timestamp (to derive the month grain for the metric).,,,,,,,stage_a_derived,
+S2T-0078,BG035,cross_state_order_share,ORDER_ITEMS,SELLER_ID,"Order line table linking each order to its seller via seller_id; required to compare seller state against customer state at item level, and to apply the 'any item cross-state' logic per order.",,,,,,,stage_a_derived,
+S2T-0079,BG035,cross_state_order_share,CUSTOMERS,CUSTOMER_STATE,Customer master providing customer_state (2-letter BR state code); joined to orders via customer_id to get the customer's state for each order.,,,,,,,stage_a_derived,
+S2T-0080,BG035,cross_state_order_share,SELLERS,SELLER_STATE,Seller master providing seller_state (2-letter BR state code); joined to order_items via seller_id to get the fulfilling seller's state for each order line.,,,,,,,stage_a_derived,

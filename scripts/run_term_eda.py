@@ -51,6 +51,7 @@ _BG_CSV = _ROOT / "dbt" / "seeds" / "business_glossary.csv"
 
 _API_URL = "https://api.anthropic.com/v1/messages"
 from _model_config import MODEL as _MODEL  # single source of truth (env: DG_AGENT_MODEL)
+from _source_config import SOURCE_SCHEMA
 _MAX_TOKENS = 8000
 
 # Lens enum per v5 Edit 2 (post-rename).
@@ -305,6 +306,17 @@ def _render_bundle(
     parts.append(", ".join(scope_tables) if scope_tables else "(empty)")
     parts.append("")
 
+    # Relation map: staged model where one exists, raw source table
+    # otherwise. On a greenfield source only some scope tables are staged
+    # (staging models are created later, at Stage D), and the old
+    # staging-only mandate dead-ended Stage C on any unstaged table
+    # (BG035: sellers had no stg model, so 'no lens query can execute').
+    parts.append("## Scope relation map (authoritative — query THESE relations)")
+    for _t, _rel in _SCOPE_RELATION_MAP.items():
+        _tag = "" if _rel.startswith("main_staging.") else "  (not staged yet — raw source)"
+        parts.append(f"- {_t} -> {_rel}{_tag}")
+    parts.append("")
+
     # DARs.
     parts.append("## Domain EDA evidence (DARs, latest success per analysis_type per scope table)")
     if dars:
@@ -377,20 +389,43 @@ def _render_bundle(
 # ─── query execution ──────────────────────────────────────────────────
 
 _STG_REF_PATTERN = re.compile(
-    r"\braw_sap\.([A-Za-z_][A-Za-z0-9_]*)",
+    rf"\b{re.escape(SOURCE_SCHEMA)}\.([A-Za-z_][A-Za-z0-9_]*)",
     re.IGNORECASE,
 )
 
+# table -> authoritative relation ("main_staging.stg_<src>__<t>" when the
+# staging model exists, else "<source_schema>.<t>"). Populated per run in
+# main() after scope load + staging bootstrap; rendered into the bundle.
+_SCOPE_RELATION_MAP: dict = {}
+
+
+def _scope_relation_map(conn, scope_tables: list[str]) -> dict:
+    from _staging_bootstrap import _staging_prefix
+    prefix = _staging_prefix()
+    out = {}
+    for t in scope_tables:
+        staged = f"{prefix}{t.lower()}"
+        row = conn.execute(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema='main_staging' AND LOWER(table_name)=?",
+            [staged],
+        ).fetchone()
+        out[t.lower()] = (f"main_staging.{staged}" if row
+                          else f"{SOURCE_SCHEMA}.{t.lower()}")
+    return out
+
 
 def _rewrite_raw_sap_refs(sql: str) -> str:
-    """Defensive: LLM may emit raw_sap.<t> despite the constraint. Rewrite
-    to main_staging.stg_sap__<t> so executions don't fail on staging-only
-    deployments. Mirrors the rewrite_sql_for_staging pattern in the
-    Streamlit query path."""
-    return _STG_REF_PATTERN.sub(
-        lambda m: f"main_staging.stg_sap__{m.group(1).lower()}",
-        sql,
-    )
+    """Defensive: LLM may emit <source>.<t> despite the constraint.
+    Rewrite to the staged relation when one exists (per the relation
+    map); leave raw refs alone for tables that genuinely aren't staged."""
+    def _sub(m):
+        t = m.group(1).lower()
+        rel = _SCOPE_RELATION_MAP.get(t)
+        if rel and rel.startswith("main_staging."):
+            return rel
+        return m.group(0)
+    return _STG_REF_PATTERN.sub(_sub, sql)
 
 
 def _execute_query(conn, sql: str, max_rows: int = 100) -> dict:
@@ -593,6 +628,25 @@ def run_term_eda(term_id: str, executed_by: str = "system") -> dict:
         # Load all bundle inputs.
         term = _load_term(conn, term_id)
         scope_tables = _load_scope_tables(conn, term_id)
+
+        # Owner design: every scope table must be staged before Stage C.
+        # Greenfield sources reach this point with partial staging (only
+        # Stage D creates richer models); mechanically stage the gaps as
+        # 1:1 passthrough views so the staging contract holds uniformly.
+        # dbt needs the exclusive file lock, so generate the model files
+        # with this connection, close it around the build, then reopen.
+        from _staging_bootstrap import (
+            ensure_staging_coverage, build_staged_models,
+            missing_staging_tables,
+        )
+        _staged_new = ensure_staging_coverage(conn, scope_tables,
+                                              run_dbt=False)
+        if _staged_new:
+            conn.close()
+            build_staged_models(_staged_new)
+            conn = duckdb.connect(str(_DB), read_only=False)
+        _SCOPE_RELATION_MAP.clear()
+        _SCOPE_RELATION_MAP.update(_scope_relation_map(conn, scope_tables))
         dars = _load_dar_summaries(conn, scope_tables)
         prior_tars = load_candidate_prior_tars(conn, term_id)
         blockers = _load_stage_a_blockers(term.get("history") or "{}")

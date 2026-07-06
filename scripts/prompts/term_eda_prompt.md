@@ -73,8 +73,8 @@ Choose per-blocker status with care. These definitions gate term advancement; ge
 
 ### SQL constraints
 
-- Queries MUST reference `main_staging.stg_sap__<table>` (staged SAP, lowercase).
-- NEVER reference `raw_sap.<table>` directly.
+- Queries MUST use the relations listed in the `## Scope relation map` section of your bundle (the staged model where one exists; the raw source relation only where the map says the table is not staged yet).
+- NEVER reference a raw table that has a staged relation in the map.
 - Read-only SELECT statements only. No DDL, no DML, no side effects.
 - LIMIT clauses encouraged on large-result queries (≤ 100 rows is a reasonable cap for analytical observation).
 - Quote SAP identifiers with double quotes to preserve case (SAP columns are UPPERCASE).
@@ -104,7 +104,7 @@ Consider all 8 lenses. Emit this JSON exactly:
       "queries": [
         {
           "lens_rationale": "<why this query for this lens>",
-          "query_sql": "<SELECT against main_staging.stg_sap__*>",
+          "query_sql": "<SELECT against the relations in the scope relation map>",
           "query_explanation": "<what the result shape will show>",
           "grounded_in_tar_ids": [...]
         }
