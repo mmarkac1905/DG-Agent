@@ -1,6 +1,6 @@
 # Business Term: Cross-State Order Share
 
-_Last generated: 2026-07-07 12:05:18_
+_Last generated: 2026-07-07 12:28:57_
 
 ## Definition
 

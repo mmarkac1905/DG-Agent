@@ -1,6 +1,6 @@
 # SAP Tables: equipment
 
-_Last generated: 2026-07-07 12:05:18_
+_Last generated: 2026-07-07 12:28:57_
 
 Keywords: `equi, eqbs, seri, ser01, ser03, objk, serial, equipment, oprema, serijski, status_update, warranty, provisioning, ZMM_CPE_STATUS, ZHT_WARRANTY, ZHT_CUST_INSTALL`
 

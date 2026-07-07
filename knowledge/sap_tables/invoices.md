@@ -1,6 +1,6 @@
 # SAP Tables: invoices
 
-_Last generated: 2026-07-07 12:05:18_
+_Last generated: 2026-07-07 12:28:57_
 
 Keywords: `rbkp, rseg, invoice, faktur, verification, three_way_match, ZMM_INVOICE, tolerance`
 

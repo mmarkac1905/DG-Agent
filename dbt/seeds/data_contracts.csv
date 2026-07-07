@@ -1,22 +1,22 @@
 id,source_table,producer_team,producer_contact,extraction_frequency,extraction_sla_utc,freshness_max_hours,completeness_threshold_pct,schema_change_notice_days,notes
-DC001,EKKO,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.5,30,PO header — critical for all procurement analytics
-DC002,EKPO,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.5,30,PO items — always extracted with EKKO
-DC003,EKET,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,98.0,30,Delivery schedules — may have nulls for new POs
-DC004,EKKN,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,95.0,30,Account assignments — some POs lack cost center
-DC005,MKPF,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.9,30,Material doc headers — high volume table
-DC006,MSEG,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.9,30,Material doc items — high volume table
-DC007,LFA1,SAP Basis Team,sap-basis@ht.hr,weekly,Sunday 02:00,168,100.0,30,Vendor master — rarely changes
-DC008,LFB1,SAP Basis Team,sap-basis@ht.hr,weekly,Sunday 02:00,168,100.0,30,Vendor company code data
-DC009,LFM1,SAP Basis Team,sap-basis@ht.hr,weekly,Sunday 02:00,168,100.0,30,Vendor purchasing data
-DC010,MARA,SAP Basis Team,sap-basis@ht.hr,weekly,Sunday 02:00,168,100.0,60,Material master — changes only for new CPE models
-DC011,MAKT,SAP Basis Team,sap-basis@ht.hr,weekly,Sunday 02:00,168,100.0,60,Material descriptions
-DC012,MARC,SAP Basis Team,sap-basis@ht.hr,weekly,Sunday 02:00,168,99.0,30,Material plant data — MRP settings may change quarterly
-DC013,EQUI,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.0,30,Equipment master — new devices created daily via ABAP ZMM_AUTO_EQUI_CREATE
-DC014,EQBS,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.0,30,Equipment status — changes with every deployment/return
-DC015,MARD,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,100.0,30,Stock levels — snapshot table always complete
-DC016,RBKP,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.0,30,Invoice headers
-DC017,RSEG,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.0,30,Invoice items
-DC018,EBAN,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,98.0,30,Purchase requisitions — MRP-generated PRs may lack some fields
-DC019,EKBE,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.5,30,PO history — audit trail
-DC020,SERI,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,95.0,30,Serial assignments — capped at 20 per GR doc
-DC021,OBJK,SAP Basis Team,sap-basis@ht.hr,daily,06:00,24,99.0,30,Serial-to-equipment cross-reference
+DC001,EKKO,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.5,30,PO header — critical for all procurement analytics
+DC002,EKPO,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.5,30,PO items — always extracted with EKKO
+DC003,EKET,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,98.0,30,Delivery schedules — may have nulls for new POs
+DC004,EKKN,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,95.0,30,Account assignments — some POs lack cost center
+DC005,MKPF,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.9,30,Material doc headers — high volume table
+DC006,MSEG,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.9,30,Material doc items — high volume table
+DC007,LFA1,SAP Basis Team,sap-basis@heliostelecom.example,weekly,Sunday 02:00,168,100.0,30,Vendor master — rarely changes
+DC008,LFB1,SAP Basis Team,sap-basis@heliostelecom.example,weekly,Sunday 02:00,168,100.0,30,Vendor company code data
+DC009,LFM1,SAP Basis Team,sap-basis@heliostelecom.example,weekly,Sunday 02:00,168,100.0,30,Vendor purchasing data
+DC010,MARA,SAP Basis Team,sap-basis@heliostelecom.example,weekly,Sunday 02:00,168,100.0,60,Material master — changes only for new CPE models
+DC011,MAKT,SAP Basis Team,sap-basis@heliostelecom.example,weekly,Sunday 02:00,168,100.0,60,Material descriptions
+DC012,MARC,SAP Basis Team,sap-basis@heliostelecom.example,weekly,Sunday 02:00,168,99.0,30,Material plant data — MRP settings may change quarterly
+DC013,EQUI,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.0,30,Equipment master — new devices created daily via ABAP ZMM_AUTO_EQUI_CREATE
+DC014,EQBS,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.0,30,Equipment status — changes with every deployment/return
+DC015,MARD,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,100.0,30,Stock levels — snapshot table always complete
+DC016,RBKP,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.0,30,Invoice headers
+DC017,RSEG,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.0,30,Invoice items
+DC018,EBAN,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,98.0,30,Purchase requisitions — MRP-generated PRs may lack some fields
+DC019,EKBE,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.5,30,PO history — audit trail
+DC020,SERI,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,95.0,30,Serial assignments — capped at 20 per GR doc
+DC021,OBJK,SAP Basis Team,sap-basis@heliostelecom.example,daily,06:00,24,99.0,30,Serial-to-equipment cross-reference
