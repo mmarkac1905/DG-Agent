@@ -69,5 +69,12 @@ jobs:
           print(f"on-time: {otd}% | cross-state: {xs_c}/{xs_d}")
           assert float(otd) == 91.888, "on-time mart drifted"
           assert (int(xs_d), int(xs_c)) == (96478, 61898), "cross-state mart drifted"
+          con = duckdb.connect("cpe_analytics.duckdb", read_only=True)
+          fr = con.execute(
+              "SELECT ROUND(100.0*SUM(total_freight_value_brl)/SUM(total_item_price_brl),4) "
+              "FROM main_marts.fact_freight_to_price_ratio").fetchone()[0]
+          con.close()
+          print(f"freight ratio: {fr}%")
+          assert float(fr) == 16.6265, "freight-ratio mart drifted"
           print("RECONCILES — published numbers hold on freshly downloaded data")
           EOF

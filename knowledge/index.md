@@ -1,6 +1,6 @@
 # CPE Procurement Analytics — Knowledge Wiki
 
-_Last generated: 2026-07-07 11:33:06_
+_Last generated: 2026-07-07 12:05:18_
 
 Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand.
 
@@ -12,11 +12,11 @@ Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand
 - **Total known issues:** 133 (35 open)
 - **Data products tracked:** 0
 - **Data Vault entities designed:** 60 (15 hubs · 17 links · 28 satellites)
-- **Business glossary terms:** 35 (28 approved · 2 draft)
+- **Business glossary terms:** 36 (29 approved · 2 draft)
 - **ABAP custom programs:** 16 documented (2 critical · 4 high risk) · **Z-tables:** 11
 - **Data contracts:** 21 (15 daily · 6 weekly)
-- **dbt models scanned:** 159 (knowledge: 6, marts: 18, obt: 6, other: 24, staging: 45, vault: 60)
-- **Column lineage tracked:** 1505 columns across all layers
+- **dbt models scanned:** 161 (knowledge: 6, marts: 18, obt: 6, other: 26, staging: 45, vault: 60)
+- **Column lineage tracked:** 1523 columns across all layers
 
 ## Data Products (Analytical Use Cases)
 
@@ -52,6 +52,7 @@ Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand
 - [Monthly GMV by Product Category](business_glossary/monthly_gmv_by_category.md) — ecommerce_sales · product_category x month
 - [Olist On-Time Delivery Rate](business_glossary/olist_on_time_delivery_rate.md) — ecommerce_sales · month
 - [Cross-State Order Share](business_glossary/cross_state_order_share.md) — ecommerce_sales · month
+- [Freight-to-Item Price Ratio](business_glossary/freight_to_item_price_ratio.md) — logistics · English product category × calendar month of order purchase
 
 ### Draft Terms (awaiting approval)
 - [Total Cost of Ownership (TCO)](business_glossary/total_cost_of_ownership.md) — cost_analysis · draft

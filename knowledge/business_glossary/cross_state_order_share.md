@@ -1,6 +1,6 @@
 # Business Term: Cross-State Order Share
 
-_Last generated: 2026-07-07 11:33:06_
+_Last generated: 2026-07-07 12:05:18_
 
 ## Definition
 
@@ -42,9 +42,9 @@ Share of delivered orders where at least one item was fulfilled by a seller loca
 6. Truncates the order purchase timestamp to the first day of its calendar month, converting it to a standard date, to identify which month each order belongs to.
    - *Join:* Header table — drives monthly bucketing of every order.
    - *Filter:* No additional filter; null_pct = 0.0 per DAR-01024.
-7. This column carries the raw order identifier value flowing through unchanged from HUB_OLIST_ORDER.ORDER_ID, representing the cross-state order share percentage as sourced directly from the pipeline without modification.
-8. Carries the raw order identifier directly from HUB_OLIST_ORDER.ORDER_ID, flowing through staging, vault, and mart layers unchanged to represent each cross-state order included in the share calculation.
-9. This column carries a direct copy of the ORDER_ID field from HUB_OLIST_ORDER, flowing through staging, vault, and mart layers unchanged to represent the same-state order records contributing to the cross-state order share calculation.
+7. Calculates the percentage of delivered orders that crossed state lines by dividing the count of cross-state orders by the total delivered orders, rounded to four decimal places.
+8. Counts the number of distinct orders where the customer's state differs from the seller's state (i.e., cross-state orders).
+9. Counts the number of distinct orders where the customer and seller are located in the same state (i.e., not cross-state orders).
 
 ### SQL (from dbt models)
 
@@ -56,6 +56,24 @@ COUNT(DISTINCT order_id)
 **fact_cross_state_order_share.order_month:**
 ```sql
 DATE_TRUNC('month', order_purchase_timestamp)::DATE
+```
+
+**fact_cross_state_order_share.cross_state_order_share_pct:**
+```sql
+ROUND(
+        cross_state_orders * 100.0 / NULLIF(delivered_orders, 0),
+        4
+    )
+```
+
+**fact_cross_state_order_share.cross_state_orders:**
+```sql
+COUNT(DISTINCT CASE WHEN is_cross_state = 1 THEN order_id END)
+```
+
+**fact_cross_state_order_share.same_state_orders:**
+```sql
+COUNT(DISTINCT CASE WHEN is_cross_state = 0 THEN order_id END)
 ```
 
 ### Target Models

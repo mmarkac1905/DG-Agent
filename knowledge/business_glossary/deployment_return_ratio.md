@@ -1,6 +1,6 @@
 # Business Term: Deployment to Return Ratio
 
-_Last generated: 2026-07-07 11:33:06_
+_Last generated: 2026-07-07 12:05:18_
 
 ## Definition
 

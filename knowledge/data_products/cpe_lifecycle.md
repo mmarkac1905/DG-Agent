@@ -1,6 +1,6 @@
 # Data Product: cpe_lifecycle
 
-_Last generated: 2026-07-07 11:33:06_
+_Last generated: 2026-07-07 12:05:18_
 
 Keywords: `cpe, equipment, equi, serial, device, router, ont, set-top, stb, modem, lifecycle, installed, returned, defective`
 
