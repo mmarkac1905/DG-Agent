@@ -1,6 +1,6 @@
 # Data Product: vendor_scorecard
 
-_Last generated: 2026-07-07 11:00:29_
+_Last generated: 2026-07-07 11:22:47_
 
 Keywords: `vendor, supplier, lfa1, lfb1, lifnr, dobavljač, on-time delivery, otd, defect rate`
 

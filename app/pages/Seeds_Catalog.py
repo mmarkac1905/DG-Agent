@@ -32,171 +32,22 @@ APP_DIR = ROOT / "app"
 SCRIPTS_DIR = ROOT / "scripts"
 
 
-# Hand-maintained taxonomy mirroring knowledge/seeds_catalog.md. Keys are
-# seed (= table) names without .csv. Values: (category, purpose).
-SEED_TAXONOMY: dict[str, tuple[str, str]] = {
-    # A. Reference / master data — hand-maintained
-    "gl_account_master": (
-        "Reference (data)",
-        "GL account dictionary for the FI shadow postings (account name, "
-        "type, margin flow category). Written by generate_fi_shadows.py; "
-        "read by the contribution-margin models."
-    ),
-    "org_structure": (
-        "Reference (LLM context)",
-        "HT corporate structure (purchasing orgs, plants, cost centers). "
-        "Hierarchical; cleanest production home is a new hub_org_unit "
-        "(deferred follow-up to the seed->vault refactor)."
-    ),
-    "procurement_rules": (
-        "Reference (cross-cutting policy)",
-        "Business rules (DQ thresholds, approval limits). Cross-cutting "
-        "policy, not entity attributes — stays as a seed."
-    ),
-    "data_contracts": (
-        "Reference (governance)",
-        "Source-system contracts (expected schemas, SLAs). Hand-maintained."
-    ),
-    "data_vault_design": (
-        "Reference (architecture)",
-        "DV 2.0 entity catalog (which hub/link/sat exists, why)."
-    ),
-    "zmm_approval_status": (
-        "Reference (Z-table dictionary)",
-        "Z-table reference: APPR_STATUS code dictionary (02=approved etc)."
-    ),
-    "zmm_reason_codes": (
-        "Reference (Z-table dictionary)",
-        "Z-table reference: REASON_CODE dictionary."
-    ),
-    "abap_logic_catalog": (
-        "Reference (custom code)",
-        "Custom ABAP programs documented for analyst reference."
-    ),
-    "z_tables_catalog": (
-        "Reference (custom tables)",
-        "Custom Z-tables documented (Z*-prefixed)."
-    ),
+# The taxonomy is itself a seed (main_seeds.seed_taxonomy) so it is
+# governed like everything it describes: versioned, queryable, and
+# pinned to the CSVs on disk by tests/test_seed_taxonomy_invariant.py.
+@st.cache_data(ttl=60)
+def _load_taxonomy() -> dict[str, tuple[str, str]]:
+    try:
+        df = query(
+            "SELECT seed_name, category, purpose FROM main_seeds.seed_taxonomy"
+        )
+        return {r["seed_name"]: (r["category"], r["purpose"])
+                for _, r in df.iterrows()}
+    except Exception:
+        return {}
 
-    # B. Knowledge graph — hand-maintained, gated by end_of_task.py
-    "known_decisions": (
-        "Knowledge graph",
-        "Append-only architectural decision log. Every model change must "
-        "add a row (CLAUDE.md commit-gate rule)."
-    ),
-    "known_issues": (
-        "Knowledge graph",
-        "Open / resolved / wontfix issue tracker. NEXT_SESSION-tagged "
-        "items are the routing surface."
-    ),
 
-    # C. Auto-generated — dbt scanner pipeline (in end_of_task.py)
-    "dbt_model_catalog": (
-        "Auto-generated (scanner)",
-        "One row per dbt model: name, layer, materialization, refs, "
-        "columns. Written by scripts/scan_dbt_models.py."
-    ),
-    "dbt_column_lineage": (
-        "Auto-generated (scanner)",
-        "One row per (model, column): source expression, transformation, "
-        "origin. Powers column-level lineage. Written by "
-        "scripts/scan_dbt_models.py."
-    ),
-    "dbt_model_relationships": (
-        "Auto-generated (scanner)",
-        "Inferred fact<->dim joinability from shared vault ancestors. "
-        "Written by scripts/extract_dbt_relationships.py."
-    ),
-
-    # D. Auto-generated — semantic-model layer
-    "semantic_model": (
-        "Auto-generated (Layer A, LLM)",
-        "Layer A semantic model: LLM-synthesized canonical conventions "
-        "for raw SAP tables WITHOUT dbt ontology coverage. Written by "
-        "scripts/compile_semantic_model.py."
-    ),
-    "dbt_semantic_model": (
-        "Auto-generated (Layer B, deterministic)",
-        "Layer B semantic model: deterministic extraction from "
-        "dbt/target/manifest.json. Per-dbt-model canonical info. "
-        "Written by scripts/compile_dbt_semantic_model.py."
-    ),
-    "sap_data_dictionary": (
-        "Auto-generated + manual",
-        "Per (table, column) classification. Written by "
-        "scripts/classify_source_columns.py (LLM batch) + "
-        "scripts/run_catalog_backfill.py."
-    ),
-    "sap_table_catalog": (
-        "Auto-generated (scrape)",
-        "Per-table SAP metadata (purpose, category). Written by "
-        "scripts/scrape_sap_catalog.py (one-shot scrape from public docs)."
-    ),
-    "source_column_roles": (
-        "Auto-generated (LLM)",
-        "LLM-assigned column roles (key/measure/dimension/metadata)."
-    ),
-    "source_column_role_changes": (
-        "Audit log",
-        "Append-only diff every time source_column_roles is re-classified."
-    ),
-
-    # E. Auto-generated — analysis pipeline (Stage B/C/E)
-    "domain_analysis_results": (
-        "Auto-generated (Stage B DAR)",
-        "One row per Domain Analysis Result. Written by scripts/run_*_"
-        "analysis.py (10+ analyzers). Atom of Stage B analysis."
-    ),
-    "term_analysis_results": (
-        "Auto-generated (Stage C TAR)",
-        "Per-iteration query+result for Stage C term EDA. Written by "
-        "scripts/_tar_writer.py."
-    ),
-    "business_term_analysis_results": (
-        "Auto-generated (Stage C BAR)",
-        "Per-term Stage C->E bridge with declared_sufficient + validated "
-        "S2T fragment. Written by scripts/_bar_writer.py."
-    ),
-    "domain_facts": (
-        "Auto-generated (LLM)",
-        "Per-domain summarized facts used to ground Stage B prompts. "
-        "Written by scripts/refresh_domain_facts.py."
-    ),
-    "domain_reports": (
-        "Auto-generated (LLM)",
-        "Per-domain markdown report. Written by app/pages/Data_Analysis.py."
-    ),
-    "analysis_findings": (
-        "Auto-generated (analyst)",
-        "Per-term findings from analyst review of DARs. Written by "
-        "app/pages/Data_Analysis.py."
-    ),
-
-    # F. Application state + audit logs
-    "business_glossary": (
-        "Application state",
-        "Business term registry. Created/edited via Business_Glossary "
-        "page; Stage A blocker loader appends. Status: draft/approved/"
-        "archived."
-    ),
-    "s2t_mapping": (
-        "Application state",
-        "Source-to-target column mappings. Auto-generated by "
-        "scripts/sync_s2t_from_dbt.py; Stage E appends on deploy."
-    ),
-    "archive_log": (
-        "Audit log",
-        "Append-only audit of term archival events."
-    ),
-    "data_qa_log": (
-        "Audit log",
-        "Append-only audit of DQ-rule events from the Data Analysis tab."
-    ),
-    "ingestion_log": (
-        "Audit log",
-        "Append-only ingestion event log. Drives the staleness-banner UI."
-    ),
-}
+SEED_TAXONOMY: dict[str, tuple[str, str]] = _load_taxonomy()
 
 CATEGORY_ORDER = [
     "Knowledge graph",
@@ -427,8 +278,8 @@ if not seed:
     st.stop()
 
 cat_label, purpose = SEED_TAXONOMY.get(
-    seed, ("(uncategorized)", "_No taxonomy entry — add one to "
-           "app/pages/Seeds_Catalog.py SEED_TAXONOMY._")
+    seed, ("(uncategorized)", "_No taxonomy entry — add a row to "
+           "dbt/seeds/seed_taxonomy.csv and run `dbt seed`._")
 )
 
 # Header card

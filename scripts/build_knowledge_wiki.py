@@ -791,6 +791,29 @@ def main() -> None:
     for subdir in ["data_products", "sap_tables", "domain", "data_vault", "infrastructure"]:
         (WIKI_DIR / subdir).mkdir(parents=True, exist_ok=True)
 
+    # Seed taxonomy (generated from dbt/seeds/seed_taxonomy.csv — the
+    # authoritative per-seed inventory; seeds_catalog.md keeps the prose)
+    taxonomy = load_csv("seed_taxonomy")
+    if taxonomy:
+        by_cat: dict = {}
+        for r in taxonomy:
+            by_cat.setdefault(r.get("category", "(uncategorized)"), []).append(r)
+        tax_lines = [
+            "# Seed Taxonomy (generated)",
+            "",
+            "One row per seed in `dbt/seeds/`: category and purpose. Generated "
+            "from `seed_taxonomy.csv` by `build_knowledge_wiki.py`; drift from "
+            "the CSVs on disk fails `tests/test_seed_taxonomy_invariant.py`.",
+            "",
+        ]
+        for cat in sorted(by_cat):
+            tax_lines += [f"## {cat}", "", "| Seed | Purpose |", "|---|---|"]
+            for r in sorted(by_cat[cat], key=lambda x: x.get("seed_name", "")):
+                tax_lines.append(
+                    f"| `{r.get('seed_name', '')}` | {r.get('purpose', '')} |")
+            tax_lines.append("")
+        write(WIKI_DIR / "seed_taxonomy.md", chr(10).join(tax_lines))
+
     # Index
     write(WIKI_DIR / "index.md", build_index(configs, decisions, issues, relationships, dv_entities, glossary, abap_catalog, z_tables))
 

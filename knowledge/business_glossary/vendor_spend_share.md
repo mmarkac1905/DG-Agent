@@ -1,6 +1,6 @@
 # Business Term: Vendor Spend Share
 
-_Last generated: 2026-07-07 11:00:29_
+_Last generated: 2026-07-07 11:22:47_
 
 ## Definition
 

@@ -1,5 +1,7 @@
 # `main_seeds` Schema — Table-by-Table Catalog
 
+> **Authoritative per-seed inventory:** [`seed_taxonomy.md`](seed_taxonomy.md), generated from the `seed_taxonomy` seed and pinned to the CSVs on disk by test. This page keeps the narrative and design notes.
+
 What's in DuckDB's `main_seeds` schema, what populates each table, and what reads from it. Source of truth for every row is the matching `dbt/seeds/<name>.csv` (per RULE 9, `dbt seed` syncs CSV → DuckDB; per RULE 1 + KI-117, the CSV is authoritative and DuckDB is the consumer view).
 
 ---
