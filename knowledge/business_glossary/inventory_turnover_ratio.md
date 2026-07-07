@@ -1,6 +1,6 @@
 # Business Term: Inventory Turnover Ratio
 
-_Last generated: 2026-07-07 11:22:47_
+_Last generated: 2026-07-07 11:33:06_
 
 ## Definition
 

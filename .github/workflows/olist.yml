@@ -41,7 +41,7 @@ jobs:
         run: |
           cd dbt
           dbt deps
-          dbt build --select models/olist
+          dbt build --select +models/olist
 
       - name: Reconcile marts against the published numbers
         run: |
@@ -58,5 +58,16 @@ jobs:
           print(f"GMV: {gmv_rows} rows, {gmv_total} BRL, {gmv_cats} categories | repeat rate: {rr}%")
           assert (gmv_rows, float(gmv_total), gmv_cats) == (1282, 13496408.43, 74), "GMV mart drifted"
           assert float(rr) == 3.044, "repeat-rate mart drifted"
+          con = duckdb.connect("cpe_analytics.duckdb", read_only=True)
+          otd = con.execute(
+              "SELECT ROUND(100.0*SUM(on_time_orders)/SUM(delivered_orders),3) "
+              "FROM main_marts.fact_on_time_delivery_monthly").fetchone()[0]
+          xs_d, xs_c = con.execute(
+              "SELECT SUM(delivered_orders), SUM(cross_state_orders) "
+              "FROM main_marts.fact_cross_state_order_share").fetchone()
+          con.close()
+          print(f"on-time: {otd}% | cross-state: {xs_c}/{xs_d}")
+          assert float(otd) == 91.888, "on-time mart drifted"
+          assert (int(xs_d), int(xs_c)) == (96478, 61898), "cross-state mart drifted"
           print("RECONCILES — published numbers hold on freshly downloaded data")
           EOF

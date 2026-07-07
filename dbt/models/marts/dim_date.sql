@@ -1,13 +1,14 @@
 {{ config(materialized='table') }}
 
 /*
-    Dimension: Date — generated calendar covering 2023-01-01 to 2027-12-31.
+    Dimension: Date — generated calendar covering 2016-01-01 to 2027-12-31
+    (conformed across sources: SAP demo era 2023+, Olist 2016-2018).
 */
 
 WITH date_spine AS (
     SELECT
         CAST(UNNEST(GENERATE_SERIES(
-            DATE '2023-01-01',
+            DATE '2016-01-01',
             DATE '2027-12-31',
             INTERVAL 1 DAY
         )) AS DATE) AS date_day
