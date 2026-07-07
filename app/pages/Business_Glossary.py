@@ -2306,10 +2306,14 @@ with tab_detail:
                 f"**Status:** <span style='color:{status_color};font-weight:bold;font-size:18px'>{term['status'].upper()}</span>",
                 unsafe_allow_html=True,
             )
-            st.markdown(f"**Owner:** {term['owner']}")
-            st.markdown(f"**Approved by:** {term['approved_by']}")
-            st.markdown(f"**Domain:** {term['domain']}")
-            st.markdown(f"**Created:** {term['created_date']}")
+            def _meta(v):
+                # empty metadata renders as a dash, never pandas' 'nan'
+                return v if (pd.notna(v) and str(v).strip()
+                             and str(v).lower() != "nan") else "-"
+            st.markdown(f"**Owner:** {_meta(term['owner'])}")
+            st.markdown(f"**Approved by:** {_meta(term['approved_by'])}")
+            st.markdown(f"**Domain:** {_meta(term['domain'])}")
+            st.markdown(f"**Created:** {_meta(term['created_date'])}")
 
         related = term.get('related_terms', '')
         if pd.notna(related) and related:
