@@ -1,6 +1,6 @@
 # CPE Procurement Analytics — Knowledge Wiki
 
-_Last generated: 2026-07-07 01:07:16_
+_Last generated: 2026-07-07 10:48:23_
 
 Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand.
 
@@ -12,7 +12,7 @@ Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand
 - **Total known issues:** 131 (35 open)
 - **Data products tracked:** 0
 - **Data Vault entities designed:** 60 (15 hubs · 17 links · 28 satellites)
-- **Business glossary terms:** 35 (27 approved · 2 draft)
+- **Business glossary terms:** 35 (28 approved · 2 draft)
 - **ABAP custom programs:** 16 documented (2 critical · 4 high risk) · **Z-tables:** 11
 - **Data contracts:** 21 (15 daily · 6 weekly)
 - **dbt models scanned:** 159 (knowledge: 6, marts: 18, obt: 6, other: 24, staging: 45, vault: 60)
@@ -51,6 +51,7 @@ Auto-generated from `dbt/seeds/` — do not edit files in this directory by hand
 - [CPE Contribution Margin by Service Plan & Tenure](business_glossary/cpe_contribution_margin_by_segment.md) — procurement_finance · service_plan x tenure_band x month
 - [Monthly GMV by Product Category](business_glossary/monthly_gmv_by_category.md) — ecommerce_sales · product_category x month
 - [Olist On-Time Delivery Rate](business_glossary/olist_on_time_delivery_rate.md) — ecommerce_sales · month
+- [Cross-State Order Share](business_glossary/cross_state_order_share.md) — ecommerce_sales · month
 
 ### Draft Terms (awaiting approval)
 - [Total Cost of Ownership (TCO)](business_glossary/total_cost_of_ownership.md) — cost_analysis · draft

@@ -239,6 +239,29 @@ DOMAIN_LAYOUTS = {
     "main_obt": {},
 }
 
+# For a non-SAP source layer, process groups come from the DATA: the
+# dictionary's per-table domain_area (SAP keeps its curated groups).
+if _active_src != "raw_sap" and schema == _active_src:
+    try:
+        _dg_conn = get_connection()
+        _dom_df = _dg_conn.execute(
+            "SELECT LOWER(table_name) AS t, domain_area AS d, COUNT(*) AS n "
+            "FROM main_seeds.sap_data_dictionary "
+            "WHERE LOWER(table_name) IN ("
+            "  SELECT LOWER(table_name) FROM information_schema.tables "
+            f" WHERE table_schema = '{_active_src}') "
+            "GROUP BY 1, 2"
+        ).fetchdf()
+        _src_groups: dict = {}
+        for _, _r in _dom_df.iterrows():
+            _src_groups.setdefault(str(_r["d"]), []).append(str(_r["t"]))
+        if _src_groups:
+            DOMAIN_GROUPS[schema] = {
+                k: sorted(v) for k, v in sorted(_src_groups.items())
+            }
+    except Exception:
+        pass
+
 _all_groups = DOMAIN_GROUPS.get(schema, {})
 # Hide the "All tables / All entities / All models" catch-all for layers
 # that have any real process/domain split — the full-layer view is too

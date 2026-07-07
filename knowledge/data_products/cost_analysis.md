@@ -1,6 +1,6 @@
 # Data Product: cost_analysis
 
-_Last generated: 2026-07-07 01:07:16_
+_Last generated: 2026-07-07 10:48:23_
 
 Keywords: `cost, price, invoice, rbkp, rseg, netpr, netwr, tco, margin, budget, trošak, cijena`
 

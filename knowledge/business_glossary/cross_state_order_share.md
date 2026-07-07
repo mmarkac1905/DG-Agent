@@ -1,6 +1,6 @@
 # Business Term: Cross-State Order Share
 
-_Last generated: 2026-07-07 01:07:16_
+_Last generated: 2026-07-07 10:48:23_
 
 ## Definition
 
@@ -8,8 +8,8 @@ Share of delivered orders where at least one item was fulfilled by a seller loca
 
 - **ID:** `BG035`
 - **Owner:** 
-- **Approved by:** 
-- **Status:** `ready_for_s2t`
+- **Approved by:** Martin Markac
+- **Status:** `approved`
 - **Unit:** percent
 - **Grain:** month
 - **Domain:** ecommerce_sales
@@ -78,4 +78,4 @@ Simplified path: **SAP source** → `staging` → `vault (hubs/links/sats)` → 
 
 ## Validation Status
 
-Status: `ready_for_s2t`
+APPROVED — Business owner approved definition (2026-07-06)

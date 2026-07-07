@@ -1,6 +1,6 @@
 # Business Term: Average Vendor Lead Time
 
-_Last generated: 2026-07-07 01:07:16_
+_Last generated: 2026-07-07 10:48:23_
 
 ## Definition
 

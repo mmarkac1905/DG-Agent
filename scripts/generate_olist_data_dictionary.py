@@ -102,6 +102,22 @@ DESCR: dict[str, dict[str, str]] = {
 }
 
 
+# Per-table process domain (order-to-delivery business process). Renders
+# as the "Filter by Process" facet on the Data Model page and the domain
+# facet in the Data Catalog dictionary tab.
+_TABLE_DOMAIN = {
+    "orders": "order_fulfillment",
+    "order_items": "order_fulfillment",
+    "order_payments": "payments",
+    "order_reviews": "customer_experience",
+    "customers": "customers_geography",
+    "geolocation": "customers_geography",
+    "products": "product_catalog",
+    "category_translation": "product_catalog",
+    "sellers": "sellers",
+}
+
+
 def main() -> int:
     con = duckdb.connect(str(DB), read_only=True)
     live = con.execute(
@@ -126,7 +142,7 @@ def main() -> int:
             "description_hr": "",
             "business_meaning": (table_ctx + " " + desc).strip(),
             "example_value": "" if example is None else str(example[0])[:60],
-            "domain_area": "ecommerce_sales",
+            "domain_area": _TABLE_DOMAIN.get(table, "ecommerce_sales"),
             "description_source": "olist_kaggle_documentation",
             "needs_review": "0",
         })
