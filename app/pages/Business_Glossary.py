@@ -3471,6 +3471,48 @@ with tab_new:
     st.subheader("Create New Business Term")
     st.caption("Define a new business term. After creation, a data analyst will map it to source tables.")
 
+    # Evidence-grounded term discovery: the system proposes candidates the
+    # source can actually answer (profiled tables + measured join graph),
+    # so the analyst does not need an operator to know what to ask.
+    with st.expander("💡 Suggest term candidates from this source", expanded=False):
+        st.caption(
+            "Proposes business terms computable from the active source, "
+            "grounded in the profiled tables and the measured join graph. "
+            "Nothing is created until you submit the form."
+        )
+        if st.button("Generate candidates", key="tc_generate"):
+            from _term_suggester import suggest_term_candidates
+            with st.spinner("Reading the evidence and drafting candidates..."):
+                st.session_state["term_candidates"] = suggest_term_candidates()
+        _tc = st.session_state.get("term_candidates")
+        if _tc:
+            if _tc.get("error"):
+                st.error(_tc["error"])
+            else:
+                for _i, _c in enumerate(_tc.get("candidates", [])):
+                    with st.container(border=True):
+                        st.markdown(
+                            f"**{_c.get('display_name', '?')}** "
+                            f"`{_c.get('term_name', '')}` · "
+                            f"{_c.get('unit', '?')} · grain: {_c.get('grain', '?')} · "
+                            f"{_c.get('difficulty', '?')}"
+                        )
+                        st.markdown(_c.get("definition", ""))
+                        st.caption(
+                            f"Tables: {', '.join(_c.get('required_tables', []))} · "
+                            f"Evidence: {_c.get('evidence', '')}"
+                        )
+                        if _c.get("business_value"):
+                            st.caption(f"Why: {_c['business_value']}")
+                        if st.button("Use this term", key=f"tc_use_{_i}"):
+                            st.session_state["nt_term_name"] = _c.get("term_name", "")
+                            st.session_state["nt_display_name"] = _c.get("display_name", "")
+                            st.session_state["nt_definition"] = _c.get("definition", "")
+                            st.session_state["nt_unit"] = _c.get("unit", "")
+                            st.session_state["nt_grain"] = _c.get("grain", "")
+                            st.session_state["nt_prefill_domain"] = _c.get("domain", "")
+                            st.rerun()
+
     # Post-create banner: creation ends with a rerun (so the cleared form
     # proves something happened) and the success message survives it here,
     # above the form. User finding: the old in-form message was so easy to
@@ -3488,11 +3530,11 @@ with tab_new:
         col1, col2 = st.columns(2)
 
         with col1:
-            new_term_name = st.text_input("Term Name (snake_case)", placeholder="e.g., avg_vendor_lead_time")
-            new_display_name = st.text_input("Display Name", placeholder="e.g., Average Vendor Lead Time")
-            new_definition = st.text_area("Definition", placeholder="Describe what this metric means, how it should be calculated, and any exclusions...")
-            new_unit = st.text_input("Unit", placeholder="e.g., days, percent, EUR, ratio")
-            new_grain = st.text_input("Grain", placeholder="e.g., vendor x month, material x quarter")
+            new_term_name = st.text_input("Term Name (snake_case)", placeholder="e.g., avg_vendor_lead_time", key="nt_term_name")
+            new_display_name = st.text_input("Display Name", placeholder="e.g., Average Vendor Lead Time", key="nt_display_name")
+            new_definition = st.text_area("Definition", placeholder="Describe what this metric means, how it should be calculated, and any exclusions...", key="nt_definition")
+            new_unit = st.text_input("Unit", placeholder="e.g., days, percent, EUR, ratio", key="nt_unit")
+            new_grain = st.text_input("Grain", placeholder="e.g., vendor x month, material x quarter", key="nt_grain")
 
         with col2:
             # Domains are data, not a hardcoded list: offer every domain the
@@ -3507,12 +3549,21 @@ with tab_new:
                 _known_domains = ["procurement", "quality", "inventory",
                                   "equipment", "cost_analysis"]
             _NEW_DOMAIN_SENTINEL = "+ new domain..."
+            _prefill_dom = st.session_state.pop("nt_prefill_domain", "")
+            if _prefill_dom:
+                if _prefill_dom in _known_domains:
+                    st.session_state["nt_domain_choice"] = _prefill_dom
+                else:
+                    st.session_state["nt_domain_choice"] = _NEW_DOMAIN_SENTINEL
+                    st.session_state["nt_domain_new"] = _prefill_dom
             _domain_choice = st.selectbox(
-                "Domain", _known_domains + [_NEW_DOMAIN_SENTINEL])
+                "Domain", _known_domains + [_NEW_DOMAIN_SENTINEL],
+                key="nt_domain_choice")
             if _domain_choice == _NEW_DOMAIN_SENTINEL:
                 new_domain = st.text_input(
                     "New domain (snake_case)",
                     placeholder="e.g., ecommerce_sales",
+                    key="nt_domain_new",
                 ).strip()
             else:
                 new_domain = _domain_choice

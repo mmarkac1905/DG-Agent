@@ -38,13 +38,103 @@ abap = query("SELECT * FROM main_seeds.abap_logic_catalog ORDER BY risk_level, i
 z_tables = query("SELECT * FROM main_seeds.z_tables_catalog ORDER BY id")
 
 
-tab_arch, tab_dv, tab_abap, tab_dict, tab_diag = st.tabs([
+tab_src, tab_arch, tab_dv, tab_abap, tab_dict, tab_diag = st.tabs([
+    "📇 Source Tables",
     "🏗️ Architecture",
     "🏛️ Data Vault",
     "⚙️ ABAP Catalog",
     "📚 SAP Dictionary",
     "🔍 Source Diagnostic",
 ])
+
+# ============================================================
+# TAB: Source Tables — per-table cards for the ACTIVE source
+# (analyst request: an honest, human-readable catalog view)
+# ============================================================
+with tab_src:
+    st.subheader(f"Source tables — `{_ACTIVE_SRC}`")
+    st.caption(
+        "One card per table in the active source: columns from the "
+        "dictionary, row counts from the live database, and the join "
+        "evidence measured empirically by the analyzers. 🔴 marks join "
+        "directions the evidence says would multiply rows."
+    )
+
+    _src_tables = query(
+        "SELECT table_name FROM information_schema.tables "
+        f"WHERE table_schema = '{_ACTIVE_SRC}' ORDER BY table_name"
+    )["table_name"].tolist()
+
+    # Measured join graph, indexed per table (latest non-superseded).
+    _jc = query(
+        "SELECT id, result_json FROM main_seeds.domain_analysis_results "
+        "WHERE analysis_type = 'join_cardinality' AND status = 'success' "
+        "AND (superseded_by IS NULL OR superseded_by = '') "
+        "ORDER BY executed_at_utc"
+    )
+    _joins_by_table: dict = {}
+    _names_lc = {x.lower() for x in _src_tables}
+    for _, _r in _jc.iterrows():
+        try:
+            _j = json.loads(_r["result_json"])
+        except Exception:
+            continue
+        _t1, _t2 = (_j.get("t1") or "").lower(), (_j.get("t2") or "").lower()
+        if _t1 not in _names_lc or _t2 not in _names_lc:
+            continue
+        _keys = "+".join(_j.get("key_columns_t1") or [])
+        _cls = _j.get("fanout_class", "?")
+        _icon = {"per_record_key": "🟢 1:1", "header_detail": "🔵 1:N",
+                 "catastrophic_fanout": "🔴 fanout",
+                 "no_signal": "⚪ no signal"}.get(_cls, _cls)
+        _line = f"{_icon} · `{_t1}` ↔ `{_t2}` on `{_keys}`"
+        if _j.get("avg_fanout") is not None:
+            _line += f" (avg {_j['avg_fanout']}×)"
+        if _j.get("safe_direction"):
+            _line += f" — safe: {_j['safe_direction']}"
+        _line += f" · <sub>{_r['id']}</sub>"
+        for _side in (_t1, _t2):
+            _joins_by_table.setdefault(_side, {})[(_t1, _t2, _keys)] = _line
+
+    _dict_lc = sap_dict.copy()
+    _dict_lc["_tbl"] = _dict_lc["table_name"].astype(str).str.lower()
+
+    for _tbl in _src_tables:
+        try:
+            _n = query(
+                f'SELECT COUNT(*) AS n FROM {_ACTIVE_SRC}."{_tbl}"'
+            ).iloc[0]["n"]
+            _rows_label = f"{int(_n):,} rows"
+        except Exception:
+            _rows_label = "row count unavailable"
+        with st.expander(f"**{_tbl}** — {_rows_label}"):
+            _cols = _dict_lc[_dict_lc["_tbl"] == _tbl.lower()]
+            if not _cols.empty:
+                st.dataframe(
+                    _cols[["field_name", "data_type", "description_en"]]
+                    .rename(columns={"field_name": "column",
+                                     "data_type": "type",
+                                     "description_en": "description"}),
+                    use_container_width=True, hide_index=True,
+                )
+            else:
+                _isc = query(
+                    "SELECT column_name AS column, data_type AS type "
+                    "FROM information_schema.columns "
+                    f"WHERE table_schema = '{_ACTIVE_SRC}' "
+                    f"AND LOWER(table_name) = '{_tbl.lower()}' "
+                    "ORDER BY ordinal_position"
+                )
+                st.dataframe(_isc, use_container_width=True, hide_index=True)
+                st.caption("No dictionary rows yet — showing live schema.")
+            _tj = _joins_by_table.get(_tbl.lower())
+            if _tj:
+                st.markdown("**Measured joins** (empirical, not declared):")
+                for _line in _tj.values():
+                    st.markdown(f"- {_line}", unsafe_allow_html=True)
+            else:
+                st.caption("No measured join evidence yet — run the "
+                           "join cardinality analyzer on this table.")
 
 # ============================================================
 # TAB 1: Architecture Overview
