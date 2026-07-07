@@ -3511,6 +3511,8 @@ with tab_new:
                             st.session_state["nt_unit"] = _c.get("unit", "")
                             st.session_state["nt_grain"] = _c.get("grain", "")
                             st.session_state["nt_prefill_domain"] = _c.get("domain", "")
+                            st.session_state["nt_prefilled_from"] = _c.get(
+                                "display_name") or _c.get("term_name", "")
                             st.rerun()
 
     # Post-create banner: creation ends with a rerun (so the cleared form
@@ -3518,6 +3520,26 @@ with tab_new:
     # above the form. User finding: the old in-form message was so easy to
     # miss that the only signal of success was the duplicate-name error on
     # a second click.
+    # Candidate-loaded feedback: the Use button prefills the form far
+    # below the fold, which read as "nothing happened" (analyst finding).
+    # Announce it and scroll the form into view.
+    _prefilled_from = st.session_state.pop("nt_prefilled_from", None)
+    if _prefilled_from:
+        st.success(
+            f"✅ Candidate **{_prefilled_from}** loaded into the form below. "
+            "Review every field, then click **Create Term**."
+        )
+        st.markdown('<div id="nt-form-anchor"></div>', unsafe_allow_html=True)
+        st.components.v1.html(
+            """<script>
+            setTimeout(function () {
+                const el = window.parent.document.getElementById('nt-form-anchor');
+                if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+            }, 250);
+            </script>""",
+            height=0,
+        )
+
     _created_msg = st.session_state.pop("new_term_created_msg", None)
     if _created_msg:
         st.success(_created_msg)
