@@ -22,10 +22,14 @@ st.divider()
 
 DB_PATH = Path(__file__).resolve().parent.parent.parent / "cpe_analytics.duckdb"
 
+import os as _os
+_active_src = _os.environ.get("DG_SOURCE_SCHEMA", "raw_sap")
+_src_label = f"Source ({_active_src})"
+
 selected_layer = st.selectbox(
     "Select Layer",
     [
-        "SAP Source (raw_sap)",
+        _src_label,
         "Data Vault (main_vault)",
         "Data Marts (main_marts)",
         "OBT Views (main_obt)",
@@ -33,25 +37,20 @@ selected_layer = st.selectbox(
     key="dm_layer",
 )
 
-# The ER diagrams on this page are curated for the SAP demo source.
-# When the pipeline is pointed at another source, say so instead of
-# silently presenting SAP diagrams as if they covered it.
-import os as _os
-_active_src = _os.environ.get("DG_SOURCE_SCHEMA", "raw_sap")
-if _active_src != "raw_sap":
-    st.info(
-        f"These ER diagrams are curated for the SAP demo source. The active "
-        f"source is `{_active_src}` — its tables and generated models are "
-        f"browsable in **Data Catalog**."
-    )
-
 SCHEMA_MAP = {
-    "SAP Source (raw_sap)":   "raw_sap",
+    _src_label:                _active_src,
     "Data Vault (main_vault)": "main_vault",
     "Data Marts (main_marts)": "main_marts",
     "OBT Views (main_obt)":    "main_obt",
 }
 schema = SCHEMA_MAP[selected_layer]
+
+if _active_src != "raw_sap" and schema == _active_src:
+    st.caption(
+        "This source's model is drawn from **measured evidence**: every edge "
+        "below was empirically tested by the join-cardinality analyzer "
+        "(1:1 / 1:N verified; ⚠ marks directions that multiply rows)."
+    )
 
 
 # ------------------------------------------------------------------
@@ -275,6 +274,27 @@ columns_df = conn.execute(
     [schema],
 ).fetchdf()
 
+# In a non-default source, the vault/mart/obt schemas also hold the SAP
+# demo's models; show only the active source's generated models there.
+# Source-isolated models live under dbt/models/<src>/ and scan into the
+# model catalog as layer='other' (mart names don't carry the source
+# token, so a name filter alone misses them).
+if _active_src != "raw_sap" and schema in ("main_vault", "main_marts", "main_obt"):
+    _tok = _active_src[4:] if _active_src.startswith("raw_") else _active_src
+    try:
+        _src_models = set(
+            conn.execute(
+                "SELECT LOWER(model_name) AS m FROM main_seeds.dbt_model_catalog "
+                "WHERE layer = 'other'"
+            ).fetchdf()["m"]
+        )
+    except Exception:
+        _src_models = set()
+    tables_df = tables_df[
+        tables_df["table_name"].str.lower().isin(_src_models)
+        | tables_df["table_name"].str.contains(_tok, case=False)
+    ].reset_index(drop=True)
+
 # Apply the domain filter to the full table list
 domain_filter = DOMAIN_GROUPS.get(schema, {}).get(selected_domain)
 if domain_filter is not None:
@@ -451,6 +471,53 @@ RELATIONSHIPS_BY_SCHEMA = {
     "main_obt":    OBT_RELATIONSHIPS,
 }
 relationships = list(RELATIONSHIPS_BY_SCHEMA.get(schema, []))
+
+
+def _measured_source_relationships(src_tables: set) -> list:
+    """Edges for a non-SAP source layer, from the empirically measured
+    join-cardinality evidence (latest non-superseded DAR per pair+key).
+    Nothing is hand-curated: what the analyzers measured is what renders."""
+    try:
+        df = conn.execute(
+            "SELECT id, result_json FROM main_seeds.domain_analysis_results "
+            "WHERE analysis_type = 'join_cardinality' AND status = 'success' "
+            "AND (superseded_by IS NULL OR superseded_by = '') "
+            "ORDER BY executed_at_utc"
+        ).fetchdf()
+    except Exception:
+        return []
+    out: dict = {}
+    for _, r in df.iterrows():
+        try:
+            j = json.loads(r["result_json"])
+        except Exception:
+            continue
+        t1 = (j.get("t1") or "").lower()
+        t2 = (j.get("t2") or "").lower()
+        if t1 not in src_tables or t2 not in src_tables:
+            continue
+        cls = j.get("fanout_class")
+        if cls == "no_signal":
+            continue
+        keys = "+".join(j.get("key_columns_t1") or [])
+        avg = j.get("avg_fanout")
+        if cls == "per_record_key":
+            card = "1:1"
+        elif cls == "header_detail":
+            card = f"1:N (avg {avg}x)" if avg is not None else "1:N"
+        else:
+            card = f"⚠ x{avg:.0f} fanout" if avg is not None else "⚠ fanout"
+        out[(t1, t2, keys)] = {
+            "from": t1, "to": t2, "name": "measured",
+            "label": f"on {keys}", "cardinality": card,
+        }
+    return list(out.values())
+
+
+if _active_src != "raw_sap" and schema == _active_src:
+    relationships = _measured_source_relationships(
+        {x.lower() for x in tables_df["table_name"].tolist()}
+    )
 
 # Layer in extractor-derived edges from dbt_model_relationships seed.
 # scripts/extract_dbt_relationships.py parses ref() calls and walks
