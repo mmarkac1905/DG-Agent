@@ -1,6 +1,6 @@
 # Infrastructure: pipeline
 
-_Last generated: 2026-07-07 10:48:23_
+_Last generated: 2026-07-07 11:00:29_
 
 Keywords: `pipeline, etl, ingestion, refresh, scheduler`
 

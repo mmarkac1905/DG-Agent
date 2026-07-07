@@ -75,6 +75,23 @@ def export_all():
                 errors += 1
                 print(f"  [error] {schema}.{table}: {e}")
 
+        # --- Prune parquet files whose DB table no longer exists.
+        # COPY only ever writes; without this, a decommissioned seed's
+        # parquet ghost survives forever and the app (parquet-backed
+        # connection) keeps serving a table the DB dropped months ago
+        # (analyst finding: 6 ghosts from a 2026-04 decommission).
+        live = set(exported_tables)
+        pruned = 0
+        for stale in PARQUET_DIR.glob("*/*.parquet"):
+            key = (stale.parent.name, stale.stem)
+            if key not in live and stale.parent.name not in SKIP_SCHEMAS:
+                stale.unlink()
+                pruned += 1
+                print(f"  [pruned] {stale.parent.name}.{stale.stem} "
+                      "(no longer in the database)")
+        if pruned:
+            print(f"  Pruned {pruned} stale parquet file(s).")
+
         # --- Sidecar: row-count per exported table (design §OQ2 resolution).
         # No content_sha256 because parquet export is unconditional; sidecar
         # is forensic, not staleness-gating. Uses the still-open conn.

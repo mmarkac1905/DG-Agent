@@ -1,6 +1,6 @@
 # Anti-Patterns — DO NOT List
 
-_Last generated: 2026-07-07 10:48:23_
+_Last generated: 2026-07-07 11:00:29_
 
 Scannable in 30 seconds. Check this BEFORE proposing or building anything.
 
