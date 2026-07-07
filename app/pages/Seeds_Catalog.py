@@ -36,10 +36,11 @@ SCRIPTS_DIR = ROOT / "scripts"
 # seed (= table) names without .csv. Values: (category, purpose).
 SEED_TAXONOMY: dict[str, tuple[str, str]] = {
     # A. Reference / master data — hand-maintained
-    "movement_type_mapping": (
+    "gl_account_master": (
         "Reference (data)",
-        "BWART code -> English description. Feeds dim_movement_type. "
-        "Pure lookup dictionary — correctly a seed."
+        "GL account dictionary for the FI shadow postings (account name, "
+        "type, margin flow category). Written by generate_fi_shadows.py; "
+        "read by the contribution-margin models."
     ),
     "org_structure": (
         "Reference (LLM context)",
