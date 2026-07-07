@@ -85,6 +85,7 @@ be governance theatre), so a stage turns green only when its checkpoint is walke
 
 | Step | Where in the app | Who acts |
 |---|---|---|
+| Discover *(optional)* | Business Glossary → **New Term** → **Suggest term candidates** | machine proposes 5-8 evidence-grounded terms the source can actually answer (profiled tables + the measured join graph, catastrophic join directions excluded by contract); **you pick one** and it prefills the form. Nothing exists until you submit |
 | Define | Business Glossary → **New Term** | you write the term contract (status `draft`) |
 | Scope | Data Analysis → **Term Scope** → Propose, review, **Confirm** | LLM proposes, **you confirm** (`scope_confirmed`) |
 | Domain EDA | Data Analysis → **Domain Analysis** → run the analyzers the prerequisites readout lists | machine; coverage is checked automatically, nothing to sign |
@@ -262,7 +263,7 @@ CLAUDE.md       agent & contributor guide (conventions for working in the repo)
 
 ## Pointing it at another source
 
-The pipeline is **source-agnostic by configuration**. To prove it, and to answer the fair criticism
+The pipeline is **source-agnostic by configuration** (switch sources with one command: `powershell -File scripts\start_app.ps1 -Source sap|olist`; the Data Catalog's **Source Tables** tab then shows the active source as per-table cards with row counts, dictionary columns, and the measured join evidence rendered for humans, fanout hazards marked red). To prove it, and to answer the fair criticism
 that a system validated only on data its own author generated proves the *mechanism* but not
 *robustness*, I pointed it at the public
 [Olist Brazilian e-commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce):
